@@ -53,16 +53,18 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	// Strategy 1: If llms_txt_url is configured, fetch and split it.
 	// This is the most efficient path — one HTTP request gets all pages.
 	if f.cfg.LLMSTxtURL != "" {
-		llmsPage, err := f.fetchURL(ctx, f.cfg.LLMSTxtURL, "llms.txt")
+		// Derive the archive filename from the URL (e.g. "llms.txt", "llms-full.txt").
+		llmsFilename := llmsTxtFilename(f.cfg.LLMSTxtURL)
+		llmsPage, err := f.fetchURL(ctx, f.cfg.LLMSTxtURL, llmsFilename)
 		if err != nil {
-			fmt.Printf("  ⚠ llms.txt: %v (falling back to individual pages)\n", err)
+			fmt.Printf("  ⚠ %s: %v (falling back to individual pages)\n", llmsFilename, err)
 		} else {
-			// Save the raw llms.txt file too.
+			// Save the raw file.
 			pages = append(pages, *llmsPage)
 			// Split into individual pages.
 			split := SplitLLMSTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
 			pages = append(pages, split...)
-			fmt.Printf("  ✓ llms.txt: %d sections extracted\n", len(split))
+			fmt.Printf("  ✓ %s: %d sections extracted\n", llmsFilename, len(split))
 		}
 	}
 
@@ -166,6 +168,21 @@ func (f *HTTPFetcher) fetchURL(ctx context.Context, rawURL, archivePath string) 
 		Path:      archivePath,
 		Content:   body,
 	}, nil
+}
+
+// llmsTxtFilename extracts the filename from an llms_txt_url for use as the
+// archive path. Falls back to "llms.txt" if the URL has no usable filename.
+// Examples:
+//
+//	"https://docs.x.ai/llms.txt"                          → "llms.txt"
+//	"https://docs.pydantic.dev/latest/llms-full.txt"      → "llms-full.txt"
+func llmsTxtFilename(rawURL string) string {
+	if u, err := url.Parse(rawURL); err == nil {
+		if base := path.Base(u.Path); base != "" && base != "." && base != "/" {
+			return base
+		}
+	}
+	return "llms.txt"
 }
 
 // pathToArchivePath converts a URL path to a filesystem-safe archive path.

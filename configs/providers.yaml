@@ -41,3 +41,21 @@ topics:
           - /docs/api-reference/chat
           - /docs/api-reference/responses
         openapi_url: https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
+  - slug: python-libs
+    name: Python Libraries
+    description: Key Python library documentation
+    providers:
+      # Pydantic — llms-full.txt is a single 1.7MB Markdown dump (no delimiters).
+      # Individual .md pages also available via MkDocs at /concepts/*/index.md.
+      - slug: pydantic
+        name: Pydantic
+        base_url: https://docs.pydantic.dev/latest
+        fetch_strategy: native
+        llms_txt_url: https://docs.pydantic.dev/latest/llms-full.txt
+        paths:
+          # Key reference pages (fetched individually as supplements)
+          - /concepts/models/index.md
+          - /concepts/fields/index.md
+          - /concepts/validators/index.md
+          - /concepts/serialization/index.md
+          - /concepts/config/index.md
