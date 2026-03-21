@@ -95,8 +95,9 @@ tools:  ## Verify external tools are available
 	@$(GONEAT_RESOLVE); echo "✅ goneat: $$($$GONEAT --version 2>&1 | head -n1)"
 	@echo "✅ All tools verified"
 
-dependencies:  ## Verify Go module dependencies
-	@echo "Verifying Go module dependencies..."
+dependencies:  ## Tidy and verify Go module dependencies
+	@echo "Tidying Go module dependencies..."
+	@go mod tidy
 	@go mod verify
 	@echo "✅ Dependencies verified"
 
@@ -172,7 +173,7 @@ release-checksums: ## Generate SHA256SUMS and SHA512SUMS in dist/release
 # Build
 # ─────────────────────────────────────────────────────────────────────────────
 
-build: ## Build binary for current platform
+build: dependencies ## Build binary for current platform
 	@echo "→ Building $(BINARY_NAME) v$(VERSION)..."
 	@go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 	@echo "✓ Binary built: bin/$(BINARY_NAME)"
@@ -191,7 +192,7 @@ build-all:  ## Build multi-platform binaries and generate checksums
 version:  ## Print current version
 	@echo "$(VERSION)"
 
-test: ## Run all tests
+test: dependencies ## Run all tests
 	@echo "Running test suite..."
 	$(GOTEST) ./... -v
 
