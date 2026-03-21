@@ -1,0 +1,170 @@
+# fularchive Provider Registry Entry Schema
+# Draft: JSON Schema 2020-12
+#
+# Defines the structure for a single entry in the provider registry (JSONL).
+# The registry is a catalog of known documentation sources — not all entries
+# are active. Active providers are configured in configs/providers.yaml.
+#
+# The registry answers: "what providers exist and how do they behave?"
+# The config answers: "which providers should I fetch right now?"
+"$schema": "https://json-schema.org/draft/2020-12/schema"
+"$id": "registry/v0/provider-registry"
+title: fularchive Provider Registry Entry
+description: >-
+  Schema for a single provider entry in the fularchive registry. One JSONL line = one provider. The registry is the discovery layer; configs/providers.yaml is the activation layer.
+type: object
+required:
+  - slug
+  - name
+  - base_url
+  - status
+  - tags
+properties:
+  slug:
+    type: string
+    description: >-
+      Unique identifier for this provider. Same slug used in configs/providers.yaml. Must be lowercase alphanumeric with hyphens only.
+    pattern: "^[a-z][a-z0-9]+(-[a-z0-9]+)*$"
+    minLength: 2
+    maxLength: 64
+    examples:
+      - xai
+      - anthropic
+      - aws-cli
+      - aws-glue
+      - pydantic
+  name:
+    type: string
+    description: Human-readable display name.
+    examples:
+      - xAI / Grok
+      - AWS CLI
+      - Pydantic
+  description:
+    type: string
+    description: One-line description of what this provider's docs cover.
+  base_url:
+    type: string
+    format: uri
+    description: Base URL for the documentation site.
+  # ── Discovery & fetch capabilities ──────────────────────────────
+  capabilities:
+    type: object
+    description: What fetch strategies this provider supports.
+    properties:
+      llms_txt:
+        type: boolean
+        description: Has a llms.txt or llms-full.txt endpoint.
+        default: false
+      llms_txt_url:
+        type: string
+        format: uri
+        description: URL of the llms.txt file if available.
+      llms_full_txt:
+        type: boolean
+        description: Has a llms-full.txt (complete content dump).
+        default: false
+      llms_full_txt_url:
+        type: string
+        format: uri
+      md_suffix:
+        type: boolean
+        description: Supports .md suffix on page URLs for native Markdown.
+        default: false
+      sitemap:
+        type: boolean
+        description: Has a usable sitemap.xml.
+        default: false
+      github_source:
+        type: boolean
+        description: Raw Markdown available from a GitHub repo.
+        default: false
+      github_repo:
+        type: string
+        description: GitHub repo slug (e.g. trinodb/trino) if source is on GitHub.
+      github_docs_path:
+        type: string
+        description: Path within the repo to docs (e.g. docs/src/main/sphinx/).
+      openapi:
+        type: boolean
+        description: Has a publicly available OpenAPI/JSON spec.
+        default: false
+      openapi_url:
+        type: string
+        format: uri
+    additionalProperties: false
+  # ── Recommended fetch strategy ──────────────────────────────────
+  recommended_strategy:
+    type: string
+    description: >-
+      Best fetch approach for this provider based on capabilities.
+    enum:
+      - llmstxt-split
+      - llmstxt-hierarchical
+      - md-suffix
+      - github-raw
+      - sitemap-jina
+      - jina-fallback
+    examples:
+      - llmstxt-split
+  # ── Taxonomy ────────────────────────────────────────────────────
+  tags:
+    type: array
+    description: >-
+      Searchable tags for discovery. Include domain, technology, language, and provider family.
+    minItems: 1
+    items:
+      type: string
+      pattern: "^[a-z][a-z0-9]+(-[a-z0-9]+)*$"
+    examples:
+      - - llm-api
+        - ai
+        - frontier-model
+      - - cloud
+        - aws
+        - cli
+      - - python
+        - validation
+        - data
+  suggested_topics:
+    type: array
+    description: >-
+      Topic slugs this provider naturally belongs to. Helps users pick the right topic when activating a provider.
+    items:
+      type: string
+      pattern: "^[a-z][a-z0-9]+(-[a-z0-9]+)*$"
+    examples:
+      - - llm-api
+      - - cloud-infra
+      - - python-libs
+  # ── Status & maintenance ────────────────────────────────────────
+  status:
+    type: string
+    description: >-
+      Current status of this registry entry.
+    enum:
+      - verified
+      - untested
+      - broken
+      - deprecated
+  last_verified:
+    type: string
+    format: date
+    description: Date this entry was last verified to work (YYYY-MM-DD).
+  tos_reviewed:
+    type: boolean
+    description: Whether the provider's TOS has been reviewed per SDR-0001.
+    default: false
+  notes:
+    type: string
+    description: Free-form operational notes (quirks, caveats, known issues).
+  # ── Scale hints ─────────────────────────────────────────────────
+  estimated_pages:
+    type: integer
+    description: Approximate number of pages (helps capacity planning).
+    minimum: 1
+  estimated_size_kb:
+    type: integer
+    description: Approximate total content size in KB.
+    minimum: 1
+additionalProperties: false

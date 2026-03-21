@@ -6,26 +6,38 @@ topics:
     name: LLM API Documentation
     description: Frontier LLM provider API reference and guides
     providers:
+      # xAI — best case: llms.txt gives us the entire site in one request,
+      # plus individual .md pages are available at /developers/**/*.md
+      - slug: xai
+        name: xAI / Grok
+        base_url: https://docs.x.ai
+        fetch_strategy: native
+        llms_txt_url: https://docs.x.ai/llms.txt
+        paths:
+          # Individual .md pages for targeted fetching (supplement llms.txt)
+          - /developers/introduction.md
+          - /developers/quickstart.md
+          - /developers/models.md
+          - /developers/tools/overview.md
+          - /developers/tools/function-calling.md
+          - /developers/tools/web-search.md
+          - /developers/rest-api-reference/inference/chat.md
+      # Anthropic — docs moved to platform.claude.com (March 2026)
+      # TODO: verify llms-full.txt and .md suffix at new domain
       - slug: anthropic
         name: Anthropic
-        base_url: https://docs.anthropic.com
-        fetch_strategy: native
+        base_url: https://platform.claude.com/docs
+        fetch_strategy: auto
         paths:
-          - /en/docs/build-with-claude/**/*.md
-          - /en/docs/api-reference/**/*.md
-          - /llms-full.txt
+          - /en/docs/build-with-claude/tool-use
+          - /en/docs/build-with-claude/prompt-caching
+          - /en/docs/api-reference/messages
+      # OpenAI — no native .md, has OpenAPI spec on GitHub
       - slug: openai
         name: OpenAI
         base_url: https://platform.openai.com
         fetch_strategy: auto
         paths:
-          - /docs/**/*.md
-          - /llms-full.txt
+          - /docs/api-reference/chat
+          - /docs/api-reference/responses
         openapi_url: https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
-      - slug: xai
-        name: xAI / Grok
-        base_url: https://docs.x.ai
-        fetch_strategy: native
-        paths:
-          - /docs/**/*.md
-          - /api-reference/**/*.md

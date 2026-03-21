@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fulmenhq/fularchive/internal/provider"
 	"github.com/fulmenhq/gofulmen/logging"
 	"github.com/fulmenhq/gofulmen/schema"
 	"github.com/spf13/viper"
@@ -161,6 +162,70 @@ func TopicSlugs() []string {
 		}
 	}
 	return slugs
+}
+
+// Topic holds a parsed topic from config with its providers.
+type Topic struct {
+	Slug      string
+	Providers []provider.ProviderConfig
+}
+
+// Topics returns all configured topics with fully typed provider configs.
+func Topics() []Topic {
+	raw := cfg.Get("topics")
+	if raw == nil {
+		return nil
+	}
+	slice, ok := raw.([]interface{})
+	if !ok {
+		return nil
+	}
+	var topics []Topic
+	for _, t := range slice {
+		tm, ok := t.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		topic := Topic{
+			Slug: stringVal(tm, "slug"),
+		}
+		rawProviders, ok := tm["providers"].([]interface{})
+		if !ok {
+			continue
+		}
+		for _, p := range rawProviders {
+			pm, ok := p.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			pc := provider.ProviderConfig{
+				Slug:          stringVal(pm, "slug"),
+				Name:          stringVal(pm, "name"),
+				BaseURL:       stringVal(pm, "base_url"),
+				FetchStrategy: provider.FetchStrategy(stringVal(pm, "fetch_strategy")),
+				LLMSTxtURL:    stringVal(pm, "llms_txt_url"),
+				OpenAPIURL:    stringVal(pm, "openapi_url"),
+				AuthEnvVar:    stringVal(pm, "auth_env_var"),
+			}
+			if paths, ok := pm["paths"].([]interface{}); ok {
+				for _, path := range paths {
+					if s, ok := path.(string); ok {
+						pc.Paths = append(pc.Paths, s)
+					}
+				}
+			}
+			topic.Providers = append(topic.Providers, pc)
+		}
+		topics = append(topics, topic)
+	}
+	return topics
+}
+
+func stringVal(m map[string]interface{}, key string) string {
+	if v, ok := m[key].(string); ok {
+		return v
+	}
+	return ""
 }
 
 // Providers returns all provider slugs across all topics (flat list).

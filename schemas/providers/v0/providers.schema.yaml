@@ -117,6 +117,15 @@ properties:
           - - /en/docs/build-with-claude/tool-use.md
             - /en/docs/api-reference/**/*.md
             - /llms-full.txt
+      # ── LLM-friendly full-site dump ───────────────────────────────
+      llms_txt_url:
+        type: string
+        format: uri
+        description: >-
+          Optional URL to a llms.txt or llms-full.txt file — a single-file Markdown dump of the entire doc site. When set, fularchive fetches this first and splits it into individual pages using section delimiters (e.g. ===/<path>===). Most efficient fetch strategy.
+        examples:
+          - https://docs.x.ai/llms.txt
+          - https://docs.anthropic.com/llms-full.txt
       # ── Fetch strategy ───────────────────────────────────────────
       fetch_strategy:
         type: string
