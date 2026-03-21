@@ -199,13 +199,26 @@ func Topics() []Topic {
 				continue
 			}
 			pc := provider.ProviderConfig{
-				Slug:          stringVal(pm, "slug"),
-				Name:          stringVal(pm, "name"),
-				BaseURL:       stringVal(pm, "base_url"),
-				FetchStrategy: provider.FetchStrategy(stringVal(pm, "fetch_strategy")),
-				LLMSTxtURL:    stringVal(pm, "llms_txt_url"),
-				OpenAPIURL:    stringVal(pm, "openapi_url"),
-				AuthEnvVar:    stringVal(pm, "auth_env_var"),
+				Slug:           stringVal(pm, "slug"),
+				Name:           stringVal(pm, "name"),
+				BaseURL:        stringVal(pm, "base_url"),
+				FetchStrategy:  provider.FetchStrategy(stringVal(pm, "fetch_strategy")),
+				LLMSTxtURL:     stringVal(pm, "llms_txt_url"),
+				OpenAPIURL:     stringVal(pm, "openapi_url"),
+				GitHubRepo:     stringVal(pm, "github_repo"),
+				GitHubDocsPath: stringVal(pm, "github_docs_path"),
+				GitHubBranch:   stringVal(pm, "github_branch"),
+				AuthEnvVar:     stringVal(pm, "auth_env_var"),
+				Enabled:        boolPtrVal(pm, "enabled"),
+			}
+			if rm, ok := pm["rate_limit"].(map[string]interface{}); ok {
+				rl := provider.RateLimitConfig{
+					RequestsPerSecond: floatVal(rm, "requests_per_second"),
+					Burst:             intVal(rm, "burst"),
+				}
+				if rl.RequestsPerSecond > 0 || rl.Burst > 0 {
+					pc.RateLimit = &rl
+				}
 			}
 			if paths, ok := pm["paths"].([]interface{}); ok {
 				for _, path := range paths {
@@ -226,6 +239,53 @@ func stringVal(m map[string]interface{}, key string) string {
 		return v
 	}
 	return ""
+}
+
+func boolPtrVal(m map[string]interface{}, key string) *bool {
+	v, ok := m[key].(bool)
+	if !ok {
+		return nil
+	}
+	b := v
+	return &b
+}
+
+func floatVal(m map[string]interface{}, key string) float64 {
+	switch v := m[key].(type) {
+	case float64:
+		return v
+	case float32:
+		return float64(v)
+	case int:
+		return float64(v)
+	case int64:
+		return float64(v)
+	case uint:
+		return float64(v)
+	case uint64:
+		return float64(v)
+	default:
+		return 0
+	}
+}
+
+func intVal(m map[string]interface{}, key string) int {
+	switch v := m[key].(type) {
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case uint:
+		return int(v)
+	case uint64:
+		return int(v)
+	case float64:
+		return int(v)
+	case float32:
+		return int(v)
+	default:
+		return 0
+	}
 }
 
 // Providers returns all provider slugs across all topics (flat list).

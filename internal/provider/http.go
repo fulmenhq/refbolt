@@ -19,11 +19,7 @@ type HTTPFetcher struct {
 	client *http.Client
 }
 
-// NewHTTPFetcher creates a fetcher for any provider using HTTP.
-func NewHTTPFetcher(cfg ProviderConfig) (*HTTPFetcher, error) {
-	if cfg.BaseURL == "" {
-		return nil, fmt.Errorf("base_url is required for provider %s", cfg.Slug)
-	}
+func newHTTPClient() *http.Client {
 	// Some doc sites return 404 when Go's default HTTP/2 ALPN is negotiated.
 	// Using HTTP/1.1 only resolves this compatibility issue.
 	transport := &http.Transport{
@@ -31,12 +27,21 @@ func NewHTTPFetcher(cfg ProviderConfig) (*HTTPFetcher, error) {
 			NextProtos: []string{"http/1.1"},
 		},
 	}
+
+	return &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: transport,
+	}
+}
+
+// NewHTTPFetcher creates a fetcher for any provider using HTTP.
+func NewHTTPFetcher(cfg ProviderConfig) (*HTTPFetcher, error) {
+	if cfg.BaseURL == "" {
+		return nil, fmt.Errorf("base_url is required for provider %s", cfg.Slug)
+	}
 	return &HTTPFetcher{
-		cfg: cfg,
-		client: &http.Client{
-			Timeout:   30 * time.Second,
-			Transport: transport,
-		},
+		cfg:    cfg,
+		client: newHTTPClient(),
 	}, nil
 }
 
@@ -152,7 +157,9 @@ func (f *HTTPFetcher) fetchURL(ctx context.Context, rawURL, archivePath string) 
 	if err != nil {
 		return nil, fmt.Errorf("fetching %s: %w", rawURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)

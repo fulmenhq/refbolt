@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/fulmenhq/fularchive/internal/config"
+	"github.com/fulmenhq/fularchive/internal/provider"
 )
 
 func TestLoad_NoConfigFile(t *testing.T) {
@@ -69,6 +70,75 @@ func TestLoad_EnvOverride(t *testing.T) {
 
 	if got := config.ArchiveRoot(); got != "/custom/path" {
 		t.Errorf("ArchiveRoot() = %q, want /custom/path", got)
+	}
+}
+
+func TestTopics_ParsesGitHubRawFields(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "providers.yaml")
+	configBody := []byte(`archive_root: /tmp/archive
+topics:
+  - slug: data-platform
+    providers:
+      - slug: trino
+        name: Trino
+        base_url: https://trino.io/docs/current
+        fetch_strategy: github-raw
+        github_repo: trinodb/trino
+        github_docs_path: docs/src/main/sphinx/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        enabled: false
+        rate_limit:
+          requests_per_second: 3
+          burst: 2
+        paths:
+          - "**/*.md"
+`)
+	if err := os.WriteFile(configPath, configBody, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("FULARCHIVE_CONFIG", configPath)
+
+	if err := config.Load(); err != nil {
+		t.Fatalf("Load() failed: %v", err)
+	}
+
+	topics := config.Topics()
+	if len(topics) != 1 {
+		t.Fatalf("len(Topics()) = %d, want 1", len(topics))
+	}
+	if len(topics[0].Providers) != 1 {
+		t.Fatalf("len(Topics()[0].Providers) = %d, want 1", len(topics[0].Providers))
+	}
+
+	got := topics[0].Providers[0]
+	if got.FetchStrategy != provider.StrategyGitHubRaw {
+		t.Fatalf("FetchStrategy = %q, want %q", got.FetchStrategy, provider.StrategyGitHubRaw)
+	}
+	if got.GitHubRepo != "trinodb/trino" {
+		t.Fatalf("GitHubRepo = %q, want trinodb/trino", got.GitHubRepo)
+	}
+	if got.GitHubDocsPath != "docs/src/main/sphinx/" {
+		t.Fatalf("GitHubDocsPath = %q, want docs/src/main/sphinx/", got.GitHubDocsPath)
+	}
+	if got.GitHubBranch != "master" {
+		t.Fatalf("GitHubBranch = %q, want master", got.GitHubBranch)
+	}
+	if got.AuthEnvVar != "GITHUB_TOKEN" {
+		t.Fatalf("AuthEnvVar = %q, want GITHUB_TOKEN", got.AuthEnvVar)
+	}
+	if got.Enabled == nil || *got.Enabled {
+		t.Fatalf("Enabled = %v, want false", got.Enabled)
+	}
+	if got.RateLimit == nil {
+		t.Fatal("RateLimit = nil, want parsed config")
+	}
+	if got.RateLimit.RequestsPerSecond != 3 {
+		t.Fatalf("RateLimit.RequestsPerSecond = %v, want 3", got.RateLimit.RequestsPerSecond)
+	}
+	if got.RateLimit.Burst != 2 {
+		t.Fatalf("RateLimit.Burst = %d, want 2", got.RateLimit.Burst)
 	}
 }
 

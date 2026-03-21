@@ -130,12 +130,37 @@ properties:
       fetch_strategy:
         type: string
         description: >-
-          How to fetch content from this provider. - native: Fetch .md suffix or known Markdown endpoints directly. - jina: Use Jina Reader (r.jina.ai) to convert HTML to Markdown. - auto: Try native first, fall back to Jina on failure.
+          How to fetch content from this provider. - native: Fetch .md suffix or known Markdown endpoints directly. - jina: Use Jina Reader (r.jina.ai) to convert HTML to Markdown. - auto: Try native first, fall back to Jina on failure. - github-raw: Discover Markdown via the GitHub tree API, then fetch raw file contents from raw.githubusercontent.com.
         enum:
           - native
           - jina
           - auto
+          - github-raw
         default: auto
+      github_repo:
+        type: string
+        description: >-
+          GitHub repository slug in owner/repo form for providers using the github-raw strategy.
+        pattern: "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        examples:
+          - trinodb/trino
+          - kubernetes/website
+      github_docs_path:
+        type: string
+        description: >-
+          Path prefix within the GitHub repository that contains the documentation tree for github-raw providers.
+        minLength: 1
+        examples:
+          - docs/src/main/sphinx/
+          - content/en/docs/reference/kubectl/
+      github_branch:
+        type: string
+        description: >-
+          Branch or ref to fetch from for github-raw providers. Defaults to main when omitted.
+        minLength: 1
+        examples:
+          - main
+          - master
       # ── OpenAPI / supplementary files ────────────────────────────
       openapi_url:
         type: string
@@ -164,13 +189,25 @@ properties:
       auth_env_var:
         type: string
         description: >-
-          Name of the environment variable holding the API key or token for this provider. Used by Jina Reader or authenticated endpoints. Secrets are NEVER stored in this config file.
+          Name of the environment variable holding the API key or token for this provider. Used by Jina Reader or authenticated endpoints. For github-raw providers, this should normally point to GITHUB_TOKEN because anonymous GitHub API access hits 403/429 limits quickly. Secrets are NEVER stored in this config file.
         pattern: "^[A-Z][A-Z0-9_]+$"
         examples:
           - JINA_API_KEY
           - OPENAI_API_KEY
+          - GITHUB_TOKEN
       enabled:
         type: boolean
         description: Whether this provider is active. Defaults to true.
         default: true
+    allOf:
+      - if:
+          properties:
+            fetch_strategy:
+              const: github-raw
+          required:
+            - fetch_strategy
+        then:
+          required:
+            - github_repo
+            - github_docs_path
     additionalProperties: false

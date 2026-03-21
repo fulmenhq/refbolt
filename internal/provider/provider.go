@@ -10,10 +10,17 @@ import (
 type FetchStrategy string
 
 const (
-	StrategyNative FetchStrategy = "native" // Direct .md or known Markdown endpoints.
-	StrategyJina   FetchStrategy = "jina"   // Jina Reader HTML-to-Markdown conversion.
-	StrategyAuto   FetchStrategy = "auto"   // Try native first, fall back to Jina.
+	StrategyNative    FetchStrategy = "native"     // Direct .md or known Markdown endpoints.
+	StrategyJina      FetchStrategy = "jina"       // Jina Reader HTML-to-Markdown conversion.
+	StrategyAuto      FetchStrategy = "auto"       // Try native first, fall back to Jina.
+	StrategyGitHubRaw FetchStrategy = "github-raw" // GitHub tree discovery + raw Markdown fetch.
 )
+
+// RateLimitConfig controls request pacing for a provider.
+type RateLimitConfig struct {
+	RequestsPerSecond float64 `yaml:"requests_per_second,omitempty"`
+	Burst             int     `yaml:"burst,omitempty"`
+}
 
 // Page represents a single fetched documentation page.
 type Page struct {
@@ -29,15 +36,19 @@ type Page struct {
 // ProviderConfig holds the configuration for a single documentation provider,
 // matching the schema in schemas/providers/v0/providers.schema.yaml.
 type ProviderConfig struct {
-	Slug          string        `yaml:"slug"`
-	Name          string        `yaml:"name"`
-	BaseURL       string        `yaml:"base_url"`
-	Paths         []string      `yaml:"paths"`
-	FetchStrategy FetchStrategy `yaml:"fetch_strategy"`
-	LLMSTxtURL    string        `yaml:"llms_txt_url,omitempty"`
-	OpenAPIURL    string        `yaml:"openapi_url,omitempty"`
-	AuthEnvVar    string        `yaml:"auth_env_var,omitempty"`
-	Enabled       *bool         `yaml:"enabled,omitempty"`
+	Slug           string           `yaml:"slug"`
+	Name           string           `yaml:"name"`
+	BaseURL        string           `yaml:"base_url"`
+	Paths          []string         `yaml:"paths"`
+	FetchStrategy  FetchStrategy    `yaml:"fetch_strategy"`
+	LLMSTxtURL     string           `yaml:"llms_txt_url,omitempty"`
+	OpenAPIURL     string           `yaml:"openapi_url,omitempty"`
+	GitHubRepo     string           `yaml:"github_repo,omitempty"`
+	GitHubDocsPath string           `yaml:"github_docs_path,omitempty"`
+	GitHubBranch   string           `yaml:"github_branch,omitempty"`
+	RateLimit      *RateLimitConfig `yaml:"rate_limit,omitempty"`
+	AuthEnvVar     string           `yaml:"auth_env_var,omitempty"`
+	Enabled        *bool            `yaml:"enabled,omitempty"`
 }
 
 // IsEnabled returns whether this provider is active (defaults to true).
@@ -70,6 +81,9 @@ func Register(slug string, constructor func(cfg ProviderConfig) (Fetcher, error)
 // If a slug-specific constructor is registered, it is used; otherwise
 // the default HTTP fetcher is returned.
 func NewFetcher(cfg ProviderConfig) (Fetcher, error) {
+	if cfg.FetchStrategy == StrategyGitHubRaw {
+		return NewGitHubRawFetcher(cfg)
+	}
 	if constructor, ok := registry[cfg.Slug]; ok {
 		return constructor(cfg)
 	}

@@ -59,3 +59,33 @@ topics:
           - /concepts/validators/index.md
           - /concepts/serialization/index.md
           - /concepts/config/index.md
+  - slug: data-platform
+    name: Data Platform
+    description: Query engines, warehouses, and database platform docs
+    providers:
+      # GitHub-backed provider: authenticated GitHub API access is recommended
+      # to avoid low anonymous tree API limits during full syncs.
+      - slug: trino
+        name: Trino
+        base_url: https://trino.io/docs/current
+        fetch_strategy: github-raw
+        github_repo: trinodb/trino
+        github_docs_path: docs/src/main/sphinx/
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+  - slug: container-platform
+    name: Container Platform
+    description: Kubernetes and adjacent container tooling docs
+    providers:
+      # Scope this provider tightly; the full Kubernetes docs repo is much larger.
+      # Authenticated GitHub API access is recommended for tree discovery.
+      - slug: kubernetes-kubectl
+        name: Kubernetes kubectl
+        base_url: https://kubernetes.io/docs/reference/kubectl
+        fetch_strategy: github-raw
+        github_repo: kubernetes/website
+        github_docs_path: content/en/docs/reference/kubectl/
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"

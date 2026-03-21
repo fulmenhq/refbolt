@@ -2,6 +2,44 @@
 
 Operational notes for each documentation provider — fetch quirks, domain changes, auth requirements, and known issues. Updated as providers change behavior.
 
+## GitHub-Hosted Markdown Providers
+
+Providers using the `github-raw` strategy rely on two GitHub surfaces:
+
+- `api.github.com` for recursive tree discovery
+- `raw.githubusercontent.com` for file content download
+
+### Operating Guidance (as of 2026-03-21)
+
+- **Authenticated API access is the expected mode**: Set `GITHUB_TOKEN` or the provider's configured `auth_env_var` for normal syncs. Anonymous GitHub API access is supported only as a best-effort fallback for local testing.
+- **Auth applies only to the API**: Send the token to `api.github.com` tree requests. Do not send it to `raw.githubusercontent.com`.
+- **403 and 429 are operational signals**: They usually mean the anonymous budget is exhausted or secondary throttling has kicked in. Retry later or use authenticated access.
+- **Keep scope tight**: Large repos need narrow `github_docs_path` and path filters to avoid truncated trees and excessive request volume.
+
+## Trino
+
+**Base URL**: `https://trino.io/docs/current`
+**GitHub source**: `trinodb/trino`
+**Docs path**: `docs/src/main/sphinx/`
+
+### Fetch Quirks (as of 2026-03-21)
+
+- **No llms.txt**: Discovery comes from the GitHub tree API, not the published site.
+- **Auth recommended**: Tree discovery can hit GitHub anonymous limits quickly during repeated syncs. Use `GITHUB_TOKEN`.
+- **Sphinx tree**: Connector, function, and SQL reference pages live under the same docs subtree and can be archived with `**/*.md`.
+
+## Kubernetes kubectl
+
+**Base URL**: `https://kubernetes.io/docs/reference/kubectl`
+**GitHub source**: `kubernetes/website`
+**Docs path**: `content/en/docs/reference/kubectl/`
+
+### Fetch Quirks (as of 2026-03-21)
+
+- **Strict scope control required**: The full repo is large; keep this provider limited to the kubectl reference subtree.
+- **Auth recommended**: GitHub tree discovery should use `GITHUB_TOKEN` for routine runs.
+- **Hugo `_index.md` convention**: Archive `_index.md` pages as `index.md` so directory landing pages remain stable.
+
 ## xAI / Grok
 
 **Base URL**: `https://docs.x.ai`
