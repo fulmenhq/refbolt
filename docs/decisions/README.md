@@ -14,9 +14,9 @@ This directory is the **single authoritative location** for all decision records
 
 ### Architecture Decisions
 
-| ADR | Decision     | Date |
-| --- | ------------ | ---- |
-| —   | _(none yet)_ | —    |
+| ADR                                           | Decision                           | Date       |
+| --------------------------------------------- | ---------------------------------- | ---------- |
+| [ADR-0001](ADR-0001-llmstxt-primary-fetch.md) | llms.txt as primary fetch strategy | 2026-03-21 |
 
 ### Security Decisions
 
@@ -26,9 +26,9 @@ This directory is the **single authoritative location** for all decision records
 
 ### Data Decisions
 
-| DDR | Decision     | Date |
-| --- | ------------ | ---- |
-| —   | _(none yet)_ | —    |
+| DDR                                            | Decision               | Date       |
+| ---------------------------------------------- | ---------------------- | ---------- |
+| [DDR-0001](DDR-0001-archive-tree-structure.md) | Archive tree structure | 2026-03-21 |
 
 ## Creating a New Decision Record
 

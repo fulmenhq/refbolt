@@ -19,3 +19,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Trademark Notices
+
+"fularchive" is a trademark of 3 Leaps, LLC, claimed through use in commerce. "3 Leaps®" is a registered trademark of 3 Leaps, LLC, a Florida LLC with offices in South Carolina. "Fulmen™" is a trademark of 3 Leaps, LLC, claimed through use in commerce, with plans for USPTO registration. "Fulmens" and "FulmenHQ" are trademarks of 3 Leaps, LLC.
+
+While code and documentation are open under the MIT License, usage of these trademarks is reserved for official implementations to prevent confusion and benefit the ecosystem. Use of these marks in derivative works does not imply endorsement by 3 Leaps, LLC. For the benefit of the community, please rename your project folder and configurations to avoid using "fularchive", "3leaps", "fulmen", "fulmens", or "fulmenhq" in derivative works.
+
+For questions regarding trademark usage, contact legal@3leaps.net.
+
+This license applies to the code. Documentation may have separate terms.
+
+---
+
+For additional governance details and contributor obligations, see the 3 Leaps Open Source Policies at https://github.com/3leaps/oss-policies.

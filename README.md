@@ -26,6 +26,10 @@ docker run --rm -v ./archive:/data ghcr.io/fulmenhq/fularchive fularchive sync -
 docker-compose up -d
 ```
 
+## Intended Use
+
+fularchive is designed for local, offline developer reference — keeping version-pinned copies of documentation you're actively building against. It is not intended for republishing, redistributing, or publicly hosting archived content. Respect the terms of service of the documentation sites you archive.
+
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — component design, storage model, deployment topology
