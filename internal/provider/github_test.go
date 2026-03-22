@@ -187,27 +187,28 @@ func TestGitHubRawFetcherRaw403ReturnsGenericHTTPError(t *testing.T) {
 	}
 }
 
-func TestDoublestarMatch(t *testing.T) {
+func TestPatternMatcherMatches(t *testing.T) {
 	tests := []struct {
-		name    string
-		pattern string
-		target  string
-		want    bool
+		name     string
+		patterns []string
+		target   string
+		want     bool
 	}{
-		{name: "root markdown", pattern: "**/*.md", target: "index.md", want: true},
-		{name: "nested markdown", pattern: "**/*.md", target: "security/index.md", want: true},
-		{name: "exact subtree", pattern: "docs/**/*.md", target: "docs/reference/index.md", want: true},
-		{name: "reject other extension", pattern: "**/*.md", target: "security/rules.txt", want: false},
+		{name: "root markdown", patterns: []string{"**/*.md"}, target: "index.md", want: true},
+		{name: "nested markdown", patterns: []string{"**/*.md"}, target: "security/index.md", want: true},
+		{name: "exact subtree", patterns: []string{"docs/**/*.md"}, target: "docs/reference/index.md", want: true},
+		{name: "reject other extension", patterns: []string{"**/*.md"}, target: "security/rules.txt", want: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := doublestarMatch(tt.pattern, tt.target)
+			matcher, err := newPatternMatcher(tt.patterns)
 			if err != nil {
-				t.Fatalf("doublestarMatch() error = %v", err)
+				t.Fatalf("newPatternMatcher() error = %v", err)
 			}
+			got := matcher.matches(tt.target)
 			if got != tt.want {
-				t.Fatalf("doublestarMatch(%q, %q) = %v, want %v", tt.pattern, tt.target, got, tt.want)
+				t.Fatalf("matches(%v, %q) = %v, want %v", tt.patterns, tt.target, got, tt.want)
 			}
 		})
 	}

@@ -9,11 +9,13 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"regexp"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fulmenhq/gofulmen/pathfinder"
 )
 
 const (
@@ -127,6 +129,10 @@ func (f *GitHubRawFetcher) discoverFiles(ctx context.Context) ([]gitHubFile, err
 	}
 
 	files := make([]gitHubFile, 0, len(payload.Tree))
+	matcher, err := newPatternMatcher(f.cfg.Paths)
+	if err != nil {
+		return nil, err
+	}
 	for _, node := range payload.Tree {
 		if node.Type != "blob" {
 			continue
@@ -136,7 +142,7 @@ func (f *GitHubRawFetcher) discoverFiles(ctx context.Context) ([]gitHubFile, err
 		if !ok {
 			continue
 		}
-		if !matchesAnyPattern(relPath, f.cfg.Paths) {
+		if !matcher.matches(relPath) {
 			continue
 		}
 
@@ -339,56 +345,38 @@ func buildGitHubRawURL(baseURL, repo, branch, repoPath string) string {
 	return strings.Join(parts, "/")
 }
 
-func matchesAnyPattern(target string, patterns []string) bool {
-	if len(patterns) == 0 {
-		return true
-	}
-	for _, pattern := range patterns {
-		matched, err := doublestarMatch(pattern, target)
-		if err == nil && matched {
-			return true
-		}
-	}
-	return false
+type patternMatcher struct {
+	matcher *pathfinder.IgnoreMatcher
 }
 
-func doublestarMatch(pattern, target string) (bool, error) {
-	pattern = strings.Trim(strings.TrimSpace(pattern), "/")
-	target = strings.Trim(strings.TrimSpace(target), "/")
-	if pattern == "" {
-		return false, nil
+func newPatternMatcher(patterns []string) (*patternMatcher, error) {
+	if len(patterns) == 0 {
+		return &patternMatcher{}, nil
 	}
 
-	var builder strings.Builder
-	builder.WriteString("^")
-	for i := 0; i < len(pattern); i++ {
-		switch pattern[i] {
-		case '*':
-			if i+1 < len(pattern) && pattern[i+1] == '*' {
-				if i+2 < len(pattern) && pattern[i+2] == '/' {
-					builder.WriteString("(?:.*/)?")
-					i += 2
-				} else {
-					builder.WriteString(".*")
-					i++
-				}
-			} else {
-				builder.WriteString("[^/]*")
-			}
-		case '?':
-			builder.WriteString("[^/]")
-		case '.', '(', ')', '+', '|', '^', '$', '{', '}', '[', ']', '\\':
-			builder.WriteByte('\\')
-			builder.WriteByte(pattern[i])
-		default:
-			builder.WriteByte(pattern[i])
-		}
-	}
-	builder.WriteString("$")
-
-	re, err := regexp.Compile(builder.String())
+	ignoreRoot := filepath.Join(os.TempDir(), "fularchive-pathfinder-ignore-root")
+	matcher, err := pathfinder.NewIgnoreMatcher(ignoreRoot)
 	if err != nil {
-		return false, err
+		return nil, fmt.Errorf("creating path matcher: %w", err)
 	}
-	return re.MatchString(target), nil
+	for _, pattern := range patterns {
+		pattern = strings.Trim(strings.TrimSpace(pattern), "/")
+		if pattern == "" {
+			continue
+		}
+		matcher.AddPattern(pattern)
+	}
+
+	return &patternMatcher{matcher: matcher}, nil
+}
+
+func (m *patternMatcher) matches(target string) bool {
+	if m == nil || m.matcher == nil {
+		return true
+	}
+	target = strings.Trim(strings.TrimSpace(target), "/")
+	if target == "" {
+		return false
+	}
+	return m.matcher.IsIgnored(target)
 }
