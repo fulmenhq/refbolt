@@ -44,6 +44,10 @@ type gitHubTreeResponse struct {
 	Tree      []gitHubTreeNode `json:"tree"`
 }
 
+type gitHubRepoResponse struct {
+	DefaultBranch string `json:"default_branch"`
+}
+
 type gitHubTreeNode struct {
 	Path string `json:"path"`
 	Type string `json:"type"`
@@ -70,7 +74,7 @@ func NewGitHubRawFetcher(cfg ProviderConfig) (*GitHubRawFetcher, error) {
 	authToken := githubAuthToken(cfg)
 	branch := strings.TrimSpace(cfg.GitHubBranch)
 	if branch == "" {
-		branch = "main"
+		branch = "HEAD"
 	}
 
 	return &GitHubRawFetcher{
@@ -90,6 +94,16 @@ func (f *GitHubRawFetcher) Name() string {
 
 // Fetch retrieves all matching Markdown files from the configured GitHub repo.
 func (f *GitHubRawFetcher) Fetch(ctx context.Context) ([]Page, error) {
+	if f.branch == "HEAD" {
+		branch, err := f.resolveDefaultBranch(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// Cache the resolved branch so tree discovery and raw fetches use the
+		// same ref for the lifetime of this fetcher.
+		f.branch = branch
+	}
+
 	files, err := f.discoverFiles(ctx)
 	if err != nil {
 		return nil, err
@@ -105,6 +119,31 @@ func (f *GitHubRawFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	}
 
 	return pages, nil
+}
+
+func (f *GitHubRawFetcher) resolveDefaultBranch(ctx context.Context) (string, error) {
+	repoURL := fmt.Sprintf("%s/repos/%s", strings.TrimRight(f.apiBaseURL, "/"), f.cfg.GitHubRepo)
+	resp, err := f.doRequest(ctx, repoURL, map[string]string{
+		"Accept":               "application/vnd.github+json",
+		"X-GitHub-Api-Version": gitHubAPIVersion,
+	}, true)
+	if err != nil {
+		return "", fmt.Errorf("resolving default GitHub branch for %s: %w", f.cfg.Slug, err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	var payload gitHubRepoResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return "", fmt.Errorf("decoding GitHub repo response: %w", err)
+	}
+
+	branch := strings.TrimSpace(payload.DefaultBranch)
+	if branch == "" {
+		return "", fmt.Errorf("GitHub repo %s did not report a default_branch", f.cfg.GitHubRepo)
+	}
+	return branch, nil
 }
 
 func (f *GitHubRawFetcher) discoverFiles(ctx context.Context) ([]gitHubFile, error) {

@@ -21,12 +21,15 @@ Providers using the `github-raw` strategy rely on two GitHub surfaces:
 **Base URL**: `https://trino.io/docs/current`
 **GitHub source**: `trinodb/trino`
 **Docs path**: `docs/src/main/sphinx/`
+**Default branch**: `master`
 
-### Fetch Quirks (as of 2026-03-21)
+### Fetch Quirks (as of 2026-03-22)
 
 - **No llms.txt**: Discovery comes from the GitHub tree API, not the published site.
+- **Default branch is not `main`**: The source repo still uses `master`. Leave `github_branch` unset or set it explicitly when testing branch-specific fetches.
 - **Auth recommended**: Tree discovery can hit GitHub anonymous limits quickly during repeated syncs. Use `GITHUB_TOKEN`.
 - **Sphinx tree**: Connector, function, and SQL reference pages live under the same docs subtree and can be archived with `**/*.md`.
+- **robots.txt allows current docs**: `/docs/current/` is allowed for user agents, which aligns with the published site path this provider mirrors.
 
 ## Kubernetes kubectl
 
