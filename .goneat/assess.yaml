@@ -34,6 +34,8 @@ lint:
   make:
     checkmake:
       enabled: true
+      config:
+        max_body_length: 15
     paths:
       - "**/Makefile"
     ignore: []
