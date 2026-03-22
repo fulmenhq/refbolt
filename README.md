@@ -12,7 +12,7 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 - Jina Reader fallback for noisy sites
 - Git-aware diff/commit/PR for change detection
 - Envvar/config-driven tree (e.g. `/data/archive/openai/2026-03-21/`)
-- Container-ready design (Dockerfile planned)
+- Container-ready design with a slim CLI image
 
 ## Quick Start
 
@@ -22,6 +22,18 @@ make build
 
 # One-shot sync (all providers)
 ./bin/refbolt sync --all --verbose
+```
+
+## Docker
+
+```bash
+make docker-build
+
+docker run --rm \
+  -e REFBOLT_CONFIG=/work/providers.yaml \
+  -v ./configs/providers.yaml:/work/providers.yaml:ro \
+  -v ./archive:/data/archive \
+  refbolt:local sync --all --verbose
 ```
 
 ## Intended Use
