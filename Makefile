@@ -1,4 +1,4 @@
-.PHONY: all help bootstrap bootstrap-force hooks-ensure tools dependencies version-bump lint test build build-all clean fmt version check-all precommit prepush run install test-cov
+.PHONY: all help bootstrap bootstrap-force hooks-ensure tools dependencies version-bump lint test build build-all clean fmt version check-all precommit prepush run install test-cov docker-build
 .PHONY: release-clean release-build release-checksums release-check release-prepare
 .PHONY: version-set version-bump-major version-bump-minor version-bump-patch
 .PHONY: license-inventory license-save license-audit update-licenses
@@ -15,6 +15,8 @@ GOCMD := go
 GOTEST := $(GOCMD) test
 GOFMT := $(GOCMD) fmt
 GOMOD := $(GOCMD) mod
+DOCKER ?= docker
+DOCKER_IMAGE ?= $(BINARY_NAME):local
 
 # Tool installation (user-space bin dir; overridable with BINDIR=...)
 #
@@ -68,7 +70,7 @@ GONEAT_RESOLVE = \
 all: fmt test
 
 help:  ## Show this help message
-	@printf '%s\n' '$(BINARY_NAME) - Available Make Targets' '' 'Required targets (Makefile Standard):' '  help            - Show this help message' '  bootstrap       - Install external tools (sfetch, goneat) and dependencies' '  bootstrap-force - Force reinstall external tools' '  tools           - Verify external tools are available' '  dependencies    - Verify Go module dependencies' '  lint            - Run lint/format/style checks' '  test            - Run all tests' '  build           - Build binary for current platform' '  build-all       - Build multi-platform binaries' '  clean           - Remove build artifacts and caches' '  fmt             - Format code and Markdown' '  version         - Print current version' '  version-set     - Set version to specific value' '  version-bump-major - Bump major version' '  version-bump-minor - Bump minor version' '  version-bump-patch - Bump patch version' '  release-check   - Run release checklist validation' '  release-prepare - Prepare for release' '  release-build   - Build release artifacts' '  check-all       - Run all quality checks (fmt, lint, test)' '  precommit       - Run pre-commit hooks' '  prepush         - Run pre-push hooks (includes license-audit)' '' 'License compliance:' '  license-audit   - Audit for forbidden licenses (GPL, LGPL, etc.)' '  license-inventory - Generate CSV inventory of dependency licenses' '  license-save    - Save third-party license texts' '  update-licenses - Update license inventory and texts' '' 'Additional targets:' '  run             - Run CLI in development mode' '  test-cov        - Run tests with coverage report' ''
+	@printf '%s\n' '$(BINARY_NAME) - Available Make Targets' '' 'Required targets (Makefile Standard):' '  help            - Show this help message' '  bootstrap       - Install external tools (sfetch, goneat) and dependencies' '  bootstrap-force - Force reinstall external tools' '  tools           - Verify external tools are available' '  dependencies    - Verify Go module dependencies' '  lint            - Run lint/format/style checks' '  test            - Run all tests' '  build           - Build binary for current platform' '  build-all       - Build multi-platform binaries' '  clean           - Remove build artifacts and caches' '  fmt             - Format code and Markdown' '  version         - Print current version' '  version-set     - Set version to specific value' '  version-bump-major - Bump major version' '  version-bump-minor - Bump minor version' '  version-bump-patch - Bump patch version' '  release-check   - Run release checklist validation' '  release-prepare - Prepare for release' '  release-build   - Build release artifacts' '  check-all       - Run all quality checks (fmt, lint, test)' '  precommit       - Run pre-commit hooks' '  prepush         - Run pre-push hooks (includes license-audit)' '' 'License compliance:' '  license-audit   - Audit for forbidden licenses (GPL, LGPL, etc.)' '  license-inventory - Generate CSV inventory of dependency licenses' '  license-save    - Save third-party license texts' '  update-licenses - Update license inventory and texts' '' 'Additional targets:' '  run             - Run CLI in development mode' '  test-cov        - Run tests with coverage report' '  docker-build    - Build local CLI container image' ''
 
 bootstrap:  ## Install external tools (sfetch, goneat) and dependencies
 	@echo "Installing external tools..."
@@ -188,6 +190,15 @@ build-all:  ## Build multi-platform binaries and generate checksums
 	@GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-linux-arm64 ./cmd/$(BINARY_NAME)
 	@cd bin && (sha256sum * > SHA256SUMS.txt 2>/dev/null || shasum -a 256 * > SHA256SUMS.txt)
 	@echo "✓ Multi-platform binaries built in bin/"
+
+docker-build:  ## Build local CLI container image
+	@echo "→ Building Docker image $(DOCKER_IMAGE)..."
+	@$(DOCKER) build \
+		--build-arg VERSION="$(VERSION)" \
+		--build-arg COMMIT="$(COMMIT)" \
+		--build-arg BUILD_DATE="$(BUILD_DATE)" \
+		-t "$(DOCKER_IMAGE)" .
+	@echo "✓ Docker image built: $(DOCKER_IMAGE)"
 
 version:  ## Print current version
 	@echo "$(VERSION)"

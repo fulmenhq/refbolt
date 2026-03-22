@@ -1,0 +1,14 @@
+.git
+.gitignore
+.plans
+.env
+.env.*
+*.env
+*.key
+*.pem
+AGENTS.local.md
+bin
+dist
+archive
+coverage.out
+coverage.html

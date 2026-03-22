@@ -101,10 +101,16 @@ make build
 ./bin/refbolt sync --all --verbose
 ```
 
-### Planned: Docker (container-first)
+### Available: Docker (CLI image)
 
 ```bash
-docker run --rm -v ./archive:/data ghcr.io/fulmenhq/refbolt refbolt sync --all
+make docker-build
+docker run --rm refbolt:local version
+docker run --rm \
+  -e REFBOLT_CONFIG=/work/providers.yaml \
+  -v ./configs/providers.yaml:/work/providers.yaml:ro \
+  -v ./archive:/data/archive \
+  refbolt:local sync --all --verbose
 ```
 
 ### Planned: Runner image + docker-compose
