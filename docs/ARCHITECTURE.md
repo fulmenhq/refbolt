@@ -66,7 +66,7 @@ Cobra-based commands:
 
 ### 3. Storage Layer
 
-Controlled by `REFBOLT_ROOT` (default: `/data/archive`)
+Controlled by `REFBOLT_ARCHIVE_ROOT` (default: `/data/archive`)
 
 ```
 archive/
