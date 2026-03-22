@@ -12,16 +12,16 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 - Jina Reader fallback for noisy sites
 - Git-aware diff/commit/PR for change detection
 - Envvar/config-driven tree (e.g. `/data/archive/openai/2026-03-21/`)
-- Daily cron via supercronic in runner image
+- Container-ready design (Dockerfile planned)
 
 ## Quick Start
 
 ```bash
-# One-shot sync (all providers)
-docker run --rm -v ./archive:/data ghcr.io/fulmenhq/refbolt refbolt sync --all
+# Build from source
+make build
 
-# Or use the runner image for scheduled jobs
-docker-compose up -d
+# One-shot sync (all providers)
+./bin/refbolt sync --all --verbose
 ```
 
 ## Intended Use

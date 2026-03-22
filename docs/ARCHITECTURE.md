@@ -84,26 +84,33 @@ archive/
 
 ### 4. fulmen-toolbox Integration
 
-Two images:
+Two images (planned, not yet published):
 
 - `ghcr.io/fulmenhq/refbolt:latest` — slim CLI only
 - `ghcr.io/fulmenhq/refbolt-runner:latest` — + supercronic, pandoc, git, jq, yq
 
-Toolbox handles builds, multi-arch, Cosign signing, and SBOMs.
+Toolbox will handle builds, multi-arch, Cosign signing, and SBOMs.
 
 ## Deployment Models
 
-### Primary: Docker (recommended)
+### Current: Local binary
+
+```bash
+make build
+./bin/refbolt sync --all --verbose
+```
+
+### Planned: Docker (container-first)
 
 ```bash
 docker run --rm -v ./archive:/data ghcr.io/fulmenhq/refbolt refbolt sync --all
 ```
 
-### Scheduled: Runner image + docker-compose
+### Planned: Runner image + docker-compose
 
-See docker-compose.yml (daily cron via supercronic).
+Daily cron via supercronic (Dockerfile and docker-compose.yml not yet checked in).
 
-### CI: GitHub Actions
+### Planned: CI via GitHub Actions
 
 Daily workflow that runs sync and opens PR on changes.
 
