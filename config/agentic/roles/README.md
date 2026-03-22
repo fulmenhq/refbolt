@@ -23,7 +23,7 @@ These roles extend the [crucible baseline](https://github.com/fulmenhq/crucible/
 | Role       | Extension Purpose                                            |
 | ---------- | ------------------------------------------------------------ |
 | `cxotech`  | Strategic fulcrum — product + technical decisions            |
-| `devlead`  | Adds fularchive provider framework and container patterns    |
+| `devlead`  | Adds refbolt provider framework and container patterns       |
 | `infoarch` | Archive output quality, Markdown standards, provider schemas |
 
 ## Usage

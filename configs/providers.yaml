@@ -1,4 +1,4 @@
-# fularchive provider configuration
+# refbolt provider configuration
 # Schema: schemas/providers/v0/providers.schema.yaml
 archive_root: /data/archive
 topics:

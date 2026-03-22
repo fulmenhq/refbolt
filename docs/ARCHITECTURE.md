@@ -1,18 +1,18 @@
 ---
-title: "fularchive Architecture"
-description: "Complete architecture for fularchive — CLI, providers, storage model, toolbox integration, and deployment topology"
+title: "refbolt Architecture"
+description: "Complete architecture for refbolt — CLI, providers, storage model, toolbox integration, and deployment topology"
 author: "3leapsdave"
 date: "2026-03-21"
 status: "draft"
 version: "0.1.0"
-tags: ["fularchive", "architecture", "docs", "toolbox"]
+tags: ["refbolt", "architecture", "docs", "toolbox"]
 ---
 
-# fularchive Architecture
+# refbolt Architecture
 
 ## Vision Alignment
 
-fularchive delivers clean, versioned Markdown archives of web documentation with zero hand-fetching. It is container-first, license-clean, and purpose-built for Lanyte native backends (especially Grok).
+refbolt delivers clean, versioned Markdown archives of web documentation with zero hand-fetching. It is container-first, license-clean, and purpose-built for Lanyte native backends (especially Grok).
 
 ## Architecture Principles
 
@@ -27,7 +27,7 @@ fularchive delivers clean, versioned Markdown archives of web documentation with
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    fularchive (Docker / Toolbox)             │
+│                    refbolt (Docker / Toolbox)             │
 │                                                             │
 │  ┌────────────────────┐  ┌───────────────────────────────┐  │
 │  │   CLI (Go)         │  │   Providers                   │  │
@@ -38,7 +38,7 @@ fularchive delivers clean, versioned Markdown archives of web documentation with
 │            │                             │                   │
 │  ┌─────────┴──────────┐  ┌───────────────┴───────────────┐  │
 │  │   Storage Layer    │  │   Toolbox Integration         │  │
-│  │  /data/archive/    │  │   - ghcr.io/fulmenhq/fularchive│  │
+│  │  /data/archive/    │  │   - ghcr.io/fulmenhq/refbolt│  │
 │  │  YYYY-MM-DD + latest│ │   - runner image + supercronic│  │
 │  └────────────────────┘  └───────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
@@ -50,10 +50,10 @@ fularchive delivers clean, versioned Markdown archives of web documentation with
 
 Cobra-based commands:
 
-- `fularchive sync [--providers openai,anthropic,xai] [--git-commit]`
-- `fularchive status`
-- `fularchive diff`
-- `fularchive serve` (future: tiny HTTP viewer)
+- `refbolt sync [--providers openai,anthropic,xai] [--git-commit]`
+- `refbolt status`
+- `refbolt diff`
+- `refbolt serve` (future: tiny HTTP viewer)
 
 ### 2. Providers (pluggable)
 
@@ -66,7 +66,7 @@ Cobra-based commands:
 
 ### 3. Storage Layer
 
-Controlled by `FULARCHIVE_ROOT` (default: `/data/archive`)
+Controlled by `REFBOLT_ROOT` (default: `/data/archive`)
 
 ```
 archive/
@@ -86,8 +86,8 @@ archive/
 
 Two images:
 
-- `ghcr.io/fulmenhq/fularchive:latest` — slim CLI only
-- `ghcr.io/fulmenhq/fularchive-runner:latest` — + supercronic, pandoc, git, jq, yq
+- `ghcr.io/fulmenhq/refbolt:latest` — slim CLI only
+- `ghcr.io/fulmenhq/refbolt-runner:latest` — + supercronic, pandoc, git, jq, yq
 
 Toolbox handles builds, multi-arch, Cosign signing, and SBOMs.
 
@@ -96,7 +96,7 @@ Toolbox handles builds, multi-arch, Cosign signing, and SBOMs.
 ### Primary: Docker (recommended)
 
 ```bash
-docker run --rm -v ./archive:/data ghcr.io/fulmenhq/fularchive fularchive sync --all
+docker run --rm -v ./archive:/data ghcr.io/fulmenhq/refbolt refbolt sync --all
 ```
 
 ### Scheduled: Runner image + docker-compose

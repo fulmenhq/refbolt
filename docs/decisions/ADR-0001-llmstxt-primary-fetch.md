@@ -10,14 +10,14 @@ Documentation providers offer content through multiple channels: individual HTML
 
 ## Decision
 
-When a provider offers a `llms.txt` or `llms-full.txt` endpoint, fularchive uses it as the **primary fetch strategy**:
+When a provider offers a `llms.txt` or `llms-full.txt` endpoint, refbolt uses it as the **primary fetch strategy**:
 
 1. Fetch the single file in one HTTP request.
 2. Split it into individual pages using section delimiters (e.g. `===/<path>===` for xAI).
 3. Write each section as a separate file in the archive tree.
 4. Supplement with individual `.md` page fetches for targeted updates.
 
-The `llms_txt_url` field in provider config controls this. When absent, fularchive falls back to fetching individual paths.
+The `llms_txt_url` field in provider config controls this. When absent, refbolt falls back to fetching individual paths.
 
 ## Consequences
 

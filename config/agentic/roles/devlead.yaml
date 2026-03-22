@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://schemas.3leaps.dev/agentic/v0/role-prompt.schema.json
 slug: devlead
 name: Development Lead
-description: Architecture, implementation, and code review for fularchive
+description: Architecture, implementation, and code review for refbolt
 version: 1.0.0
 author: entarch
 status: approved
@@ -20,7 +20,7 @@ context: |
   Use this role for implementation work. The devlead role is the default for
   most coding tasks — building features, fixing bugs, and maintaining code quality.
 
-  fularchive-specific focus areas:
+  refbolt-specific focus areas:
   - Provider framework (fetcher registry, URL patterns, fallback chains)
   - Archive tree structure and date-versioned output
   - Container images (CLI + runner with supercronic)

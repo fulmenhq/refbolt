@@ -8,16 +8,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fulmenhq/fularchive/internal/provider"
 	"github.com/fulmenhq/gofulmen/logging"
 	"github.com/fulmenhq/gofulmen/schema"
+	"github.com/fulmenhq/refbolt/internal/provider"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
 const (
 	schemaID  = "providers/v0/providers"
-	envPrefix = "FULARCHIVE"
+	envPrefix = "REFBOLT"
 )
 
 var (
@@ -29,7 +29,7 @@ var (
 // If a config file is found, it is validated against the providers schema.
 func Load() error {
 	var err error
-	log, err = logging.NewCLI("fularchive")
+	log, err = logging.NewCLI("refbolt")
 	if err != nil {
 		return fmt.Errorf("initializing logger: %w", err)
 	}
@@ -39,13 +39,13 @@ func Load() error {
 	// Defaults
 	cfg.SetDefault("archive_root", "/data/archive")
 
-	// Env prefix: FULARCHIVE_
+	// Env prefix: REFBOLT_
 	cfg.SetEnvPrefix(envPrefix)
 	cfg.AutomaticEnv()
 	cfg.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 
 	// Config file (optional override)
-	configPath := os.Getenv("FULARCHIVE_CONFIG")
+	configPath := os.Getenv("REFBOLT_CONFIG")
 	if configPath == "" {
 		configPath = filepath.Join("configs", "providers.yaml")
 	}

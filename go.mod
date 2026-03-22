@@ -1,4 +1,4 @@
-module github.com/fulmenhq/fularchive
+module github.com/fulmenhq/refbolt
 
 go 1.25.5
 

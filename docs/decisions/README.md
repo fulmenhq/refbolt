@@ -1,6 +1,6 @@
 # Decision Records
 
-This directory is the **single authoritative location** for all decision records in fularchive.
+This directory is the **single authoritative location** for all decision records in refbolt.
 
 ## Record Types
 

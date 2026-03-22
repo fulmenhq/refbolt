@@ -1,18 +1,18 @@
-# fularchive Providers Configuration Schema
+# refbolt Providers Configuration Schema
 # Draft: JSON Schema 2020-12
 # Layout: schemas/<topic>/v0/<name>.schema.yaml
 #
 # Defines the structure for providers.yaml — the archive configuration
-# that tells fularchive what to fetch, from where, and how.
+# that tells refbolt what to fetch, from where, and how.
 #
 # Hierarchy: archive_root → topics[] → providers[] → paths[]
 # Topics group providers by domain (e.g., "llm-api", "cloud-docs").
 # Providers define a base URL and glob-friendly path patterns.
 "$schema": "https://json-schema.org/draft/2020-12/schema"
 "$id": "providers/v0/providers"
-title: fularchive Providers Configuration
+title: refbolt Providers Configuration
 description: >-
-  Configuration schema for fularchive provider definitions. Controls which documentation sites are archived, under which topic grouping, and what URL paths to fetch.
+  Configuration schema for refbolt provider definitions. Controls which documentation sites are archived, under which topic grouping, and what URL paths to fetch.
 type: object
 required:
   - archive_root
@@ -21,13 +21,13 @@ properties:
   archive_root:
     type: string
     description: >-
-      Base URI for the archive tree. Date-versioned provider directories are created under this root. Currently supports local file paths only; cloud storage URIs (s3://, gs://, az://) are reserved for future use. Overridable via FULARCHIVE_ARCHIVE_ROOT env var.
+      Base URI for the archive tree. Date-versioned provider directories are created under this root. Currently supports local file paths only; cloud storage URIs (s3://, gs://, az://) are reserved for future use. Overridable via REFBOLT_ARCHIVE_ROOT env var.
     default: /data/archive
     examples:
       - /data/archive
       - ./archive
-      - file:///home/user/.local/share/fularchive
-      # Future: s3://bucket/fularchive, gs://bucket/fularchive
+      - file:///home/user/.local/share/refbolt
+      # Future: s3://bucket/refbolt, gs://bucket/refbolt
   topics:
     type: array
     description: >-
@@ -122,7 +122,7 @@ properties:
         type: string
         format: uri
         description: >-
-          Optional URL to a llms.txt or llms-full.txt file — a single-file Markdown dump of the entire doc site. When set, fularchive fetches this first and splits it into individual pages using section delimiters (e.g. ===/<path>===). Most efficient fetch strategy.
+          Optional URL to a llms.txt or llms-full.txt file — a single-file Markdown dump of the entire doc site. When set, refbolt fetches this first and splits it into individual pages using section delimiters (e.g. ===/<path>===). Most efficient fetch strategy.
         examples:
           - https://docs.x.ai/llms.txt
           - https://docs.anthropic.com/llms-full.txt

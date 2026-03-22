@@ -193,7 +193,7 @@ func (f *GitHubRawFetcher) doRequest(ctx context.Context, rawURL string, headers
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	req.Header.Set("User-Agent", "fularchive/0.1 (+https://github.com/fulmenhq/fularchive)")
+	req.Header.Set("User-Agent", "refbolt/0.1 (+https://github.com/fulmenhq/refbolt)")
 	req.Header.Set("Accept", "*/*")
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -354,7 +354,7 @@ func newPatternMatcher(providerSlug string, patterns []string) (*patternMatcher,
 		return &patternMatcher{}, nil
 	}
 
-	rootName := "fularchive-pathfinder-ignore-root"
+	rootName := "refbolt-pathfinder-ignore-root"
 	if slug := strings.TrimSpace(providerSlug); slug != "" {
 		rootName += "-" + slug
 	}

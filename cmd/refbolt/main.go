@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fulmenhq/fularchive/internal/cmd"
+	"github.com/fulmenhq/refbolt/internal/cmd"
 )
 
 // Set via -ldflags at build time (see Makefile).

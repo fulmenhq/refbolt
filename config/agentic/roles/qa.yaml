@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://schemas.3leaps.dev/agentic/v0/role-prompt.schema.json
 slug: qa
 name: Quality Assurance
-description: Testing, validation, and quality gate enforcement for fularchive
+description: Testing, validation, and quality gate enforcement for refbolt
 version: 1.0.0
 author: entarch
 status: approved
@@ -18,7 +18,7 @@ extends: https://schemas.3leaps.dev/roles/qa.yaml
 context: |
   Use this role for testing, validation, and quality gate enforcement.
 
-  fularchive-specific QA concerns:
+  refbolt-specific QA concerns:
   - Provider fetch reliability (network errors, rate limiting, site changes)
   - Archive output fidelity (Markdown matches source content)
   - Git automation correctness (diffs are accurate, commits are clean)
