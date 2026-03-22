@@ -67,7 +67,18 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 			// Save the raw file.
 			pages = append(pages, *llmsPage)
 			// Split into individual pages.
-			split := SplitLLMSTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
+			// Try xAI-style delimiters first, then URL-based (Anthropic-style).
+			split, err := SplitLLMSTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
+			if err != nil {
+				fmt.Printf("  ⚠ %s: split error: %v\n", llmsFilename, err)
+			}
+			if len(split) == 0 {
+				var fullErr error
+				split, fullErr = SplitLLMSFullTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
+				if fullErr != nil {
+					fmt.Printf("  ⚠ %s: full-split error: %v\n", llmsFilename, fullErr)
+				}
+			}
 			pages = append(pages, split...)
 			fmt.Printf("  ✓ %s: %d sections extracted\n", llmsFilename, len(split))
 		}
