@@ -14,9 +14,10 @@ This directory is the **single authoritative location** for all decision records
 
 ### Architecture Decisions
 
-| ADR                                           | Decision                           | Date       |
-| --------------------------------------------- | ---------------------------------- | ---------- |
-| [ADR-0001](ADR-0001-llmstxt-primary-fetch.md) | llms.txt as primary fetch strategy | 2026-03-21 |
+| ADR                                               | Decision                            | Date       |
+| ------------------------------------------------- | ----------------------------------- | ---------- |
+| [ADR-0001](ADR-0001-llmstxt-primary-fetch.md)     | llms.txt as primary fetch strategy  | 2026-03-21 |
+| [ADR-0002](ADR-0002-prefer-fulmenhq-libraries.md) | Prefer fulmenhq ecosystem libraries | 2026-03-22 |
 
 ### Security Decisions
 

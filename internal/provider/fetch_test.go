@@ -83,3 +83,45 @@ func TestHTTPFetcher_Pydantic_LLMSFullTxt(t *testing.T) {
 		t.Error("Expected supplemental page \"concepts/models/index.md\", not found")
 	}
 }
+
+func TestHTTPFetcher_Anthropic_LLMSFullTxt(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping network test in short mode")
+	}
+	cfg := ProviderConfig{
+		Slug:       "anthropic",
+		Name:       "Anthropic",
+		BaseURL:    "https://platform.claude.com/docs",
+		LLMSTxtURL: "https://platform.claude.com/llms-full.txt",
+	}
+	f, err := NewHTTPFetcher(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pages, err := f.Fetch(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Got %d pages", len(pages))
+
+	// Anthropic llms-full.txt has ~488 URL-delimited sections + 1 raw file.
+	if len(pages) < 400 {
+		t.Errorf("Expected 400+ pages from Anthropic llms-full.txt, got %d", len(pages))
+	}
+
+	// Check for key pages by path.
+	wantPages := []string{
+		"llms-full.txt", // raw dump
+		"en/agents-and-tools/tool-use/overview.md", // key split page
+	}
+	found := make(map[string]bool)
+	for _, p := range pages {
+		found[p.Path] = true
+	}
+	for _, want := range wantPages {
+		if !found[want] {
+			t.Errorf("Expected page %q, not found in %d pages", want, len(pages))
+		}
+	}
+}

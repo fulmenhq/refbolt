@@ -22,16 +22,19 @@ topics:
           - /developers/tools/function-calling.md
           - /developers/tools/web-search.md
           - /developers/rest-api-reference/inference/chat.md
-      # Anthropic — docs moved to platform.claude.com (March 2026)
-      # TODO: verify llms-full.txt and .md suffix at new domain
+      # Anthropic — native llms-full.txt at platform.claude.com (24MB, 488 pages).
+      # URL-based section delimiters (not xAI-style). SplitLLMSFullTxt handles parsing.
+      # Note: llms-full.txt is at the domain root, NOT under /docs/.
       - slug: anthropic
         name: Anthropic
         base_url: https://platform.claude.com/docs
-        fetch_strategy: auto
+        fetch_strategy: native
+        llms_txt_url: https://platform.claude.com/llms-full.txt
         paths:
-          - /en/docs/build-with-claude/tool-use
-          - /en/docs/build-with-claude/prompt-caching
-          - /en/docs/api-reference/messages
+          # Key pages (supplement the full dump for targeted updates)
+          - /en/agents-and-tools/tool-use/overview.md
+          - /en/build-with-claude/prompt-caching.md
+          - /en/api-reference/messages.md
       # OpenAI — no native .md, has OpenAPI spec on GitHub
       - slug: openai
         name: OpenAI

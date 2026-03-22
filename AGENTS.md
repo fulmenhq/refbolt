@@ -170,6 +170,7 @@ Committer-of-Record: Dave Thompson <dave.thompson@3leaps.net> [@3leapsdave]
 - Read files before editing them
 - Keep changes minimal and focused
 - Test manually when changing CLI behavior
+- Prefer 3 Leaps ecosystem libraries over custom implementations when suitable functionality exists — see [ADR-0002](docs/decisions/ADR-0002-prefer-fulmenhq-libraries.md)
 
 ### DO NOT
 

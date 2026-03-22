@@ -61,18 +61,48 @@ Supplement: Fetch individual `.md` pages for targeted updates between full syncs
 ## Anthropic
 
 **Base URL**: `https://platform.claude.com/docs` (migrated from `docs.anthropic.com` circa March 2026)
-**llms-full.txt**: Not found at new domain (404). Needs investigation.
-**Individual .md**: Untested at new domain.
+**llms.txt**: `https://platform.claude.com/llms.txt` — 62KB index, 606 page links
+**llms-full.txt**: `https://platform.claude.com/llms-full.txt` — 24MB full dump, 488 sections
+**Individual .md**: Available at `/docs/en/<path>.md` (307 redirects for renamed pages)
+
+**Important**: Both `.txt` endpoints are at the **domain root** (`platform.claude.com/`), NOT under `/docs/`. The old `/docs/llms.txt` and `/docs/llms-full.txt` paths return 404.
+
+### Delimiter Format
+
+Anthropic does **not** use xAI-style `===/path===` delimiters. Sections are separated by a combination of horizontal rule, heading, and URL line:
+
+```
+<end of previous page content>
+
+---
+
+# Page Title
+
+URL: https://platform.claude.com/docs/en/some/path
+
+# Page Title  (duplicate heading — stripped by splitter)
+
+<page content starts here>
+```
+
+The `URL: ` line is the reliable split point. `SplitLLMSFullTxt()` handles this format. The duplicate `# Title` after the URL line is stripped from archived content.
 
 ### Fetch Quirks (as of 2026-03-21)
 
-- **Domain migration**: `docs.anthropic.com` → `platform.claude.com/docs` (301 redirect).
-- **SPA rendering**: New domain serves Next.js SPA — static `.txt` endpoints may not exist.
-- Pages serve rich Markdown content via HTML (clean conversion via Jina Reader or similar).
+- **Domain migration**: `docs.anthropic.com` → `platform.claude.com/docs` (301 redirect). Old domain still redirects correctly.
+- **Next.js SPA**: Despite being a Next.js app, static `.txt` endpoints at the root are served correctly with `Content-Type: text/plain`.
+- **`.md` suffix**: Individual pages at `/docs/en/<path>.md` return clean Markdown. Some paths redirect via 307 (e.g., tool-use moved from `build-with-claude/` to `agents-and-tools/tool-use/overview`).
+- **File size**: `llms-full.txt` is ~24MB — scanner buffer needs to be increased beyond Go's default 64KB max line size.
+- **Content**: Includes Anthropic-specific JSX components (`<Tabs>`, `<Steps>`, `<Tip>`, `<CardGroup>`) in the Markdown. These render in Anthropic's docs but are passthrough text in raw Markdown.
+
+### Recommended Strategy
+
+Primary: Fetch `llms-full.txt` and split on `URL:` delimiters (one HTTP request, 488 pages).
+Supplement: Fetch individual `.md` pages for targeted updates between full syncs.
 
 ### Status
 
-Partially working. 3 pages fetched via HTML. Need to investigate `llms-full.txt` equivalent and `.md` suffix support at new domain.
+Verified. Full pipeline working — native `llms-full.txt` fetch, URL-based splitting, archive tree output.
 
 ## OpenAI
 
