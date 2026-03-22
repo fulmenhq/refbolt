@@ -35,15 +35,17 @@ topics:
           - /en/agents-and-tools/tool-use/overview.md
           - /en/build-with-claude/prompt-caching.md
           - /en/api-reference/messages.md
-      # OpenAI — no native .md, has OpenAPI spec on GitHub
+      # OpenAI — no native .md or llms.txt. HTML only, requires Jina Reader.
+      # OpenAPI spec on GitHub (manual_spec branch, not master/main).
       - slug: openai
         name: OpenAI
         base_url: https://platform.openai.com
-        fetch_strategy: auto
+        fetch_strategy: jina
         paths:
           - /docs/api-reference/chat
           - /docs/api-reference/responses
-        openapi_url: https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml
+          - /docs/api-reference/assistants
+        openapi_url: https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/manual_spec/openapi.yaml
   - slug: python-libs
     name: Python Libraries
     description: Key Python library documentation

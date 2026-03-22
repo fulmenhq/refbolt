@@ -1,12 +1,14 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -134,7 +136,7 @@ func (f *HTTPFetcher) fetchPage(ctx context.Context, pagePath string) (*Page, er
 	case StrategyAuto:
 		// Try direct first; if it fails or returns HTML, fall back to Jina.
 		page, err := f.fetchDirect(ctx, fullURL, archivePath)
-		if err == nil {
+		if err == nil && !looksLikeHTML(page.Content) {
 			return page, nil
 		}
 		return f.fetchViaJina(ctx, fullURL, archivePath)
@@ -149,9 +151,50 @@ func (f *HTTPFetcher) fetchDirect(ctx context.Context, rawURL, archivePath strin
 }
 
 // fetchViaJina fetches a URL through Jina Reader for HTML-to-Markdown conversion.
+// Jina Reader converts HTML pages to clean Markdown by prepending https://r.jina.ai/
+// to the target URL. Supports optional API key auth for higher rate limits.
 func (f *HTTPFetcher) fetchViaJina(ctx context.Context, rawURL, archivePath string) (*Page, error) {
 	jinaURL := "https://r.jina.ai/" + rawURL
-	return f.fetchURL(ctx, jinaURL, archivePath)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, jinaURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating Jina request: %w", err)
+	}
+	req.Header.Set("User-Agent", "refbolt/0.1 (+https://github.com/fulmenhq/refbolt)")
+	req.Header.Set("Accept", "text/markdown")
+
+	// Jina auth: uses only JINA_API_KEY — never the provider's auth_env_var,
+	// which belongs to the provider and must not be sent to third parties.
+	if apiKey := jinaAPIKey(f.cfg); apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+
+	resp, err := f.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("fetching %s via Jina: %w", rawURL, err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if err := checkJinaResponse(resp, rawURL); err != nil {
+		return nil, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading Jina response: %w", err)
+	}
+
+	// Strip Jina's metadata header (Title/URL Source/Markdown Content lines)
+	// to get clean Markdown content.
+	content := stripJinaHeader(body)
+
+	return &Page{
+		SourceURL: rawURL,
+		Path:      archivePath,
+		Content:   content,
+	}, nil
 }
 
 // fetchURL does the actual HTTP GET and returns a Page.
@@ -224,4 +267,68 @@ func pathToArchivePath(urlPath string) string {
 
 	// Otherwise, add .md
 	return p + ".md"
+}
+
+// jinaAPIKey returns the Jina Reader API key from JINA_API_KEY.
+// This intentionally does NOT use the provider's auth_env_var — that credential
+// belongs to the provider (e.g. OPENAI_API_KEY) and must never be sent to a
+// third-party service like Jina Reader.
+func jinaAPIKey(_ ProviderConfig) string {
+	return strings.TrimSpace(os.Getenv("JINA_API_KEY"))
+}
+
+// checkJinaResponse inspects an HTTP response from Jina Reader and returns
+// a descriptive error for non-200 status codes.
+func checkJinaResponse(resp *http.Response, originalURL string) error {
+	if resp.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	switch resp.StatusCode {
+	case http.StatusTooManyRequests:
+		retryAfter := resp.Header.Get("Retry-After")
+		hint := ""
+		if retryAfter != "" {
+			hint = fmt.Sprintf("; retry after %ss", retryAfter)
+		}
+		return fmt.Errorf("Jina Reader rate limit for %s (HTTP 429%s); set JINA_API_KEY for higher limits", originalURL, hint)
+	case http.StatusPaymentRequired:
+		return fmt.Errorf("Jina Reader requires payment for %s (HTTP 402); check JINA_API_KEY quota", originalURL)
+	case http.StatusUnprocessableEntity:
+		return fmt.Errorf("Jina Reader could not process %s (HTTP 422); page may be too complex or blocked", originalURL)
+	default:
+		return fmt.Errorf("Jina Reader HTTP %d for %s", resp.StatusCode, originalURL)
+	}
+}
+
+// stripJinaHeader removes the metadata header that Jina Reader prepends to
+// its Markdown output. The header format is:
+//
+//	Title: <title>
+//	URL Source: <url>
+//	Published Time: <time>  (optional)
+//	Markdown Content:
+//	<actual content>
+//
+// If no header is detected, the content is returned unchanged.
+func stripJinaHeader(body []byte) []byte {
+	marker := []byte("\nMarkdown Content:\n")
+	idx := bytes.Index(body, marker)
+	if idx < 0 {
+		return body
+	}
+	return body[idx+len(marker):]
+}
+
+// looksLikeHTML checks if content appears to be HTML rather than Markdown.
+// Used by the auto strategy to decide whether to fall back to Jina.
+func looksLikeHTML(content []byte) bool {
+	// Check the first 1KB for HTML indicators.
+	sample := content
+	if len(sample) > 1024 {
+		sample = sample[:1024]
+	}
+	lower := bytes.ToLower(sample)
+	return bytes.Contains(lower, []byte("<!doctype html")) ||
+		bytes.Contains(lower, []byte("<html"))
 }
