@@ -1,6 +1,6 @@
-# fularchive – Maintainers
+# refbolt – Maintainers
 
-**Project**: fularchive
+**Project**: refbolt
 **Purpose**: Archive web docs (especially frontier LLM APIs) into clean, versioned Markdown trees
 **Governance Model**: FulmenHQ / 3 Leaps Initiative
 

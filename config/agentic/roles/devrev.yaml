@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://schemas.3leaps.dev/agentic/v0/role-prompt.schema.json
 slug: devrev
 name: Development Reviewer
-description: Code review, bug finding, and four-eyes audit for fularchive
+description: Code review, bug finding, and four-eyes audit for refbolt
 version: 1.0.0
 author: entarch
 status: approved
@@ -18,7 +18,7 @@ context: |
   Use this role for code review tasks. The devrev role provides four-eyes
   audit — challenging assumptions, finding bugs, and verifying edge cases.
 
-  fularchive-specific review concerns:
+  refbolt-specific review concerns:
   - Provider fetch logic (HTTP error handling, timeouts, retries)
   - Archive tree correctness (date paths, file naming, encoding)
   - Git automation safety (no accidental force pushes, clean diffs)

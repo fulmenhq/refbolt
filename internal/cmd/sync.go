@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/fulmenhq/fularchive/internal/archive"
-	"github.com/fulmenhq/fularchive/internal/config"
-	"github.com/fulmenhq/fularchive/internal/provider"
+	"github.com/fulmenhq/refbolt/internal/archive"
+	"github.com/fulmenhq/refbolt/internal/config"
+	"github.com/fulmenhq/refbolt/internal/provider"
 	"github.com/spf13/cobra"
 )
 

@@ -6,13 +6,13 @@
 
 ## Context
 
-fularchive fetches documentation from third-party sites (xAI, Anthropic, OpenAI, etc.) and archives it locally. This creates obligations around how we interact with these sites — we must not violate terms of service, abuse rate limits, or use undocumented/private APIs.
+refbolt fetches documentation from third-party sites (xAI, Anthropic, OpenAI, etc.) and archives it locally. This creates obligations around how we interact with these sites — we must not violate terms of service, abuse rate limits, or use undocumented/private APIs.
 
 During initial development we encountered HTTP compatibility issues (Accept headers, TLS ALPN negotiation) that required workarounds. We need a clear policy to distinguish between legitimate compatibility fixes and behavior that could be seen as circumventing site protections.
 
 ## Decision
 
-fularchive will only fetch content through **publicly documented, intended-for-consumption interfaces**:
+refbolt will only fetch content through **publicly documented, intended-for-consumption interfaces**:
 
 1. **Use official LLM-friendly endpoints first.** Providers that offer `llms.txt`, `llms-full.txt`, or explicit "View as Markdown" links are signaling intent for programmatic access. These are our primary fetch targets.
 

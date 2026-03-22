@@ -1,6 +1,6 @@
 # Schemas Directory
 
-JSON Schema definitions for fularchive configuration validation.
+JSON Schema definitions for refbolt configuration validation.
 
 ## Directory Structure
 

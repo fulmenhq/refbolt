@@ -1,4 +1,4 @@
-# fularchive Provider Registry Entry Schema
+# refbolt Provider Registry Entry Schema
 # Draft: JSON Schema 2020-12
 #
 # Defines the structure for a single entry in the provider registry (JSONL).
@@ -9,9 +9,9 @@
 # The config answers: "which providers should I fetch right now?"
 "$schema": "https://json-schema.org/draft/2020-12/schema"
 "$id": "registry/v0/provider-registry"
-title: fularchive Provider Registry Entry
+title: refbolt Provider Registry Entry
 description: >-
-  Schema for a single provider entry in the fularchive registry. One JSONL line = one provider. The registry is the discovery layer; configs/providers.yaml is the activation layer.
+  Schema for a single provider entry in the refbolt registry. One JSONL line = one provider. The registry is the discovery layer; configs/providers.yaml is the activation layer.
 type: object
 required:
   - slug

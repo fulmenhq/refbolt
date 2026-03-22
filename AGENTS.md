@@ -1,13 +1,13 @@
 ---
 title: AGENTS.md
-description: Agentic attribution and development standards for fularchive
+description: Agentic attribution and development standards for refbolt
 author_of_record: Dave Thompson (@3leapsdave)
 status: draft
 ---
 
-# fularchive – AI Agent Guide
+# refbolt – AI Agent Guide
 
-**Project**: fularchive
+**Project**: refbolt
 **Purpose**: Archive web docs (especially frontier LLM APIs) into clean, versioned Markdown trees
 **Maintainers**: See `MAINTAINERS.md`
 
@@ -33,14 +33,14 @@ See [3leaps-crucible agent-identity standard](https://crucible.3leaps.dev/reposi
 
 | Task           | Command          | Notes                       |
 | -------------- | ---------------- | --------------------------- |
-| Build          | `make build`     | Builds `bin/fularchive`     |
+| Build          | `make build`     | Builds `bin/refbolt`        |
 | Tests          | `make test`      | Must pass before committing |
 | Format + Lint  | `make fmt`       | Format + vet                |
 | Quality checks | `make check-all` | fmt + lint + test           |
 
 ## Architecture Overview
 
-fularchive is a container-first CLI for periodic documentation archival.
+refbolt is a container-first CLI for periodic documentation archival.
 
 ```
 ┌──────────────────────────────────────┐
@@ -88,10 +88,10 @@ Full role definitions live in [`config/agentic/roles/`](config/agentic/roles/) a
 
 - **cxotech covers delivery coordination** for this project. No separate deliverylead role is needed at this scale. If the project grows to 3+ concurrent streams with external contributors, consider adding deliverylead.
 - **releng covers CI/CD** for this project. No separate cicd role — releng handles both release coordination and pipeline authoring/validation.
-- **infoarch is a first-class production role** here, not just "docs work." fularchive's core value proposition is clean, well-structured Markdown output. infoarch owns the quality bar for archive output, provider config schemas, and metadata standards.
+- **infoarch is a first-class production role** here, not just "docs work." refbolt's core value proposition is clean, well-structured Markdown output. infoarch owns the quality bar for archive output, provider config schemas, and metadata standards.
 - **Documentation work** (ADRs, architecture docs, schemas) is done by whichever role owns the task — devlead for implementation docs, cxotech for architecture docs, infoarch for output standards and schemas.
 
-### fularchive-Specific Roles (Inline)
+### refbolt-Specific Roles (Inline)
 
 #### archiver – Archive Provider Implementation
 

@@ -19,14 +19,14 @@ tags:
 context: |
   Use this role for strategic decisions at the intersection of product
   experience and technical architecture. cxotech also covers delivery
-  coordination for fularchive (no separate deliverylead role needed at
+  coordination for refbolt (no separate deliverylead role needed at
   this project's scale).
 
-  fularchive-specific strategic concerns:
+  refbolt-specific strategic concerns:
   - Which LLM doc providers to prioritize and in what order
   - Archive format decisions that affect downstream consumers (Tauri, Lanyte)
   - Container strategy (CLI vs runner image split)
-  - Ecosystem fit (how fularchive serves other Fulmen tools)
+  - Ecosystem fit (how refbolt serves other Fulmen tools)
 
   Distinct from:
   - devlead: Chooses the path (devlead optimizes execution)
@@ -67,7 +67,7 @@ does_not:
   - Prioritize providers without ecosystem value assessment
 checklists:
   brief_approval:
-    - "Strategic fit: Does this advance fularchive's mission?"
+    - "Strategic fit: Does this advance refbolt's mission?"
     - "Architecture: Is the approach sound and extensible?"
     - "Downstream impact: How does this affect Tauri/Lanyte/Fulmen consumers?"
     - "Provider value: Is this provider worth the maintenance cost?"

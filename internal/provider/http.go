@@ -160,7 +160,7 @@ func (f *HTTPFetcher) fetchURL(ctx context.Context, rawURL, archivePath string) 
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	req.Header.Set("User-Agent", "fularchive/0.1 (+https://github.com/fulmenhq/fularchive)")
+	req.Header.Set("User-Agent", "refbolt/0.1 (+https://github.com/fulmenhq/refbolt)")
 	// Do NOT use text/markdown in Accept — some CDNs (docs.x.ai) return 404 for it.
 	req.Header.Set("Accept", "*/*")
 

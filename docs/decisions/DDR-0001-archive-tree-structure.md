@@ -6,7 +6,7 @@
 
 ## Context
 
-fularchive needs a filesystem layout for archived documentation that is stable enough for downstream consumers (Lanyte backends, Tauri apps) to depend on, while supporting date-versioned snapshots and multiple providers grouped by topic.
+refbolt needs a filesystem layout for archived documentation that is stable enough for downstream consumers (Lanyte backends, Tauri apps) to depend on, while supporting date-versioned snapshots and multiple providers grouped by topic.
 
 ## Decision
 

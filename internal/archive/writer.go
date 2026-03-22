@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fulmenhq/fularchive/internal/provider"
+	"github.com/fulmenhq/refbolt/internal/provider"
 )
 
 // Writer writes fetched pages to the archive tree.

@@ -1,12 +1,10 @@
-# fularchive
+# refbolt
 
-> Archive web docs (especially frontier LLM APIs) into clean, versioned Markdown trees.
+**Bolt down the reference docs and ship faster.**
 
-## Overview
-
-fularchive is a lightweight, container-first CLI that periodically snapshots documentation sites (OpenAI, Anthropic, xAI/Grok, etc.) into a structured, date-versioned archive. Outputs are clean Markdown + JSON/OpenAPI where native, perfect for offline reference in Tauri apps, Lanyte backends, or any Fulmen project.
-
-**Not related to Apple's .doccarchive format** — this is a general web → Markdown archiver.
+API docs move. Refbolt pins them down. It fetches provider documentation — via
+llms.txt, GitHub raw, or direct HTTP — and produces clean, date-versioned Markdown
+trees ready for offline consumption. One command, reproducible snapshots, no drift.
 
 ## Features
 
@@ -14,21 +12,21 @@ fularchive is a lightweight, container-first CLI that periodically snapshots doc
 - Jina Reader fallback for noisy sites
 - Git-aware diff/commit/PR for change detection
 - Envvar/config-driven tree (e.g. `/data/archive/openai/2026-03-21/`)
-- Daily cron via supercronic in runner image
+- Container-ready design (Dockerfile planned)
 
 ## Quick Start
 
 ```bash
-# One-shot sync (all providers)
-docker run --rm -v ./archive:/data ghcr.io/fulmenhq/fularchive fularchive sync --all
+# Build from source
+make build
 
-# Or use the runner image for scheduled jobs
-docker-compose up -d
+# One-shot sync (all providers)
+./bin/refbolt sync --all --verbose
 ```
 
 ## Intended Use
 
-fularchive is designed for local, offline developer reference — keeping version-pinned copies of documentation you're actively building against. It is not intended for republishing, redistributing, or publicly hosting archived content. Respect the terms of service of the documentation sites you archive.
+refbolt is designed for local, offline developer reference — keeping version-pinned copies of documentation you're actively building against. It is not intended for republishing, redistributing, or publicly hosting archived content. Respect the terms of service of the documentation sites you archive.
 
 ## Documentation
 

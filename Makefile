@@ -4,7 +4,7 @@
 .PHONY: license-inventory license-save license-audit update-licenses
 
 # Binary and version information
-BINARY_NAME := fularchive
+BINARY_NAME := refbolt
 VERSION := $(shell cat VERSION 2>/dev/null || echo "dev")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -266,7 +266,8 @@ license-audit:  ## Audit for forbidden licenses
 
 update-licenses: license-inventory license-save  ## Update license inventory and texts
 
-clean:  ## Clean build artifacts and reports
+clean:  ## Clean build artifacts, reports, and Go caches
 	@echo "Cleaning artifacts..."
 	rm -rf bin/ dist/ coverage.out coverage.html
+	go clean -cache -testcache
 	@echo "✅ Clean completed"

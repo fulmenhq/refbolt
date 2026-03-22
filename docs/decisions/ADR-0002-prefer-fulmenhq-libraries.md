@@ -12,7 +12,7 @@ When projects implement functionality that already exists in these libraries, th
 
 ## Decision
 
-When implementing functionality in fularchive (or any fulmenhq/3leaps project), prefer an existing ecosystem library over a custom implementation when suitable functionality exists. For Go projects, check gofulmen first; for cross-language concerns, check the 3leaps org.
+When implementing functionality in refbolt (or any fulmenhq/3leaps project), prefer an existing ecosystem library over a custom implementation when suitable functionality exists. For Go projects, check gofulmen first; for cross-language concerns, check the 3leaps org.
 
 Deviation is acceptable when:
 

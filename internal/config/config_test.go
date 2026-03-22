@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/fulmenhq/fularchive/internal/config"
-	"github.com/fulmenhq/fularchive/internal/provider"
+	"github.com/fulmenhq/refbolt/internal/config"
+	"github.com/fulmenhq/refbolt/internal/provider"
 )
 
 func TestLoad_NoConfigFile(t *testing.T) {
 	// Point to a nonexistent config so we exercise the "no file" path.
-	t.Setenv("FULARCHIVE_CONFIG", "/tmp/nonexistent-fularchive-config.yaml")
+	t.Setenv("REFBOLT_CONFIG", "/tmp/nonexistent-refbolt-config.yaml")
 
 	if err := config.Load(); err != nil {
 		t.Fatalf("Load() with missing config should succeed: %v", err)
@@ -32,7 +32,7 @@ func TestLoad_WithConfigFile(t *testing.T) {
 		t.Skipf("configs/providers.yaml not found at %s", configPath)
 	}
 
-	t.Setenv("FULARCHIVE_CONFIG", configPath)
+	t.Setenv("REFBOLT_CONFIG", configPath)
 
 	if err := config.Load(); err != nil {
 		t.Fatalf("Load() failed: %v", err)
@@ -61,8 +61,8 @@ func TestLoad_WithConfigFile(t *testing.T) {
 }
 
 func TestLoad_EnvOverride(t *testing.T) {
-	t.Setenv("FULARCHIVE_CONFIG", "/tmp/nonexistent-fularchive-config.yaml")
-	t.Setenv("FULARCHIVE_ARCHIVE_ROOT", "/custom/path")
+	t.Setenv("REFBOLT_CONFIG", "/tmp/nonexistent-refbolt-config.yaml")
+	t.Setenv("REFBOLT_ARCHIVE_ROOT", "/custom/path")
 
 	if err := config.Load(); err != nil {
 		t.Fatalf("Load() failed: %v", err)
@@ -98,7 +98,7 @@ topics:
 		t.Fatal(err)
 	}
 
-	t.Setenv("FULARCHIVE_CONFIG", configPath)
+	t.Setenv("REFBOLT_CONFIG", configPath)
 
 	if err := config.Load(); err != nil {
 		t.Fatalf("Load() failed: %v", err)

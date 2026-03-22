@@ -1,14 +1,14 @@
 ---
-title: "fularchive Vision"
-description: "Vision and strategic rationale for fularchive — the FulmenHQ general-purpose web documentation archiver"
+title: "refbolt Vision"
+description: "Vision and strategic rationale for refbolt — the FulmenHQ general-purpose web documentation archiver"
 author: "3leapsdave"
 date: "2026-03-21"
 status: "draft"
 version: "0.1.0"
-tags: ["fularchive", "docs", "archive", "llm", "fulmen-toolbox"]
+tags: ["refbolt", "docs", "archive", "llm", "fulmen-toolbox"]
 ---
 
-# fularchive Vision
+# refbolt Vision
 
 ## The Problem We See
 
@@ -21,9 +21,9 @@ Every team building native LLM clients (especially for frontier models like Grok
 
 This pain is especially acute in Lanyte, where we are building 100% native X/Grok interfaces to give Grok agents lower friction and true sovereignty.
 
-## What fularchive Is
+## What refbolt Is
 
-**fularchive** is a lightweight, container-first CLI that automatically snapshots web documentation sites — especially frontier LLM APIs — into clean, date-versioned Markdown + JSON trees.
+**refbolt** is a lightweight, container-first CLI that automatically snapshots web documentation sites — especially frontier LLM APIs — into clean, date-versioned Markdown + JSON trees.
 
 It lives in the Fulmen toolbox as the canonical way to keep documentation alive and offline-ready across all Fulmen projects.
 
@@ -42,7 +42,7 @@ It lives in the Fulmen toolbox as the canonical way to keep documentation alive 
 A Lanyte engineer (or any Fulmen developer) runs:
 
 ```bash
-docker run --rm -v ./archive:/data ghcr.io/fulmenhq/fularchive fularchive sync --all
+docker run --rm -v ./archive:/data ghcr.io/fulmenhq/refbolt refbolt sync --all
 ```
 
 …and instantly gets a fresh, clean archive containing:
@@ -57,7 +57,7 @@ The Tauri app points at latest/ for instant offline reference. The Lanyte native
 
 ## Strategic Position
 
-fularchive sits at the intersection of:
+refbolt sits at the intersection of:
 
 - Lanyte native LLM backends (especially Grok for lower-friction agent execution)
 - Fulmen toolbox infrastructure

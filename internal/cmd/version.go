@@ -23,7 +23,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("fularchive %s (commit: %s, built: %s)\n", appVersion, appCommit, appBuild)
+		fmt.Printf("refbolt %s (commit: %s, built: %s)\n", appVersion, appCommit, appBuild)
 	},
 }
 

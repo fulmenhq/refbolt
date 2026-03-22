@@ -1,6 +1,6 @@
 # Release Notes
 
-This document tracks release notes for fularchive releases.
+This document tracks release notes for refbolt releases.
 
 > **Convention**: Keep only the latest 3 releases here to prevent file bloat. Older releases are archived in `docs/releases/`.
 
@@ -11,7 +11,7 @@ This document tracks release notes for fularchive releases.
 **Release Type**: Initial Setup
 **Status**: ✅ Released
 
-First release establishing the fularchive project structure, build system, and agentic development framework.
+First release establishing the refbolt project structure, build system, and agentic development framework.
 
 #### Overview
 
