@@ -70,6 +70,57 @@ Provider credentials (e.g., `OPENAI_API_KEY`, `GITHUB_TOKEN`) are used only for 
 # Override with REFBOLT_ARCHIVE_ROOT=/tmp/archive
 ```
 
+## Git Automation
+
+After a sync writes files, refbolt can optionally stage, commit, and push the archive changes. All git operations are opt-in and scoped to the archive root — config files, code, and credentials are never staged.
+
+### Flags
+
+| Flag            | Default | Description                                              |
+| --------------- | ------- | -------------------------------------------------------- |
+| `--git-commit`  | false   | Stage archive changes and commit with structured message |
+| `--git-push`    | false   | Push after commit (requires `--git-commit`)              |
+| `--git-branch`  | (none)  | Remote branch to push to (default: current branch)       |
+| `--git-trailer` | (none)  | Trailer line to append to commit message (repeatable)    |
+
+### Examples
+
+```bash
+# Commit archive changes after sync (no push)
+./bin/refbolt sync --all --git-commit
+
+# Commit and push to current branch
+./bin/refbolt sync --all --git-commit --git-push
+
+# Push to a specific remote branch
+./bin/refbolt sync --all --git-commit --git-push --git-branch archive/daily
+
+# Add attribution trailers (for repos with AGENTS.md compliance)
+./bin/refbolt sync --all --git-commit \
+  --git-trailer "Co-Authored-By: Claude Opus 4.6 <noreply@fulmenhq.dev>"
+```
+
+### Commit Message Format
+
+```
+refbolt sync: 2026-03-22
+
+Providers updated:
+- xai: 96 files (llm-api)
+- anthropic: 488 files (llm-api)
+
+Archive root: /data/archive
+```
+
+### Safety
+
+- Only archive files are staged — `git add` is scoped to `archive_root`
+- No commit if nothing changed (no empty commits)
+- No `--force` push, ever
+- `git` must be on PATH — clear error if missing
+- Archive root must be inside a git worktree — clear error if not
+- Non-archive working tree changes are left untouched
+
 ## Adding a New Provider
 
 1. Add entry to `configs/providers.yaml` under the appropriate topic
