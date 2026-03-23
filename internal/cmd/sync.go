@@ -5,16 +5,27 @@ import (
 
 	"github.com/fulmenhq/refbolt/internal/archive"
 	"github.com/fulmenhq/refbolt/internal/config"
+	gitpkg "github.com/fulmenhq/refbolt/internal/git"
 	"github.com/fulmenhq/refbolt/internal/provider"
 	"github.com/spf13/cobra"
 )
 
-var syncAll bool
+var (
+	syncAll     bool
+	gitCommit   bool
+	gitPush     bool
+	gitBranch   string
+	gitTrailers []string
+)
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Run archive sync for configured providers",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if gitPush && !gitCommit {
+			return fmt.Errorf("--git-push requires --git-commit")
+		}
+
 		topics := config.Topics()
 		if len(topics) == 0 {
 			fmt.Println("No topics configured.")
@@ -23,6 +34,8 @@ var syncCmd = &cobra.Command{
 
 		archiveRoot := config.ArchiveRoot()
 		writer := archive.NewWriter(archiveRoot)
+
+		var syncResults []gitpkg.SyncResult
 
 		for _, topic := range topics {
 			fmt.Printf("Topic: %s\n", topic.Slug)
@@ -52,6 +65,21 @@ var syncCmd = &cobra.Command{
 				}
 
 				fmt.Printf("  %s: wrote %d files\n", pc.Slug, written)
+
+				if written > 0 {
+					syncResults = append(syncResults, gitpkg.SyncResult{
+						TopicSlug:    topic.Slug,
+						ProviderSlug: pc.Slug,
+						FilesWritten: written,
+					})
+				}
+			}
+		}
+
+		// Git operations (opt-in via --git-commit).
+		if gitCommit {
+			if err := doGitCommit(archiveRoot, syncResults); err != nil {
+				return err
 			}
 		}
 
@@ -59,7 +87,50 @@ var syncCmd = &cobra.Command{
 	},
 }
 
+func doGitCommit(archiveRoot string, results []gitpkg.SyncResult) error {
+	gc, err := gitpkg.NewClient(archiveRoot)
+	if err != nil {
+		return fmt.Errorf("git pre-flight failed: %w", err)
+	}
+
+	has, err := gc.HasChanges()
+	if err != nil {
+		return err
+	}
+	if !has {
+		fmt.Println("Git: no changes in archive, skipping commit.")
+		return nil
+	}
+
+	if err := gc.StageArchive(); err != nil {
+		return err
+	}
+
+	msg := gitpkg.BuildCommitMessage(results, archiveRoot, gitTrailers)
+	if err := gc.Commit(msg); err != nil {
+		return err
+	}
+	fmt.Println("Git: committed archive changes.")
+
+	if gitPush {
+		if err := gc.Push(gitBranch); err != nil {
+			return err
+		}
+		if gitBranch != "" {
+			fmt.Printf("Git: pushed to branch %s.\n", gitBranch)
+		} else {
+			fmt.Println("Git: pushed to remote.")
+		}
+	}
+
+	return nil
+}
+
 func init() {
 	syncCmd.Flags().BoolVar(&syncAll, "all", false, "Sync all configured providers")
+	syncCmd.Flags().BoolVar(&gitCommit, "git-commit", false, "Stage archive changes and commit after sync")
+	syncCmd.Flags().BoolVar(&gitPush, "git-push", false, "Push after commit (requires --git-commit)")
+	syncCmd.Flags().StringVar(&gitBranch, "git-branch", "", "Remote branch to push to (default: current branch)")
+	syncCmd.Flags().StringArrayVar(&gitTrailers, "git-trailer", nil, "Trailer line(s) to append to commit message (repeatable)")
 	rootCmd.AddCommand(syncCmd)
 }
