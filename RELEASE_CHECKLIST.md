@@ -131,6 +131,15 @@ After the draft release is created by CI, download its artifacts locally for sig
 - [ ] Review the draft release on GitHub (verify artifacts, notes, signatures)
 - [ ] Publish the release
 
+### Homebrew
+
+Update the formula in `fulmenhq/homebrew-tap` (sibling repo at `../homebrew-tap`):
+
+- [ ] Update `Formula/refbolt.rb`: version, URLs, and SHA256 checksums from `dist/release/SHA256SUMS`
+- [ ] Run `make precommit` in the tap repo to validate (RuboCop + goneat)
+- [ ] Commit and push to `homebrew-tap/main`
+- [ ] Verify: `brew update && brew upgrade refbolt && refbolt version`
+
 ### Docker Images
 
 - [ ] Build and test local images:
@@ -143,6 +152,7 @@ After the draft release is created by CI, download its artifacts locally for sig
 ### Verification
 
 - [ ] `go install github.com/fulmenhq/refbolt@v<version>` works
+- [ ] `brew install fulmenhq/tap/refbolt` installs correct version
 - [ ] Docker images run correctly
 - [ ] Monitor GitHub issues for release-related bugs
 
