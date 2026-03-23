@@ -1,4 +1,4 @@
 # Standard 5-field cron format.
 # Set TZ on the container to control local schedule interpretation.
 # Git-aware schedule: mount a git worktree at /workspace and archive inside it.
-0 6 * * * cd /workspace && /usr/local/bin/refbolt sync --all --verbose --git-commit --git-push
+0 6 * * * /usr/local/bin/refbolt sync --all --verbose --git-commit --git-push
