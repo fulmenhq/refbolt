@@ -31,7 +31,7 @@ properties:
       - xai
       - anthropic
       - aws-cli
-      - aws-glue
+      - aws-glue-dg
       - pydantic
   name:
     type: string

@@ -10,10 +10,11 @@ import (
 type FetchStrategy string
 
 const (
-	StrategyNative    FetchStrategy = "native"     // Direct .md or known Markdown endpoints.
-	StrategyJina      FetchStrategy = "jina"       // Jina Reader HTML-to-Markdown conversion.
-	StrategyAuto      FetchStrategy = "auto"       // Try native first, fall back to Jina.
-	StrategyGitHubRaw FetchStrategy = "github-raw" // GitHub tree discovery + raw Markdown fetch.
+	StrategyNative       FetchStrategy = "native"               // Direct .md or known Markdown endpoints.
+	StrategyJina         FetchStrategy = "jina"                 // Jina Reader HTML-to-Markdown conversion.
+	StrategyAuto         FetchStrategy = "auto"                 // Try native first, fall back to Jina.
+	StrategyGitHubRaw    FetchStrategy = "github-raw"           // GitHub tree discovery + raw Markdown fetch.
+	StrategyHierarchical FetchStrategy = "llmstxt-hierarchical" // Top-level llms.txt index → per-service fetch.
 )
 
 // RateLimitConfig controls request pacing for a provider.
@@ -83,6 +84,9 @@ func Register(slug string, constructor func(cfg ProviderConfig) (Fetcher, error)
 func NewFetcher(cfg ProviderConfig) (Fetcher, error) {
 	if cfg.FetchStrategy == StrategyGitHubRaw {
 		return NewGitHubRawFetcher(cfg)
+	}
+	if cfg.FetchStrategy == StrategyHierarchical {
+		return NewHierarchicalFetcher(cfg)
 	}
 	if constructor, ok := registry[cfg.Slug]; ok {
 		return constructor(cfg)
