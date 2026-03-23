@@ -1,0 +1,104 @@
+# yamllint disable rule:document-start
+# yamllint disable rule:truthy
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  # Container-based format checking (LOW friction - v0.2.1+)
+  # Uses goneat-tools-runner which has foundation tools pre-installed
+  format-check:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/fulmenhq/goneat-tools-runner:v0.2.1
+      # Use UID 1001 to match GitHub-hosted runner workspace ownership.
+      options: --user 1001
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify foundation tools
+        run: |
+          set -euo pipefail
+          prettier --version
+          yamlfmt --version
+          jq --version
+          yq --version
+          rg --version
+      - name: Check formatting
+        run: |
+          set -euo pipefail
+          yamlfmt -lint .
+          prettier --check "**/*.{md,json}" || \
+            echo "Prettier differences found (non-blocking)"
+  # Build and test using goneat-tools-runner container
+  # Runner provides foundation tools + goneat/sfetch; Go is set up separately.
+  # CGO_ENABLED=0: refbolt is pure Go — no cgo dependencies.
+  build-test:
+    needs: [format-check]
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/fulmenhq/goneat-tools-runner:v0.2.1
+      # Use UID 1001 to match GitHub-hosted runner workspace ownership.
+      options: --user 1001
+    env:
+      FULMEN_WORKSPACE_ROOT: ${{ github.workspace }}
+      CGO_ENABLED: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+      - name: Verify runner + Go toolchain
+        run: |
+          set -euo pipefail
+          prettier --version
+          yamlfmt --version
+          sfetch --version
+          goneat --version
+          command -v go
+          go version
+          go env GOPATH
+          go mod download
+      - name: Format (using goneat - fail on diff)
+        run: |
+          set -euo pipefail
+          make fmt
+          git diff --exit-code
+      - name: Install golangci-lint (v2)
+        # goneat-tools-runner does not ship golangci-lint yet.
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.4.0
+          args: --help
+      - name: Verify golangci-lint
+        run: |
+          set -euo pipefail
+          golangci-lint --version
+      - name: Lint
+        run: |
+          set -euo pipefail
+          make lint
+      - name: Test (short - no live network)
+        run: |
+          set -euo pipefail
+          make test-short
+      - name: Build binary
+        run: |
+          set -euo pipefail
+          make build
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          ./bin/refbolt version
+          ./bin/refbolt --help

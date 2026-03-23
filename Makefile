@@ -1,5 +1,6 @@
-.PHONY: all help bootstrap bootstrap-force hooks-ensure tools dependencies version-bump lint test build build-all clean fmt version check-all precommit prepush run install test-cov docker-build docker-build-runner
+.PHONY: all help bootstrap bootstrap-force hooks-ensure tools dependencies version-bump lint test test-short build build-all clean fmt version check-all precommit prepush run install test-cov docker-build docker-build-runner
 .PHONY: release-clean release-build release-checksums release-check release-prepare
+.PHONY: release-sign release-export-keys release-verify-keys release-verify-checksums release-notes release-download release-upload release-upload-provenance release-upload-all
 .PHONY: version-set version-bump-major version-bump-minor version-bump-patch
 .PHONY: license-inventory license-save license-audit update-licenses
 
@@ -151,6 +152,7 @@ release-prepare:  ## Prepare for release (tests, version bump)
 
 RELEASE_TAG ?= v$(shell cat VERSION 2>/dev/null || echo "0.0.0")
 DIST_RELEASE ?= dist/release
+SIGNING_ENV_PREFIX ?= $(shell echo "$(BINARY_NAME)" | tr '[:lower:]-' '[:upper:]_')
 
 release-clean: ## Clean dist/release staging
 	@echo "🧹 Cleaning $(DIST_RELEASE)..."; rm -rf "$(DIST_RELEASE)"; mkdir -p "$(DIST_RELEASE)"; echo "✅ Cleaned"
@@ -168,9 +170,37 @@ release-build: release-clean ## Build release artifacts into dist/release
 
 release-checksums: ## Generate SHA256SUMS and SHA512SUMS in dist/release
 	@echo "→ Generating checksum manifests in $(DIST_RELEASE)..."
-	@cd "$(DIST_RELEASE)" && (sha256sum $(BINARY_NAME)-* > SHA256SUMS 2>/dev/null || shasum -a 256 $(BINARY_NAME)-* > SHA256SUMS)
-	@cd "$(DIST_RELEASE)" && (sha512sum $(BINARY_NAME)-* > SHA512SUMS 2>/dev/null || shasum -a 512 $(BINARY_NAME)-* > SHA512SUMS)
-	@echo "✅ Checksums generated"
+	@./scripts/generate-checksums.sh "$(DIST_RELEASE)" "$(BINARY_NAME)"
+
+release-download: ## Download GitHub release assets (RELEASE_TAG=vX.Y.Z)
+	@./scripts/release-download.sh "$(RELEASE_TAG)" "$(DIST_RELEASE)"
+
+release-sign: ## Sign checksum manifests (minisign required; PGP optional)
+	@SIGNING_ENV_PREFIX="$(SIGNING_ENV_PREFIX)" SIGNING_APP_NAME="$(BINARY_NAME)" RELEASE_TAG="$(RELEASE_TAG)" ./scripts/sign-release-manifests.sh "$(RELEASE_TAG)" "$(DIST_RELEASE)"
+
+release-export-keys: ## Export public signing keys into dist/release
+	@SIGNING_ENV_PREFIX="$(SIGNING_ENV_PREFIX)" SIGNING_APP_NAME="$(BINARY_NAME)" ./scripts/export-release-keys.sh "$(DIST_RELEASE)"
+
+release-verify-keys: ## Verify exported public keys are public-only
+	@if [ -f "$(DIST_RELEASE)/$(BINARY_NAME)-minisign.pub" ]; then ./scripts/verify-minisign-public-key.sh "$(DIST_RELEASE)/$(BINARY_NAME)-minisign.pub"; else echo "ℹ️  No minisign public key found (skipping)"; fi
+	@if [ -f "$(DIST_RELEASE)/fulmenhq-release-signing-key.asc" ]; then ./scripts/verify-public-key.sh "$(DIST_RELEASE)/fulmenhq-release-signing-key.asc"; else echo "ℹ️  No PGP public key found (skipping)"; fi
+
+release-verify-checksums: ## Verify SHA256SUMS and SHA512SUMS against artifacts
+	@./scripts/verify-checksums.sh "$(DIST_RELEASE)"
+
+release-notes: ## Copy docs/releases/vX.Y.Z.md into dist/release
+	@notes_src="docs/releases/$(RELEASE_TAG).md"; notes_dst="$(DIST_RELEASE)/release-notes-$(RELEASE_TAG).md"; \
+	if [ ! -f "$$notes_src" ]; then echo "❌ Missing $$notes_src"; exit 1; fi; \
+	cp "$$notes_src" "$$notes_dst"; echo "✅ Copied $$notes_src → $$notes_dst"
+
+release-upload: release-upload-provenance ## Upload provenance assets to GitHub (RELEASE_TAG=vX.Y.Z)
+	@:
+
+release-upload-provenance: release-verify-checksums release-verify-keys ## Upload manifests, signatures, keys, notes
+	@./scripts/release-upload-provenance.sh "$(RELEASE_TAG)" "$(DIST_RELEASE)"
+
+release-upload-all: release-verify-checksums release-verify-keys ## Upload binaries + provenance (manual-only)
+	@./scripts/release-upload.sh "$(RELEASE_TAG)" "$(DIST_RELEASE)"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Build
@@ -214,9 +244,13 @@ docker-build-runner:  ## Build local runner container image
 version:  ## Print current version
 	@echo "$(VERSION)"
 
-test: dependencies ## Run all tests
+test: dependencies ## Run all tests (includes live network tests)
 	@echo "Running test suite..."
 	$(GOTEST) ./... -v
+
+test-short: dependencies ## Run tests without live network (CI-safe)
+	@echo "Running short test suite..."
+	$(GOTEST) ./... -v -short
 
 test-cov:  ## Run tests with coverage
 	@echo "Running tests with coverage..."
