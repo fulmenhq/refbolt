@@ -96,12 +96,12 @@ After the draft release is created by CI, download its artifacts locally for sig
 
   ```bash
   make release-clean
-  make release-download RELEASE_TAG=$REFBOLT_VERSION_TAG
+  make release-download
   make release-checksums
   make release-verify-checksums
   ```
 
-  This path uses GitHub Release artifacts built in CI and avoids local build drift.
+  This path uses GitHub Release artifacts built in CI and avoids local build drift. `RELEASE_TAG` is read from `REFBOLT_VERSION_TAG` automatically.
 
 - [ ] (Alternative) Build artifacts locally (if CI build is unavailable):
 
@@ -117,14 +117,14 @@ After the draft release is created by CI, download its artifacts locally for sig
   export GPG_TTY="$(tty)"
   gpg-connect-agent updatestartuptty /bye
 
-  make release-sign RELEASE_TAG=$REFBOLT_VERSION_TAG
+  make release-sign
   ```
 
 - [ ] Export public keys: `make release-export-keys`
 - [ ] Verify exported keys are public-only: `make release-verify-keys`
-- [ ] Copy release notes: `make release-notes RELEASE_TAG=$REFBOLT_VERSION_TAG`
-- [ ] Upload provenance assets: `make release-upload RELEASE_TAG=$REFBOLT_VERSION_TAG`
-  - For fully manual release (no CI artifacts): `make release-upload-all RELEASE_TAG=$REFBOLT_VERSION_TAG`
+- [ ] Copy release notes: `make release-notes`
+- [ ] Upload provenance assets: `make release-upload`
+  - For fully manual release (no CI artifacts): `make release-upload-all`
 
 ### Publish
 

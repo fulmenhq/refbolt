@@ -150,7 +150,7 @@ release-prepare:  ## Prepare for release (tests, version bump)
 # Release build
 # ─────────────────────────────────────────────────────────────────────────────
 
-RELEASE_TAG ?= v$(shell cat VERSION 2>/dev/null || echo "0.0.0")
+RELEASE_TAG ?= $(or $(REFBOLT_VERSION_TAG),v$(shell cat VERSION 2>/dev/null || echo "0.0.0"))
 DIST_RELEASE ?= dist/release
 SIGNING_ENV_PREFIX ?= $(shell echo "$(BINARY_NAME)" | tr '[:lower:]-' '[:upper:]_')
 
