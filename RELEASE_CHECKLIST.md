@@ -59,23 +59,23 @@ Standard checklist for refbolt releases to ensure consistency and quality.
 
 ### Environment Variables
 
-Before signing, source the CI/CD signing credentials:
+The following variables must be set before signing. Store them in a credentials file outside the repo (e.g., a shell script you source) to keep signing keys out of version control.
+
+| Variable               | Purpose                          | Example                                                  |
+| ---------------------- | -------------------------------- | -------------------------------------------------------- |
+| `REFBOLT_GPG_HOMEDIR`  | GnuPG home directory for signing | `~/vault/fulmenhq-gpg`                                   |
+| `REFBOLT_PGP_KEY_ID`   | PGP signing key fingerprint      | `448A539320A397AF!`                                      |
+| `REFBOLT_MINISIGN_KEY` | Path to minisign private key     | `~/vault/fulmenhq-minisign/fulmenhq-release-signing.key` |
+| `REFBOLT_MINISIGN_PUB` | Path to minisign public key      | `~/vault/fulmenhq-minisign/fulmenhq-release-signing.pub` |
+| `REFBOLT_VERSION_TAG`  | Release tag for this release     | `v0.2.0`                                                 |
+
+The first four are stable across releases. `REFBOLT_VERSION_TAG` is set per release so the credentials file does not need to change.
 
 ```bash
-source ~/devsecops/vars/fulmenhq-refbolt-cicd.sh
+# Source your credentials file, then set the release tag
+source <your-credentials-file>
 export REFBOLT_VERSION_TAG=v<version>
 ```
-
-The CI/CD vars file provides four stable variables:
-
-| Variable               | Purpose                          |
-| ---------------------- | -------------------------------- |
-| `REFBOLT_GPG_HOMEDIR`  | GnuPG home directory for signing |
-| `REFBOLT_PGP_KEY_ID`   | PGP signing key fingerprint      |
-| `REFBOLT_MINISIGN_KEY` | Path to minisign private key     |
-| `REFBOLT_MINISIGN_PUB` | Path to minisign public key      |
-
-`REFBOLT_VERSION_TAG` is set separately so the vars file remains stable across releases.
 
 ### Release Artifacts & Signing
 
