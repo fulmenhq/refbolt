@@ -44,7 +44,7 @@ FROM debian:trixie-slim
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates tzdata \
+    && apt-get install -y --no-install-recommends ca-certificates git openssh-client tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /out/refbolt /usr/local/bin/refbolt
@@ -55,6 +55,7 @@ RUN chmod +x /usr/local/bin/refbolt-runner \
     && mkdir -p /etc/refbolt
 
 ENV SUPERCRONIC_CRONTAB=/etc/refbolt/crontab
+ENV REFBOLT_GIT_SAFE_DIRECTORY=/workspace
 VOLUME ["/data/archive"]
 
 ENTRYPOINT ["/usr/local/bin/refbolt-runner"]

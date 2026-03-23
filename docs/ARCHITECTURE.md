@@ -118,12 +118,25 @@ docker run --rm \
 ```bash
 make docker-build-runner
 docker run --rm refbolt-runner:local refbolt version
+
+# Non-git scheduled sync
 docker run --rm \
   -e REFBOLT_CONFIG=/work/providers.yaml \
   -e TZ=America/New_York \
   -v ./configs/providers.yaml:/work/providers.yaml:ro \
   -v ./archive:/data/archive \
   -v ./examples/crontab:/etc/refbolt/crontab:ro \
+  refbolt-runner:local
+
+# Git-aware scheduled sync
+docker run --rm \
+  -e REFBOLT_CONFIG=/workspace/configs/providers.yaml \
+  -e REFBOLT_ARCHIVE_ROOT=/workspace/archive \
+  -e REFBOLT_GIT_SAFE_DIRECTORY=/workspace \
+  -e TZ=America/New_York \
+  -v "$PWD:/workspace" \
+  -v ./examples/crontab-git:/etc/refbolt/crontab:ro \
+  -v "$HOME/.ssh:/root/.ssh:ro" \
   refbolt-runner:local
 ```
 

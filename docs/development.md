@@ -30,10 +30,11 @@ refbolt uses environment variables for credentials and configuration. Secrets ar
 
 ### Configuration Variables
 
-| Variable               | Purpose                           | Default                  |
-| ---------------------- | --------------------------------- | ------------------------ |
-| `REFBOLT_CONFIG`       | Path to providers config file     | `configs/providers.yaml` |
-| `REFBOLT_ARCHIVE_ROOT` | Base directory for archive output | `/data/archive`          |
+| Variable                     | Purpose                                       | Default                  |
+| ---------------------------- | --------------------------------------------- | ------------------------ |
+| `REFBOLT_CONFIG`             | Path to providers config file                 | `configs/providers.yaml` |
+| `REFBOLT_ARCHIVE_ROOT`       | Base directory for archive output             | `/data/archive`          |
+| `REFBOLT_GIT_SAFE_DIRECTORY` | Git safe.directory path for mounted worktrees | `/workspace`             |
 
 All config keys can be overridden via env vars with the `REFBOLT_` prefix (e.g., `REFBOLT_ARCHIVE_ROOT=/tmp/archive`).
 
@@ -120,6 +121,29 @@ Archive root: /data/archive
 - `git` must be on PATH — clear error if missing
 - Archive root must be inside a git worktree — clear error if not
 - Non-archive working tree changes are left untouched
+
+### Containerized Git Automation
+
+For containerized `--git-commit` and `--git-push` runs, mount a git worktree instead of only a bare archive directory. The archive root must live inside that worktree.
+
+```bash
+docker run --rm \
+  -e REFBOLT_CONFIG=/workspace/configs/providers.yaml \
+  -e REFBOLT_ARCHIVE_ROOT=/workspace/archive \
+  -e REFBOLT_GIT_SAFE_DIRECTORY=/workspace \
+  -e TZ=America/New_York \
+  -v "$PWD:/workspace" \
+  -v ./examples/crontab-git:/etc/refbolt/crontab:ro \
+  -v "$HOME/.ssh:/root/.ssh:ro" \
+  refbolt-runner:local
+```
+
+Notes:
+
+- `REFBOLT_GIT_SAFE_DIRECTORY=/workspace` avoids Git's ownership check on mounted worktrees
+- The SSH mount path above assumes the container runs as `root`; if that changes, mount keys under the active user's `HOME`
+- HTTPS auth also works if you mount a credential helper or provide `GIT_ASKPASS`
+- Existing non-git schedules can keep using `examples/crontab` with a plain archive volume
 
 ## Adding a New Provider
 
