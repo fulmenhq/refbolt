@@ -67,6 +67,20 @@ func TestNewClient_ArchiveIsRepoRoot(t *testing.T) {
 	}
 }
 
+func TestNewClient_ArchiveNotYetCreated(t *testing.T) {
+	repo := initTestRepo(t)
+	// Archive dir doesn't exist yet — simulates first sync.
+	archiveDir := filepath.Join(repo, "data", "archive")
+
+	c, err := NewClient(archiveDir)
+	if err != nil {
+		t.Fatalf("expected NewClient to succeed for not-yet-created archive dir, got: %v", err)
+	}
+	if c.relArchive != filepath.Join("data", "archive") {
+		t.Errorf("relArchive = %q, want %q", c.relArchive, filepath.Join("data", "archive"))
+	}
+}
+
 func TestNewClient_ArchiveInsideRepo(t *testing.T) {
 	repo := initTestRepo(t)
 	archiveDir := filepath.Join(repo, "archive")

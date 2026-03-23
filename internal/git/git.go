@@ -5,6 +5,7 @@ package git
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -42,11 +43,37 @@ func NewClient(archiveRoot string) (*Client, error) {
 	}
 
 	// Pre-flight: archive root inside a git worktree.
-	out, err := runGit(absArchive, "rev-parse", "--show-toplevel")
+	// The archive directory may not exist yet (first sync), so walk up
+	// to the nearest existing ancestor to run rev-parse.
+	gitDir := absArchive
+	for {
+		if info, statErr := os.Stat(gitDir); statErr == nil && info.IsDir() {
+			break
+		}
+		parent := filepath.Dir(gitDir)
+		if parent == gitDir {
+			return nil, fmt.Errorf("no existing ancestor directory found for archive root %q", absArchive)
+		}
+		gitDir = parent
+	}
+	out, err := runGit(gitDir, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return nil, fmt.Errorf("archive root %q is not inside a git repository: %w", absArchive, err)
 	}
 	repoRoot := strings.TrimSpace(out)
+
+	// When the archive dir doesn't exist yet, absArchive may not be
+	// fully resolved (e.g., /var/... vs /private/var/... on macOS).
+	// Re-derive the canonical archive path from the resolved ancestor.
+	if gitDir != absArchive {
+		// gitDir is resolved (exists), so use it as the canonical base.
+		resolvedGitDir, _ := filepath.EvalSymlinks(gitDir)
+		if resolvedGitDir != "" {
+			// Compute the suffix that was walked up, reattach to resolved base.
+			suffix, _ := filepath.Rel(gitDir, absArchive)
+			absArchive = filepath.Join(resolvedGitDir, suffix)
+		}
+	}
 
 	// Compute repo-root-relative path for safe staging.
 	relArchive, err := filepath.Rel(repoRoot, absArchive)
