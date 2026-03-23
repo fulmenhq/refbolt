@@ -64,6 +64,28 @@ topics:
           - /concepts/validators/index.md
           - /concepts/serialization/index.md
           - /concepts/config/index.md
+  - slug: cloud-infra
+    name: Cloud Infrastructure
+    description: AWS and cloud provider service documentation (opt-in by service)
+    providers:
+      # AWS uses hierarchical llms.txt: top-level index at docs.aws.amazon.com/llms.txt
+      # links to per-service llms.txt files. Each service/guide is a separate provider
+      # entry — no monolithic "aws" provider. See docs/providers/README.md for details.
+      - slug: aws-glue-dg
+        name: AWS Glue Developer Guide
+        base_url: https://docs.aws.amazon.com/glue/latest/dg
+        fetch_strategy: llmstxt-hierarchical
+        llms_txt_url: https://docs.aws.amazon.com/llms.txt
+      - slug: aws-bedrock-userguide
+        name: AWS Bedrock User Guide
+        base_url: https://docs.aws.amazon.com/bedrock/latest/userguide
+        fetch_strategy: llmstxt-hierarchical
+        llms_txt_url: https://docs.aws.amazon.com/llms.txt
+      - slug: aws-bedrock-apiref
+        name: AWS Bedrock API Reference
+        base_url: https://docs.aws.amazon.com/bedrock/latest/APIReference
+        fetch_strategy: llmstxt-hierarchical
+        llms_txt_url: https://docs.aws.amazon.com/llms.txt
   - slug: data-platform
     name: Data Platform
     description: Query engines, warehouses, and database platform docs

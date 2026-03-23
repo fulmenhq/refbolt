@@ -76,7 +76,6 @@ properties:
     required:
       - slug
       - base_url
-      - paths
     properties:
       slug:
         type: string
@@ -130,12 +129,13 @@ properties:
       fetch_strategy:
         type: string
         description: >-
-          How to fetch content from this provider. - native: Fetch .md suffix or known Markdown endpoints directly. - jina: Use Jina Reader (r.jina.ai) to convert HTML to Markdown. - auto: Try native first, fall back to Jina on failure. - github-raw: Discover Markdown via the GitHub tree API, then fetch raw file contents from raw.githubusercontent.com.
+          How to fetch content from this provider. - native: Fetch .md suffix or known Markdown endpoints directly. - jina: Use Jina Reader (r.jina.ai) to convert HTML to Markdown. - auto: Try native first, fall back to Jina on failure. - github-raw: Discover Markdown via the GitHub tree API, then fetch raw file contents from raw.githubusercontent.com. - llmstxt-hierarchical: Fetch a top-level llms.txt index, find the per-service llms.txt matching base_url, and fetch/split it.
         enum:
           - native
           - jina
           - auto
           - github-raw
+          - llmstxt-hierarchical
         default: auto
       github_repo:
         type: string
@@ -210,4 +210,16 @@ properties:
           required:
             - github_repo
             - github_docs_path
+      - if:
+          properties:
+            fetch_strategy:
+              const: llmstxt-hierarchical
+          required:
+            - fetch_strategy
+        then:
+          required:
+            - llms_txt_url
+        else:
+          required:
+            - paths
     additionalProperties: false

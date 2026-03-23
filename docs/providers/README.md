@@ -107,6 +107,50 @@ Supplement: Fetch individual `.md` pages for targeted updates between full syncs
 
 Verified. Full pipeline working — native `llms-full.txt` fetch, URL-based splitting, archive tree output.
 
+## AWS (Hierarchical llms.txt)
+
+AWS publishes a top-level `llms.txt` index (~290KB) at `https://docs.aws.amazon.com/llms.txt` that links to per-service `llms.txt` files. refbolt uses the `llmstxt-hierarchical` strategy to fetch individual services from this index.
+
+### Opt-In by Service
+
+**AWS is not a crawl target.** Each AWS service/guide family is a separate provider entry in `configs/providers.yaml`. Users activate only the services relevant to their project. There is no "sync all AWS" mode.
+
+Multi-guide services (e.g., Bedrock) use separate entries per guide family to avoid archive path collisions:
+
+```yaml
+- slug: aws-bedrock-userguide
+  base_url: https://docs.aws.amazon.com/bedrock/latest/userguide
+  fetch_strategy: llmstxt-hierarchical
+  llms_txt_url: https://docs.aws.amazon.com/llms.txt
+
+- slug: aws-bedrock-apiref
+  base_url: https://docs.aws.amazon.com/bedrock/latest/APIReference
+  fetch_strategy: llmstxt-hierarchical
+  llms_txt_url: https://docs.aws.amazon.com/llms.txt
+```
+
+### Service Matching
+
+Matching uses the `base_url`-derived path prefix — `/bedrock/latest/userguide/` will NOT match `/bedrock-agentcore/latest/...`. This is intentional to prevent false positives in the large AWS catalog.
+
+**Important**: Each provider entry must use a guide-specific `base_url` that matches exactly one `llms.txt` in the upstream index. Do not use broad prefixes like `/glue/latest` when a service has multiple guide families — use `/glue/latest/dg` instead. See [DDR-0002](../decisions/DDR-0002-hierarchical-guide-specificity.md) for the full rationale and rules.
+
+### Content Format
+
+AWS per-service `llms.txt` files are structured table-of-contents indexes (Markdown links to HTML pages), not content dumps. The raw `llms.txt` is archived as-is — it serves as a reference index for the service's documentation structure.
+
+### Verified Services (as of 2026-03-22)
+
+| Service               | llms.txt                                | Size  |
+| --------------------- | --------------------------------------- | ----- |
+| Glue User Guide       | `/glue/latest/dg/llms.txt`              | 228KB |
+| Bedrock User Guide    | `/bedrock/latest/userguide/llms.txt`    | 181KB |
+| Bedrock API Reference | `/bedrock/latest/APIReference/llms.txt` | 228KB |
+
+### Probed Services (observation only)
+
+S3 User Guide (157KB), CloudFormation User Guide (51KB), Lambda Developer Guide (81KB) — all return 200. The hierarchical pattern works broadly across AWS.
+
 ## OpenAI
 
 **Base URL**: `https://platform.openai.com`

@@ -23,17 +23,17 @@ refbolt uses environment variables for credentials and configuration. Secrets ar
 
 ### Credential Variables
 
-| Variable | Purpose | Required | Notes |
-|---|---|---|---|
-| `JINA_API_KEY` | Jina Reader authenticated access | Optional | Higher rate limits for HTML-to-Markdown conversion. Without it, anonymous access works but may hit 429 rate limits on repeated syncs. |
-| `GITHUB_TOKEN` | GitHub API authenticated access | Optional | Required for `github-raw` providers (Trino, kubectl) to avoid anonymous rate limits. GitHub tree API is very restrictive without auth. |
+| Variable       | Purpose                          | Required | Notes                                                                                                                                  |
+| -------------- | -------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `JINA_API_KEY` | Jina Reader authenticated access | Optional | Higher rate limits for HTML-to-Markdown conversion. Without it, anonymous access works but may hit 429 rate limits on repeated syncs.  |
+| `GITHUB_TOKEN` | GitHub API authenticated access  | Optional | Required for `github-raw` providers (Trino, kubectl) to avoid anonymous rate limits. GitHub tree API is very restrictive without auth. |
 
 ### Configuration Variables
 
-| Variable | Purpose | Default |
-|---|---|---|
-| `REFBOLT_CONFIG` | Path to providers config file | `configs/providers.yaml` |
-| `REFBOLT_ARCHIVE_ROOT` | Base directory for archive output | `/data/archive` |
+| Variable               | Purpose                           | Default                  |
+| ---------------------- | --------------------------------- | ------------------------ |
+| `REFBOLT_CONFIG`       | Path to providers config file     | `configs/providers.yaml` |
+| `REFBOLT_ARCHIVE_ROOT` | Base directory for archive output | `/data/archive`          |
 
 All config keys can be overridden via env vars with the `REFBOLT_` prefix (e.g., `REFBOLT_ARCHIVE_ROOT=/tmp/archive`).
 
@@ -53,12 +53,12 @@ Provider credentials (e.g., `OPENAI_API_KEY`, `GITHUB_TOKEN`) are used only for 
 
 ## Fetch Strategies
 
-| Strategy | When Used | Auth |
-|---|---|---|
-| `native` | Provider serves `.md` or `llms-full.txt` directly | None needed |
-| `jina` | Provider serves HTML only | `JINA_API_KEY` (optional) |
-| `auto` | Try native first, fall back to Jina if HTML detected | `JINA_API_KEY` (optional) |
-| `github-raw` | Docs hosted as Markdown in a GitHub repo | `GITHUB_TOKEN` (recommended) |
+| Strategy     | When Used                                            | Auth                         |
+| ------------ | ---------------------------------------------------- | ---------------------------- |
+| `native`     | Provider serves `.md` or `llms-full.txt` directly    | None needed                  |
+| `jina`       | Provider serves HTML only                            | `JINA_API_KEY` (optional)    |
+| `auto`       | Try native first, fall back to Jina if HTML detected | `JINA_API_KEY` (optional)    |
+| `github-raw` | Docs hosted as Markdown in a GitHub repo             | `GITHUB_TOKEN` (recommended) |
 
 ## Running a Sync
 
