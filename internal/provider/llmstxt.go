@@ -247,21 +247,6 @@ func FilterByBaseURL(pages []Page, baseURL string) []Page {
 	return filtered
 }
 
-// IsScopedBaseURL returns true if the base URL has a meaningful path
-// beyond the domain root. Used to determine whether to archive the raw
-// bulk file or just the filtered sections.
-func IsScopedBaseURL(baseURL string) bool {
-	if baseURL == "" {
-		return false
-	}
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return false
-	}
-	path := strings.TrimRight(u.Path, "/")
-	return path != ""
-}
-
 // copyBytes returns a copy of b that doesn't share the underlying array.
 // This is necessary when the source is a bytes.Buffer that will be Reset.
 func copyBytes(b []byte) []byte {

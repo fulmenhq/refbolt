@@ -334,27 +334,6 @@ func TestParseSectionURL(t *testing.T) {
 	}
 }
 
-func TestIsScopedBaseURL(t *testing.T) {
-	tests := []struct {
-		url  string
-		want bool
-	}{
-		{"https://docs.digitalocean.com/reference/api", true},
-		{"https://docs.digitalocean.com/products/kubernetes", true},
-		{"https://platform.claude.com/docs", true},
-		{"https://platform.claude.com", false},
-		{"https://platform.claude.com/", false},
-		{"https://docs.x.ai", false},
-		{"", false},
-	}
-	for _, tt := range tests {
-		got := IsScopedBaseURL(tt.url)
-		if got != tt.want {
-			t.Errorf("IsScopedBaseURL(%q) = %v, want %v", tt.url, got, tt.want)
-		}
-	}
-}
-
 func TestLLMSFullURLToPath(t *testing.T) {
 	tests := []struct {
 		url  string

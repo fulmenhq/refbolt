@@ -85,16 +85,18 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 			}
 
 			// Apply base_url prefix filter for scoped providers (e.g., DO).
-			// Domain-only base URLs pass all sections (backwards-compat).
-			scoped := IsScopedBaseURL(f.cfg.BaseURL)
+			// If filtering reduces the set, this is a scoped provider — skip
+			// the raw bulk file to avoid archiving 40MB per scoped entry.
+			// If filtering passes everything through, archive the raw file
+			// (backwards-compat with Anthropic, Pydantic, xAI).
+			preFilterCount := len(split)
 			split = FilterByBaseURL(split, f.cfg.BaseURL)
+			scoped := len(split) < preFilterCount
 
 			if scoped && len(split) == 0 {
 				return nil, fmt.Errorf("no pages matched base_url scope %q in %s", f.cfg.BaseURL, f.cfg.LLMSTxtURL)
 			}
 
-			// Only archive the raw bulk file for unscoped providers.
-			// Scoped providers (base_url with a path) skip the 40MB dump.
 			if !scoped {
 				pages = append(pages, *llmsPage)
 			}
