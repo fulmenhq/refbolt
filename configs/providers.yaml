@@ -157,3 +157,29 @@ topics:
         auth_env_var: GITHUB_TOKEN
         paths:
           - "**/*.md"
+  - slug: collaboration
+    name: Collaboration Platforms
+    description: Team messaging and collaboration platform docs
+    providers:
+      # Mattermost — OpenAPI v4 source YAML from GitHub (56 files, ~910KB).
+      # Same github-raw strategy as Trino and kubectl.
+      - slug: mattermost-api
+        name: Mattermost REST API v4
+        base_url: https://developers.mattermost.com/api-documentation
+        fetch_strategy: github-raw
+        github_repo: mattermost/mattermost
+        github_docs_path: api/v4/source/
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.yaml"
+      # Mattermost integration guides — Markdown source from developer docs repo.
+      # Covers webhooks, slash commands, bots, PATs, OAuth, plugins.
+      - slug: mattermost-integrate
+        name: Mattermost Integration Guides
+        base_url: https://developers.mattermost.com/integrate
+        fetch_strategy: github-raw
+        github_repo: mattermost/mattermost-developer-documentation
+        github_docs_path: site/content/integrate/
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
