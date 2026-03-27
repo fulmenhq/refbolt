@@ -109,6 +109,7 @@ properties:
         description: >-
           List of URL path patterns to fetch, resolved relative to base_url. Supports doublestar glob patterns. Fetched in order; duplicates are deduplicated. Can be empty when llms_txt_url is set (bulk fetch covers all content).
         minItems: 0
+        default: []
         items:
           type: string
           minLength: 1
@@ -230,6 +231,15 @@ properties:
           required:
             - llms_txt_url
         else:
-          required:
-            - paths
+          # Non-hierarchical providers must have either paths (non-empty)
+          # or llms_txt_url for bulk fetch. Prevents configs that silently
+          # fetch nothing.
+          anyOf:
+            - required:
+                - paths
+              properties:
+                paths:
+                  minItems: 1
+            - required:
+                - llms_txt_url
     additionalProperties: false
