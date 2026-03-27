@@ -183,3 +183,29 @@ topics:
         auth_env_var: GITHUB_TOKEN
         paths:
           - "**/*.md"
+  - slug: self-hosted-suite
+    name: Self-Hosted Suite
+    description: Self-hosted infrastructure — file sync, groupware, email
+    providers:
+      # Nextcloud admin manual — RST source from Sphinx, published to docs.nextcloud.com.
+      # Single repo has 3 manuals; we start with admin only (deployment focus).
+      - slug: nextcloud-admin
+        name: Nextcloud Administration Manual
+        base_url: https://docs.nextcloud.com/server/latest/admin_manual
+        fetch_strategy: github-raw
+        github_repo: nextcloud/documentation
+        github_docs_path: admin_manual/
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.rst"
+      # Stalwart Mail Server — Docusaurus Markdown source, published to stalw.art/docs/.
+      # Single cohesive manual covering JMAP, IMAP, SMTP, CalDAV, spam, clustering.
+      - slug: stalwart
+        name: Stalwart Mail Server Documentation
+        base_url: https://stalw.art/docs
+        fetch_strategy: github-raw
+        github_repo: stalwartlabs/website
+        github_docs_path: docs/
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
