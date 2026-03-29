@@ -142,28 +142,36 @@ var syncCmd = &cobra.Command{
 			}
 
 			// Write sync metadata atomically (success-gated).
+			// Only update metadata when files actually changed or on cold start
+			// (no existing metadata). This prevents git noise from LastSync
+			// timestamp updates when nothing in the archive changed.
 			metaPath := syncpkg.MetaPath(archiveRoot, sp.topicSlug, sp.cfg.Slug)
-			newMeta := &syncpkg.SyncMeta{
-				Provider:    sp.cfg.Slug,
-				Strategy:    string(sp.cfg.FetchStrategy),
-				ConfigHash:  cfgHash,
-				LastSync:    time.Now().UTC(),
-				ContentHash: contentHash,
-				FileCount:   stat.Total,
-			}
-			// Capture hints from the fetcher if available.
-			if hc, ok := fetcher.(provider.HintChecker); ok {
-				if hint, hErr := hc.CheckHints(cmd.Context()); hErr == nil {
-					newMeta.Hint = syncpkg.FetchHint{
-						ETag:          hint.ETag,
-						LastModified:  hint.LastModified,
-						ContentLength: hint.ContentLength,
-						TreeSHA:       hint.TreeSHA,
+			existingMeta, _ := syncpkg.Read(metaPath)
+			isColdStart := existingMeta == nil
+
+			if stat.Written > 0 || isColdStart {
+				newMeta := &syncpkg.SyncMeta{
+					Provider:    sp.cfg.Slug,
+					Strategy:    string(sp.cfg.FetchStrategy),
+					ConfigHash:  cfgHash,
+					LastSync:    time.Now().UTC(),
+					ContentHash: contentHash,
+					FileCount:   stat.Total,
+				}
+				// Capture hints from the fetcher if available.
+				if hc, ok := fetcher.(provider.HintChecker); ok {
+					if hint, hErr := hc.CheckHints(cmd.Context()); hErr == nil {
+						newMeta.Hint = syncpkg.FetchHint{
+							ETag:          hint.ETag,
+							LastModified:  hint.LastModified,
+							ContentLength: hint.ContentLength,
+							TreeSHA:       hint.TreeSHA,
+						}
 					}
 				}
-			}
-			if wErr := syncpkg.Write(metaPath, newMeta); wErr != nil {
-				fmt.Printf("  %s: warning writing metadata: %v\n", sp.cfg.Slug, wErr)
+				if wErr := syncpkg.Write(metaPath, newMeta); wErr != nil {
+					fmt.Printf("  %s: warning writing metadata: %v\n", sp.cfg.Slug, wErr)
+				}
 			}
 
 			if stat.Written > 0 {

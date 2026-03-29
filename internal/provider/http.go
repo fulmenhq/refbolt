@@ -56,12 +56,23 @@ func (f *HTTPFetcher) Name() string {
 }
 
 // CheckHints issues a HEAD request to the provider's primary URL
-// (llms_txt_url or first path) to get ETag/Last-Modified/Content-Length
-// without downloading content. Used by incremental sync to skip unchanged providers.
+// to get ETag/Last-Modified/Content-Length without downloading content.
+// Used by incremental sync to skip unchanged providers.
+//
+// Only safe for single-source providers (one llms_txt_url or one path).
+// Multi-path providers (e.g., OpenAI with 3 paths + openapi_url) return
+// an error — a HEAD on one path cannot represent the entire provider.
 func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 	var hint FetchHint
 
-	// Determine which URL to HEAD.
+	// Multi-source providers: refuse to offer hints.
+	// A HEAD on one URL cannot represent all upstream sources.
+	hasMultipleSources := len(f.cfg.Paths) > 1 || (len(f.cfg.Paths) > 0 && f.cfg.OpenAPIURL != "")
+	if hasMultipleSources {
+		return hint, fmt.Errorf("multi-source provider %s: HEAD check cannot represent all upstream URLs", f.cfg.Slug)
+	}
+
+	// Determine which single URL to HEAD.
 	targetURL := f.cfg.LLMSTxtURL
 	if targetURL == "" && len(f.cfg.Paths) > 0 {
 		targetURL = f.cfg.BaseURL + f.cfg.Paths[0]
