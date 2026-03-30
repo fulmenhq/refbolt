@@ -334,6 +334,122 @@ func TestParseSectionURL(t *testing.T) {
 	}
 }
 
+func TestSplitFrontmatterFullTxt(t *testing.T) {
+	content := []byte(`---
+title: Cloudflare Workers KV
+description: Workers KV is edge storage.
+image: https://developers.cloudflare.com/preview.png
+---
+
+[Skip to content](#_top)
+
+Was this helpful?
+
+YesNo
+
+[ Edit page ](https://github.com/cloudflare/cloudflare-docs/edit/production/src/content/docs/kv/index.mdx) [ Report issue ](https://github.com/cloudflare/cloudflare-docs/issues/new/choose)
+
+Copy page
+
+# Cloudflare Workers KV
+
+Create a global, low-latency, key-value data storage.
+
+---
+
+---
+title: Getting started
+description: Learn how to get started with KV.
+image: https://developers.cloudflare.com/preview.png
+---
+
+[Skip to content](#_top)
+
+Was this helpful?
+
+YesNo
+
+[ Edit page ](https://github.com/cloudflare/cloudflare-docs/edit/production/src/content/docs/kv/get-started.mdx) [ Report issue ](https://github.com/cloudflare/cloudflare-docs/issues/new/choose)
+
+Copy page
+
+# Getting started
+
+Create a basic key-value store.
+
+## Prerequisites
+
+You need a Cloudflare account.
+`)
+
+	pages, err := SplitFrontmatterFullTxt(content, "https://developers.cloudflare.com/kv/llms-full.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pages) != 2 {
+		t.Fatalf("expected 2 pages, got %d", len(pages))
+	}
+
+	// First page: KV overview.
+	if pages[0].Path != "cloudflare-workers-kv.md" {
+		t.Errorf("page[0] Path = %q", pages[0].Path)
+	}
+	if !strings.Contains(string(pages[0].Content), "# Cloudflare Workers KV") {
+		t.Error("page[0] missing heading")
+	}
+	// Boilerplate should be stripped.
+	if strings.Contains(string(pages[0].Content), "Skip to content") {
+		t.Error("page[0] boilerplate not stripped")
+	}
+	if strings.Contains(string(pages[0].Content), "Was this helpful") {
+		t.Error("page[0] boilerplate not stripped")
+	}
+	if strings.Contains(string(pages[0].Content), "Edit page") {
+		t.Error("page[0] boilerplate not stripped")
+	}
+
+	// Second page: Getting started.
+	if pages[1].Path != "getting-started.md" {
+		t.Errorf("page[1] Path = %q", pages[1].Path)
+	}
+	if !strings.Contains(string(pages[1].Content), "# Getting started") {
+		t.Error("page[1] missing heading")
+	}
+	if !strings.Contains(string(pages[1].Content), "## Prerequisites") {
+		t.Error("page[1] missing subheading")
+	}
+}
+
+func TestSplitFrontmatterFullTxt_NoFrontmatter(t *testing.T) {
+	content := []byte("# Just a heading\n\nSome content.\n")
+	pages, err := SplitFrontmatterFullTxt(content, "https://example.com/llms-full.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pages) != 0 {
+		t.Errorf("expected 0 pages for non-frontmatter content, got %d", len(pages))
+	}
+}
+
+func TestTitleToArchivePath(t *testing.T) {
+	tests := []struct {
+		title string
+		want  string
+	}{
+		{"Getting started", "getting-started.md"},
+		{"Workers KV API", "workers-kv-api.md"},
+		{"Cloudflare Workers KV", "cloudflare-workers-kv.md"},
+		{"Create a namespace (API)", "create-a-namespace-api.md"},
+		{"", "index.md"},
+	}
+	for _, tt := range tests {
+		got := titleToArchivePath(tt.title)
+		if got != tt.want {
+			t.Errorf("titleToArchivePath(%q) = %q, want %q", tt.title, got, tt.want)
+		}
+	}
+}
+
 func TestLLMSFullURLToPath(t *testing.T) {
 	tests := []struct {
 		url  string

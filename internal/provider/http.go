@@ -137,6 +137,14 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 					fmt.Printf("  ⚠ %s: full-split error: %v\n", llmsFilename, fullErr)
 				}
 			}
+			// Try frontmatter-based splitting (Cloudflare-style).
+			if len(split) == 0 {
+				var fmErr error
+				split, fmErr = SplitFrontmatterFullTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
+				if fmErr != nil {
+					fmt.Printf("  ⚠ %s: frontmatter-split error: %v\n", llmsFilename, fmErr)
+				}
+			}
 
 			// Apply base_url prefix filter for scoped providers (e.g., DO).
 			// If filtering reduces the set, this is a scoped provider — skip
