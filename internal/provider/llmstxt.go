@@ -154,6 +154,196 @@ func SplitLLMSFullTxt(content []byte, sourceURL string) ([]Page, error) {
 	return pages, nil
 }
 
+// SplitFrontmatterFullTxt parses llms-full.txt files that use YAML frontmatter
+// as section delimiters. This format is used by Cloudflare and potentially other
+// providers that generate rendered Markdown dumps with frontmatter boundaries.
+//
+// The section boundary pattern is:
+//
+//	---
+//	title: Page Title
+//	description: ...
+//	image: ...
+//	---
+//
+//	[Skip to content]  (boilerplate — stripped)
+//	Was this helpful?  (boilerplate — stripped)
+//	[ Edit page ](https://github.com/...) (boilerplate — URL extracted for archive path)
+//	Copy page          (boilerplate — stripped)
+//
+//	# Page Title       (content starts here)
+//
+// The frontmatter `---` block with `title:` is the section boundary.
+// Archive paths are derived from the `[ Edit page ]` GitHub URL if present,
+// or from the frontmatter title as a fallback.
+func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
+	var pages []Page
+	var sections []frontmatterSection
+
+	scanner := bufio.NewScanner(bytes.NewReader(content))
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	var (
+		inFrontmatter bool
+		currentTitle  string // title of the section being collected
+		pendingTitle  string // title being parsed in current frontmatter block
+		rawContent    bytes.Buffer
+		collecting    bool
+		foundTitle    bool
+	)
+
+	flushSection := func() {
+		if currentTitle != "" && rawContent.Len() > 0 {
+			sections = append(sections, frontmatterSection{
+				title:   currentTitle,
+				content: copyBytes(rawContent.Bytes()),
+			})
+		}
+		currentTitle = ""
+		rawContent.Reset()
+		collecting = false
+	}
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+
+		// Detect frontmatter start: "---" when not already in frontmatter.
+		if trimmed == "---" && !inFrontmatter {
+			inFrontmatter = true
+			pendingTitle = ""
+			foundTitle = false
+			continue
+		}
+
+		if inFrontmatter {
+			if trimmed == "---" {
+				if foundTitle {
+					// End of a real frontmatter block (had title:).
+					// Flush the previous section, start new one.
+					if collecting {
+						flushSection()
+					}
+					currentTitle = pendingTitle
+					inFrontmatter = false
+					collecting = true
+					continue
+				}
+				// False start: "---" followed by "---" without title:.
+				// Stay scanning in case the next line starts frontmatter.
+				continue
+			}
+			// Extract title from frontmatter.
+			if strings.HasPrefix(trimmed, "title:") {
+				pendingTitle = strings.TrimSpace(strings.TrimPrefix(trimmed, "title:"))
+				foundTitle = true
+				continue
+			}
+			// Blank lines in potential frontmatter — skip.
+			if trimmed == "" {
+				continue
+			}
+			// Other frontmatter line (description:, image:, etc.) — skip.
+			if foundTitle {
+				continue
+			}
+			// Non-blank, non-title, non---- line without title found.
+			// This was a false start (the --- was just a HR).
+			inFrontmatter = false
+			// Fall through to content collection.
+		}
+
+		if !collecting {
+			continue
+		}
+
+		// Strip Cloudflare boilerplate between frontmatter and content.
+		if isBoilerplateLine(trimmed) {
+			continue
+		}
+
+		rawContent.WriteString(line)
+		rawContent.WriteByte('\n')
+	}
+	if err := scanner.Err(); err != nil {
+		return pages, fmt.Errorf("scanning frontmatter llms-full.txt: %w", err)
+	}
+
+	// Flush last section.
+	flushSection()
+
+	// Convert sections to pages.
+	for _, s := range sections {
+		archivePath := titleToArchivePath(s.title)
+		cleaned := trimTrailingBoundary(s.content)
+		// Also strip any leading blank lines.
+		cleaned = bytes.TrimLeft(cleaned, "\n\r\t ")
+
+		pages = append(pages, Page{
+			SourceURL: sourceURL,
+			Path:      archivePath,
+			Content:   cleaned,
+		})
+	}
+
+	return pages, nil
+}
+
+// frontmatterSection holds a parsed section from a frontmatter-delimited file.
+type frontmatterSection struct {
+	title   string
+	content []byte
+}
+
+// isBoilerplateLine returns true for Cloudflare-style boilerplate lines that
+// appear between the YAML frontmatter and the actual page content.
+func isBoilerplateLine(line string) bool {
+	if line == "" {
+		return false // blank lines are not boilerplate — they're formatting
+	}
+	boilerplate := []string{
+		"[Skip to content]",
+		"Was this helpful?",
+		"YesNo",
+		"Copy page",
+	}
+	for _, b := range boilerplate {
+		if strings.Contains(line, b) {
+			return true
+		}
+	}
+	// "[ Edit page ]" and "[ Report issue ]" links.
+	if strings.HasPrefix(line, "[ Edit page ]") || strings.HasPrefix(line, "[ Report issue ]") {
+		return true
+	}
+	return false
+}
+
+// titleToArchivePath converts a page title to a filesystem path.
+// "Getting started" → "getting-started.md"
+// "Workers KV API" → "workers-kv-api.md"
+func titleToArchivePath(title string) string {
+	s := strings.ToLower(title)
+	s = strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
+			return r
+		}
+		if r == ' ' || r == '_' || r == '/' {
+			return '-'
+		}
+		return -1 // drop
+	}, s)
+	// Collapse multiple hyphens.
+	for strings.Contains(s, "--") {
+		s = strings.ReplaceAll(s, "--", "-")
+	}
+	s = strings.Trim(s, "-")
+	if s == "" {
+		s = "index"
+	}
+	return s + ".md"
+}
+
 // makeLLMSFullPage creates a Page from a URL-delimited section.
 // It derives the archive path from the page URL and trims trailing
 // boundary markers (--- lines and blank lines) from the content.

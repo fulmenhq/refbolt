@@ -127,6 +127,47 @@ topics:
         fetch_strategy: native
         llms_txt_url: https://docs.digitalocean.com/llms-full.txt
         paths: []
+      # Cloudflare — per-product llms-full.txt with YAML frontmatter delimiters.
+      # Three-tier architecture: /llms.txt → /workers/llms.txt → /workers/llms-full.txt.
+      # Each product is self-contained (~50-300KB). No shared bulk file.
+      # No auth required. robots.txt: Content-Signal: ai-train=yes, ai-input=yes.
+      - slug: cloudflare-workers
+        name: Cloudflare Workers
+        base_url: https://developers.cloudflare.com/workers
+        fetch_strategy: native
+        llms_txt_url: https://developers.cloudflare.com/workers/llms-full.txt
+        paths: []
+      - slug: cloudflare-pages
+        name: Cloudflare Pages
+        base_url: https://developers.cloudflare.com/pages
+        fetch_strategy: native
+        llms_txt_url: https://developers.cloudflare.com/pages/llms-full.txt
+        paths: []
+      - slug: cloudflare-r2
+        name: Cloudflare R2
+        base_url: https://developers.cloudflare.com/r2
+        fetch_strategy: native
+        llms_txt_url: https://developers.cloudflare.com/r2/llms-full.txt
+        paths: []
+      - slug: cloudflare-kv
+        name: Cloudflare KV
+        base_url: https://developers.cloudflare.com/kv
+        fetch_strategy: native
+        llms_txt_url: https://developers.cloudflare.com/kv/llms-full.txt
+        paths: []
+        # P2 Cloudflare — uncomment as needed (same native + llms_txt_url pattern):
+        # - slug: cloudflare-d1
+        #   name: Cloudflare D1
+        #   base_url: https://developers.cloudflare.com/d1
+        #   fetch_strategy: native
+        #   llms_txt_url: https://developers.cloudflare.com/d1/llms-full.txt
+        #   paths: []
+        # - slug: cloudflare-durable-objects
+        #   name: Cloudflare Durable Objects
+        #   base_url: https://developers.cloudflare.com/durable-objects
+        #   fetch_strategy: native
+        #   llms_txt_url: https://developers.cloudflare.com/durable-objects/llms-full.txt
+        #   paths: []
   - slug: data-platform
     name: Data Platform
     description: Query engines, warehouses, and database platform docs

@@ -196,3 +196,127 @@ For authenticated access (higher rate limits), set the `JINA_API_KEY` environmen
 - Very large or complex pages may be truncated or fail (HTTP 422).
 - Output quality varies by site complexity (JavaScript-heavy SPAs may produce sparse content).
 - Free tier has lower rate limits; set `JINA_API_KEY` for production use.
+
+## DigitalOcean
+
+**Base URL**: `https://docs.digitalocean.com` (scoped per product via URL prefix)
+**llms-full.txt**: `https://docs.digitalocean.com/llms-full.txt` (40MB, 4,083 pages)
+**Strategy**: `native` + `llms_txt_url` with URL prefix filtering (FA-090)
+
+### Architecture
+
+DigitalOcean publishes a single 40MB `llms-full.txt` containing all documentation. Sections are delimited by `Source: <url>` lines (not `URL:` like Anthropic). Each provider entry scopes to a URL prefix via `base_url`, so only matching sections are archived.
+
+### Opt-In by Product
+
+Six product areas are configured, each fetching from the same shared `llms-full.txt` but scoping differently:
+
+| Slug                    | Scope                  | Pages |
+| ----------------------- | ---------------------- | ----- |
+| `digitalocean-api`      | `/reference/api`       | ~226  |
+| `digitalocean-doctl`    | `/reference/doctl`     | ~542  |
+| `digitalocean-k8s`      | `/products/kubernetes` | ~355  |
+| `digitalocean-dbs`      | `/products/databases`  | ~213  |
+| `digitalocean-droplets` | `/products/droplets`   | ~60   |
+| `digitalocean-spaces`   | `/products/spaces`     | ~40   |
+
+### Known Limitations
+
+- **Repeated fetches**: Each scoped provider re-downloads the full 40MB file. Shared fetch cache planned for v0.0.3.
+- **No auth required**: Public endpoint, no rate limit issues observed.
+
+### Status
+
+Verified. All 6 scoped providers produce correct filtered archives.
+
+## Cloudflare
+
+**Base URL**: `https://developers.cloudflare.com` (per-product)
+**Strategy**: `native` + `llms_txt_url` with YAML frontmatter splitting
+
+### Architecture
+
+Cloudflare has a three-tier llms.txt architecture:
+
+1. **Top-level index** (`/llms.txt`) — links to per-product `llms.txt` files
+2. **Per-product index** (`/workers/llms.txt`) — page link catalog
+3. **Per-product full** (`/workers/llms-full.txt`) — complete rendered Markdown
+
+Each product's `llms-full.txt` is self-contained (50-300KB). No shared bulk file like DigitalOcean.
+
+### Section Delimiter Format
+
+Cloudflare uses **YAML frontmatter** (`---/title:/---`) as section delimiters — different from Anthropic (`URL:`) and DigitalOcean (`Source:`). refbolt's `SplitFrontmatterFullTxt` handles this format and strips Cloudflare boilerplate (Skip to content, Was this helpful, Edit page, Copy page).
+
+### Opt-In by Product
+
+| Slug                 | Product | llms-full.txt            | Pages |
+| -------------------- | ------- | ------------------------ | ----- |
+| `cloudflare-workers` | Workers | `/workers/llms-full.txt` | ~407  |
+| `cloudflare-pages`   | Pages   | `/pages/llms-full.txt`   | ~118  |
+| `cloudflare-r2`      | R2      | `/r2/llms-full.txt`      | ~88   |
+| `cloudflare-kv`      | KV      | `/kv/llms-full.txt`      | ~29   |
+
+P2 products (D1, Durable Objects, Queues, Workers AI, etc.) documented as commented entries in `providers.yaml`.
+
+### robots.txt
+
+Explicitly AI-friendly: `Content-Signal: ai-train=yes, search=yes, ai-input=yes`. No restrictions on developer docs. No auth required.
+
+### Status
+
+Verified. Clean Markdown output — no JSX components, no MDX imports, no framework artifacts.
+
+## Mattermost
+
+**Strategy**: `github-raw`
+
+### Providers
+
+| Slug                   | Source Repo                                     | Docs Path                 | Files    |
+| ---------------------- | ----------------------------------------------- | ------------------------- | -------- |
+| `mattermost-api`       | `mattermost/mattermost`                         | `api/v4/source/`          | ~56 YAML |
+| `mattermost-integrate` | `mattermost/mattermost-developer-documentation` | `site/content/integrate/` | ~54 MD   |
+
+### Notes
+
+- API source is OpenAPI v4 YAML (split across 56 files), not Markdown.
+- Integration guides are standard Markdown from the developer docs repo.
+- `GITHUB_TOKEN` recommended for both.
+
+### Status
+
+Verified.
+
+## Nextcloud
+
+**Strategy**: `github-raw`
+**Source**: `nextcloud/documentation`, path `admin_manual/`
+**Format**: RST (Sphinx)
+
+### Notes
+
+- Single repo contains 3 manuals (admin, user, developer). We start with admin only.
+- 23 subdirs: installation, configuration, maintenance, groupware, office, AI, GDPR, webhooks, ExApps.
+- CC BY 3.0 license.
+- `GITHUB_TOKEN` recommended.
+
+### Status
+
+Verified. ~173 RST files archived.
+
+## Stalwart Mail Server
+
+**Strategy**: `github-raw`
+**Source**: `stalwartlabs/website`, path `docs/`
+**Format**: Docusaurus Markdown
+
+### Notes
+
+- Covers JMAP, IMAP, SMTP, CalDAV, CardDAV, spam filtering, clustering.
+- 17 sections: install, config, server, storage, auth, email, MTA, collaboration, encryption, spam, sieve, cluster, telemetry, management, API, development.
+- `GITHUB_TOKEN` recommended.
+
+### Status
+
+Verified. ~270 Markdown files archived.
