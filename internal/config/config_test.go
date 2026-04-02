@@ -9,16 +9,12 @@ import (
 	"github.com/fulmenhq/refbolt/internal/provider"
 )
 
-func TestLoad_NoConfigFile(t *testing.T) {
-	if err := config.Load(config.LoadOptions{
+func TestLoad_ExplicitMissingConfig(t *testing.T) {
+	err := config.Load(config.LoadOptions{
 		ConfigPath: "/tmp/nonexistent-refbolt-config.yaml",
-	}); err != nil {
-		t.Fatalf("Load() with missing config should succeed: %v", err)
-	}
-
-	// Defaults should apply.
-	if got := config.ArchiveRoot(); got != "/data/archive" {
-		t.Errorf("ArchiveRoot() = %q, want /data/archive", got)
+	})
+	if err == nil {
+		t.Fatal("Load() with explicit missing config should fail")
 	}
 }
 
@@ -60,9 +56,11 @@ func TestLoad_WithConfigFile(t *testing.T) {
 func TestLoad_EnvOverride(t *testing.T) {
 	t.Setenv("REFBOLT_ARCHIVE_ROOT", "/custom/path")
 
-	if err := config.Load(config.LoadOptions{
-		ConfigPath: "/tmp/nonexistent-refbolt-config.yaml",
-	}); err != nil {
+	// Use embedded catalog to test env override.
+	config.SetEmbeddedAssets([]byte("archive_root: /data/archive\ntopics: []\n"), nil)
+	defer config.SetEmbeddedAssets(nil, nil)
+
+	if err := config.Load(config.LoadOptions{UseEmbedded: true}); err != nil {
 		t.Fatalf("Load() failed: %v", err)
 	}
 

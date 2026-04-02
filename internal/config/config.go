@@ -76,13 +76,9 @@ func Load(opts LoadOptions) error {
 		cfg.SetConfigType("yaml")
 
 		if err := cfg.ReadInConfig(); err != nil {
-			var notFound viper.ConfigFileNotFoundError
-			var pathErr *os.PathError
-			if !errors.As(err, &notFound) && !errors.As(err, &pathErr) {
-				return fmt.Errorf("reading config: %w", err)
-			}
-			log.Debug("No config file found, using defaults + env vars")
-			return nil
+			// An explicit config path that doesn't exist is an error,
+			// not a graceful fallback.
+			return fmt.Errorf("reading config %s: %w", opts.ConfigPath, err)
 		}
 		configUsed = cfg.ConfigFileUsed()
 		log.Info(fmt.Sprintf("Loaded config from %s", configUsed))
@@ -110,10 +106,15 @@ func validatePermissive() {
 	}
 }
 
-// validateStrict returns an error if any schema diagnostics are found.
+// validateStrict returns an error if any schema or catalog diagnostics are found.
 // Used by `refbolt validate` to provide deterministic exit codes.
 func validateStrict() error {
 	diags := runSchemaValidation()
+
+	// Cross-check provider slugs against embedded catalog.
+	catalogDiags := checkCatalogSlugs()
+	diags = append(diags, catalogDiags...)
+
 	if len(diags) == 0 {
 		return nil
 	}
@@ -122,6 +123,38 @@ func validateStrict() error {
 		fmt.Fprintf(&b, "  %s\n", d)
 	}
 	return fmt.Errorf("config validation failed:\n%s", b.String())
+}
+
+// checkCatalogSlugs verifies that all provider slugs in the loaded config
+// exist in the embedded catalog. Users cannot invent providers in v0.0.2.
+func checkCatalogSlugs() []string {
+	if len(embeddedCatalog) == 0 {
+		return nil
+	}
+
+	catalogTopics, err := CatalogTopics()
+	if err != nil {
+		return nil
+	}
+
+	// Build catalog slug set.
+	catalogSlugs := make(map[string]bool)
+	for _, t := range catalogTopics {
+		for _, p := range t.Providers {
+			catalogSlugs[p.Slug] = true
+		}
+	}
+
+	// Check loaded config slugs.
+	var diags []string
+	for _, t := range Topics() {
+		for _, p := range t.Providers {
+			if !catalogSlugs[p.Slug] {
+				diags = append(diags, fmt.Sprintf("unknown provider slug %q (not in embedded catalog)", p.Slug))
+			}
+		}
+	}
+	return diags
 }
 
 // runSchemaValidation validates the current config against the embedded schema.
