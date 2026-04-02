@@ -8,32 +8,96 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 
 ## Features
 
-- Native Markdown fetching (`.md` suffix or `/llms-full.txt` where available)
-- Jina Reader fallback for noisy sites
-- Git-aware diff/commit/PR for change detection
-- Envvar/config-driven tree (e.g. `/data/archive/openai/2026-03-21/`)
-- Container-ready design with a slim CLI image
+- 24 providers across 7 topics (LLM APIs, cloud infra, data platforms, and more)
+- 5 fetch strategies: native, jina, auto, github-raw, llmstxt-hierarchical
+- Incremental sync — skips unchanged providers using tree SHA / HEAD hints
+- Provider/topic filtering: `--provider`, `--topic`, `--exclude-provider`
+- Git automation: `--git-commit`, `--git-push`, `--git-trailer`
+- Built-in provider catalog — works without cloning the repo
+- Container-ready with slim CLI and scheduled runner images
 
 ## Quick Start
 
-```bash
-# Build from source
-make build
+### Install and run (no source tree needed)
 
-# One-shot sync (all providers)
+```bash
+# Install via Homebrew
+brew install fulmenhq/tap/refbolt
+
+# Generate a config with the topics you need
+refbolt init --topic llm-api --output providers.yaml
+
+# Or start with everything and trim later
+refbolt init --all --output providers.yaml
+
+# Run your first sync
+refbolt sync --all
+```
+
+### Build from source
+
+```bash
+make build
 ./bin/refbolt sync --all --verbose
+```
+
+## Configuration
+
+refbolt ships with an embedded catalog of all supported providers. `refbolt init` generates a `providers.yaml` from this catalog with the topics you select.
+
+### Config resolution
+
+refbolt looks for config in this order:
+
+1. `--config <path>` (explicit flag)
+2. `REFBOLT_CONFIG` env var
+3. `./providers.yaml` (current directory)
+4. `~/.config/refbolt/providers.yaml` (user config)
+5. Built-in catalog (zero-config fallback)
+
+### Validate your config
+
+```bash
+refbolt validate                        # check ./providers.yaml
+refbolt validate --config my-config.yaml  # check a specific file
+```
+
+### Selective sync
+
+Not every project needs all 24 providers. Pick what you need:
+
+```bash
+# Just the LLM API docs
+refbolt sync --topic llm-api
+
+# Only Anthropic and OpenAI
+refbolt sync --provider anthropic --provider openai
+
+# Everything except the large GitHub-backed repos
+refbolt sync --all --exclude-provider trino --exclude-provider kubernetes-kubectl
+
+# Only one AWS service
+refbolt sync --provider aws-bedrock-userguide
 ```
 
 ## Docker
 
 ```bash
-make docker-build
+# Generate config locally, then mount it
+refbolt init --all --output providers.yaml
 
+# One-shot sync
 docker run --rm \
-  -e REFBOLT_CONFIG=/work/providers.yaml \
-  -v ./configs/providers.yaml:/work/providers.yaml:ro \
+  -v ./providers.yaml:/work/providers.yaml:ro \
   -v ./archive:/data/archive \
   refbolt:local sync --all --verbose
+
+# Scheduled runner (cron-based)
+docker run -d \
+  -v ./providers.yaml:/work/providers.yaml:ro \
+  -v ./archive:/data/archive \
+  -v ./crontab:/etc/refbolt/crontab:ro \
+  refbolt-runner:local
 ```
 
 ## Intended Use
@@ -43,7 +107,9 @@ refbolt is designed for local, offline developer reference — keeping version-p
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — component design, storage model, deployment topology
-- [Vision](docs/VISION.md) — strategic rationale and long-term trajectory
+- [Development](docs/development.md) — build, test, env vars, fetch strategies, git automation
+- [Providers](docs/providers/README.md) — per-provider fetch notes and verification status
+- [CI/CD](docs/cicd.md) — workflow triggers, test tiers, signing
 - [Decision Records](docs/decisions/) — ADRs, SDRs, DDRs
 
 ## License
