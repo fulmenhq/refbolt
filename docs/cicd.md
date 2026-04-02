@@ -79,15 +79,46 @@ For nightly or pre-merge full validation:
 ## Build
 
 ```bash
-make build          # → bin/refbolt
+make build          # → bin/refbolt (current platform)
+make install        # → build + copy to ~/.local/bin
+make build-all      # → bin/ with all 6 platform binaries
 make clean          # purge bin/, dist/, Go caches
 ```
+
+## Cross-Compilation and CGO
+
+**refbolt is `CGO_ENABLED=0`.** This is a deliberate architectural choice that simplifies the entire build and release pipeline:
+
+- **Single-runner cross-compilation**: All 6 platform binaries are built from one `ubuntu-latest` runner using `GOOS`/`GOARCH` environment variables. No platform-specific runners, no build matrices, no C toolchains.
+- **Static binaries**: No libc dependency, no dynamic linking. Binaries run on any machine with the matching OS/arch — no runtime dependencies.
+- **No native ARM64 runners needed**: `windows/arm64` and `linux/arm64` are cross-compiled from x64. Go's compiler handles this natively when CGO is disabled.
+
+**If CGO is ever needed** (e.g., for SQLite bindings, system TLS, or native crypto), the build pipeline would need:
+
+- Separate build jobs per platform (or a cross-compiler like `zig cc`)
+- Native ARM64 runners for ARM64 binaries (the org has `windows-latest-arm64-s` and `ubuntu-latest-arm64-s` available)
+- Platform-specific Dockerfiles for containerized builds
+
+For now, staying CGO-free keeps the pipeline simple. Track this decision if dependencies change.
+
+### Build Targets
+
+| Platform      | GOOS    | GOARCH | Binary Name                 |
+| ------------- | ------- | ------ | --------------------------- |
+| Linux x64     | linux   | amd64  | `refbolt-linux-amd64`       |
+| Linux ARM64   | linux   | arm64  | `refbolt-linux-arm64`       |
+| macOS x64     | darwin  | amd64  | `refbolt-darwin-amd64`      |
+| macOS ARM64   | darwin  | arm64  | `refbolt-darwin-arm64`      |
+| Windows x64   | windows | amd64  | `refbolt-windows-amd64.exe` |
+| Windows ARM64 | windows | arm64  | `refbolt-windows-arm64.exe` |
 
 ## Makefile Targets
 
 | Target                     | Description                              | CI-safe |
 | -------------------------- | ---------------------------------------- | ------- |
 | `build`                    | Build binary to `bin/refbolt`            | Yes     |
+| `install`                  | Build + copy to `~/.local/bin`           | No      |
+| `build-all`                | Build all 6 platform binaries            | Yes     |
 | `test`                     | Full test suite (includes network tests) | Nightly |
 | `test-short`               | Short tests only (no network, no git)    | Yes     |
 | `test-cov`                 | Tests with coverage report               | Nightly |
@@ -95,7 +126,8 @@ make clean          # purge bin/, dist/, Go caches
 | `lint`                     | Go vet + goneat assess                   | Yes     |
 | `check-all`                | fmt + lint + test                        | Nightly |
 | `clean`                    | Purge bin/, dist/, Go caches             | Yes     |
-| `release-build`            | Build multi-platform release artifacts   | Yes     |
+| `embed-assets`             | Sync embedded catalog/schema copies      | Yes     |
+| `release-build`            | Build 6-platform release artifacts       | Yes     |
 | `release-checksums`        | Generate SHA256SUMS/SHA512SUMS           | Yes     |
 | `release-sign`             | Sign checksum manifests (local only)     | No      |
 | `release-download`         | Download CI-built release assets         | No      |
@@ -103,6 +135,15 @@ make clean          # purge bin/, dist/, Go caches
 | `release-verify-keys`      | Verify exported keys are public-only     | No      |
 | `release-verify-checksums` | Verify checksums against artifacts       | No      |
 | `release-upload`           | Upload provenance to GitHub Release      | No      |
+
+## Package Distribution
+
+| Channel  | Repository                  | Update mechanism                                |
+| -------- | --------------------------- | ----------------------------------------------- |
+| Homebrew | `fulmenhq/homebrew-tap`     | Update `Formula/refbolt.rb` with new checksums  |
+| Scoop    | `fulmenhq/scoop-bucket`     | Update `bucket/refbolt.json` with new checksums |
+| Docker   | `ghcr.io/fulmenhq/refbolt`  | Rebuild images (when registry is set up)        |
+| Go       | `go install github.com/...` | Automatic via Go module proxy                   |
 
 ## CI Workflows
 
@@ -123,12 +164,12 @@ Both jobs run in the `ghcr.io/fulmenhq/goneat-tools-runner:v0.3.3` container. Go
 
 **Trigger:** push of a `v*` tag (e.g., `git push origin v0.2.0`).
 
-| Step                    | What it does                                                             |
-| ----------------------- | ------------------------------------------------------------------------ |
-| Validate VERSION        | Fails if `VERSION` file content does not match the pushed tag            |
-| Lint + test             | `make lint` + `make test-short`                                          |
-| Build release artifacts | `make release-build` — 5 binaries (linux/darwin × amd64/arm64 + windows) |
-| Publish draft release   | `softprops/action-gh-release` with `draft: true` + all `dist/release/*`  |
+| Step                    | What it does                                                            |
+| ----------------------- | ----------------------------------------------------------------------- |
+| Validate VERSION        | Fails if `VERSION` file content does not match the pushed tag           |
+| Lint + test             | `make lint` + `make test-short`                                         |
+| Build release artifacts | `make release-build` — 6 binaries (linux/darwin/windows × amd64/arm64)  |
+| Publish draft release   | `softprops/action-gh-release` with `draft: true` + all `dist/release/*` |
 
 The release is created as a **draft**. After CI completes:
 

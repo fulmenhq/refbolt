@@ -105,7 +105,7 @@ dependencies:  ## Tidy and verify Go module dependencies
 	@go mod verify
 	@echo "✅ Dependencies verified"
 
-install:  ## Install dependencies (alias for bootstrap)
+bootstrap-deps:  ## Install dependencies (alias for bootstrap)
 	@$(MAKE) bootstrap
 
 run:  ## Run CLI in development mode (sync all providers)
@@ -164,9 +164,10 @@ release-build: release-clean ## Build release artifacts into dist/release
 	@GOOS=darwin GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o "$(DIST_RELEASE)/$(BINARY_NAME)-darwin-amd64" ./cmd/$(BINARY_NAME)
 	@GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o "$(DIST_RELEASE)/$(BINARY_NAME)-darwin-arm64" ./cmd/$(BINARY_NAME)
 	@GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o "$(DIST_RELEASE)/$(BINARY_NAME)-windows-amd64.exe" ./cmd/$(BINARY_NAME)
+	@GOOS=windows GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o "$(DIST_RELEASE)/$(BINARY_NAME)-windows-arm64.exe" ./cmd/$(BINARY_NAME)
 	@GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o "$(DIST_RELEASE)/$(BINARY_NAME)-linux-arm64" ./cmd/$(BINARY_NAME)
 	@$(MAKE) release-checksums
-	@echo "✅ Release build complete"
+	@echo "✅ Release build complete (6 platforms)"
 
 release-checksums: ## Generate SHA256SUMS and SHA512SUMS in dist/release
 	@echo "→ Generating checksum manifests in $(DIST_RELEASE)..."
@@ -221,6 +222,15 @@ build: dependencies embed-assets ## Build binary for current platform
 	@go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
 	@echo "✓ Binary built: bin/$(BINARY_NAME)"
 
+# Install path: ~/.local/bin on macOS/Linux, %LOCALAPPDATA%/Programs on Windows.
+INSTALL_DIR ?= $(HOME)/.local/bin
+
+install: build ## Install binary to user-local path (INSTALL_DIR=~/.local/bin)
+	@mkdir -p "$(INSTALL_DIR)"
+	@cp bin/$(BINARY_NAME) "$(INSTALL_DIR)/$(BINARY_NAME)"
+	@echo "✓ Installed $(BINARY_NAME) to $(INSTALL_DIR)/$(BINARY_NAME)"
+	@echo "  Ensure $(INSTALL_DIR) is on your PATH"
+
 build-all:  ## Build multi-platform binaries and generate checksums
 	@echo "→ Building for multiple platforms..."
 	@mkdir -p bin
@@ -228,9 +238,10 @@ build-all:  ## Build multi-platform binaries and generate checksums
 	@GOOS=darwin GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-darwin-amd64 ./cmd/$(BINARY_NAME)
 	@GOOS=darwin GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-darwin-arm64 ./cmd/$(BINARY_NAME)
 	@GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-windows-amd64.exe ./cmd/$(BINARY_NAME)
+	@GOOS=windows GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-windows-arm64.exe ./cmd/$(BINARY_NAME)
 	@GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-linux-arm64 ./cmd/$(BINARY_NAME)
 	@cd bin && (sha256sum * > SHA256SUMS.txt 2>/dev/null || shasum -a 256 * > SHA256SUMS.txt)
-	@echo "✓ Multi-platform binaries built in bin/"
+	@echo "✓ Multi-platform binaries built in bin/ (6 platforms)"
 
 docker-build:  ## Build local CLI container image
 	@echo "→ Building Docker image $(DOCKER_IMAGE)..."

@@ -140,6 +140,15 @@ Update the formula in `fulmenhq/homebrew-tap` (sibling repo at `../homebrew-tap`
 - [ ] Commit and push to `homebrew-tap/main`
 - [ ] Verify: `brew update && brew upgrade refbolt && refbolt version`
 
+### Scoop (Windows)
+
+Update the manifest in `fulmenhq/scoop-bucket` (sibling repo at `../scoop-bucket`):
+
+- [ ] Update `bucket/refbolt.json`: version, URLs, and SHA256 checksums (both `64bit` and `arm64`)
+- [ ] Run `make precommit` in the scoop-bucket repo to validate
+- [ ] Commit and push to `scoop-bucket/main`
+- [ ] Verify: `scoop update && scoop install fulmenhq/refbolt && refbolt version`
+
 ### Docker Images
 
 - [ ] Build and test local images:

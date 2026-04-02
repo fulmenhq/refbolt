@@ -52,11 +52,11 @@ func TestInitCmd_StdoutIsValidYAML(t *testing.T) {
 	rootCmd.SetArgs([]string{"init", "--all"})
 	err := rootCmd.Execute()
 
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	stdout := buf.String()
 
 	if err != nil {
