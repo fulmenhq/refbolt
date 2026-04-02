@@ -41,6 +41,24 @@ make build
 ./bin/refbolt sync --all --verbose
 ```
 
+## Prerequisites
+
+refbolt works out of the box for most providers. Two optional API keys unlock higher rate limits:
+
+| Variable       | When needed                                          | How to get it                        |
+| -------------- | ---------------------------------------------------- | ------------------------------------ |
+| `JINA_API_KEY` | Providers using Jina Reader (OpenAI)                 | https://jina.ai/reader               |
+| `GITHUB_TOKEN` | GitHub-backed providers (Trino, kubectl, Mattermost) | GitHub Settings → Developer → Tokens |
+
+Set them before syncing:
+
+```bash
+export JINA_API_KEY=jina_...
+export GITHUB_TOKEN=ghp_...
+```
+
+Without these keys, anonymous access works but may hit rate limits on repeated syncs. See [docs/development.md](docs/development.md) for details.
+
 ## Configuration
 
 refbolt ships with an embedded catalog of all supported providers. `refbolt init` generates a `providers.yaml` from this catalog with the topics you select.

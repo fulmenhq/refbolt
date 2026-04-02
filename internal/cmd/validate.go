@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/fulmenhq/refbolt/internal/config"
 	"github.com/spf13/cobra"
@@ -34,6 +35,15 @@ and provider slug validity. Exits 1 on errors, 0 on success.`,
 		fmt.Printf("Valid config: %d topics, %d providers (%d enabled, %d disabled)\n",
 			len(topics), totalProviders, enabledProviders, disabledProviders)
 		fmt.Printf("Config source: %s\n", config.ConfigUsed())
+
+		// Advisory warnings for missing credential env vars (exit 0).
+		creds := config.CredentialRequirements(topics)
+		for _, c := range creds {
+			if os.Getenv(c.EnvVar) == "" {
+				fmt.Fprintf(os.Stderr, "warning: %s not set — %s (%s)\n",
+					c.EnvVar, joinSlugs(c.Providers), c.Reason)
+			}
+		}
 
 		return nil
 	},
