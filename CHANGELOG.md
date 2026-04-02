@@ -6,6 +6,33 @@ All notable changes to this project will be documented in this file. Older entri
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-04-02
+
+16 new providers, incremental sync, user-facing config, and public-readiness.
+
+### Added
+
+- **16 new providers**: DigitalOcean (6), Cloudflare (4), Mattermost (2), Nextcloud, Stalwart (PR#20, #21, #22, #24)
+- **Incremental sync**: per-provider `.sync-meta.json` with config hash, content hash, and strategy-specific hints (tree SHA, ETag/HEAD). `--force` bypass. (PR#23)
+- **`refbolt init`**: generate `providers.yaml` from embedded catalog with topic/provider selection (PR#25)
+- **`refbolt validate`**: standalone config validation against embedded schema with strict exit codes (PR#25)
+- **Embedded catalog and schema**: binary ships with full provider catalog and JSON Schema via `go:embed` — no filesystem dependency (PR#25)
+- **`--config` global flag**: explicit config path available on all commands (PR#25)
+- **Config resolution chain**: `--config` → `REFBOLT_CONFIG` → `./providers.yaml` → `~/.config/refbolt/providers.yaml` → embedded catalog (PR#25)
+- **Provider/topic filtering**: `--provider`, `--topic`, `--exclude-provider` flags with union semantics (PR#19)
+- **YAML frontmatter splitter**: `SplitFrontmatterFullTxt` for Cloudflare-style `llms-full.txt` with boilerplate stripping (PR#24)
+- **URL prefix filtering**: `FilterByBaseURL` scopes split pages by `base_url` for shared bulk files like DigitalOcean (PR#20)
+- **First-run credential guidance**: `init` stderr hints, `validate` env var warnings, inline config comments, README prerequisites section (PR#26)
+
+### Changed
+
+- **Fetch timeout**: per-provider `fetch_timeout` field (default 30s), Jina retry with 2x timeout on deadline exceeded (PR#19)
+- **Write-level dedup**: SHA-256 content hash comparison before writing — `WriteStat` with written/skipped counts (PR#23)
+
+### Full release notes
+
+See [docs/releases/v0.0.2.md](docs/releases/v0.0.2.md) for provider table, strategy details, and PR list.
+
 ## [0.0.1] - 2026-03-23
 
 First functional release of refbolt — container-first CLI for archiving web documentation into clean, date-versioned Markdown trees.
