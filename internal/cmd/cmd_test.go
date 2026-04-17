@@ -150,6 +150,68 @@ func TestSyncCmd_ConfigFlag(t *testing.T) {
 	// Full sync test would require network — covered by existing fetch tests.
 }
 
+// TestInitCmd_RealCatalog_RoundTripsValid regresses the bug where
+// `refbolt init --all` emitted YAML that failed `refbolt validate` — caused
+// by (a) mis-indented credential-hint comments popping providers up a level
+// and (b) compound Go duration strings rejected by the schema's single-unit
+// pattern. With a real catalog loaded, init output must parse and validate.
+func TestInitCmd_RealCatalog_RoundTripsValid(t *testing.T) {
+	root := findProjectRoot(t)
+	configPath := filepath.Join(root, "configs", "providers.yaml")
+	schemaPath := filepath.Join(root, "schemas", "providers", "v0", "providers.schema.yaml")
+	for _, p := range []string{configPath, schemaPath} {
+		if _, err := os.Stat(p); os.IsNotExist(err) {
+			t.Skipf("required fixture missing: %s", p)
+		}
+	}
+
+	catalogBytes, _ := os.ReadFile(configPath)
+	schemaBytes, _ := os.ReadFile(schemaPath)
+	config.SetEmbeddedAssets(catalogBytes, schemaBytes)
+	t.Cleanup(func() { config.SetEmbeddedAssets(nil, nil) })
+
+	outPath := filepath.Join(t.TempDir(), "providers.yaml")
+
+	// Reset the init flags cobra leaves behind between runs.
+	initAll, initForce = false, false
+	initOutput = ""
+	initTopics = nil
+	t.Cleanup(func() {
+		initAll, initForce = false, false
+		initOutput = ""
+		initTopics = nil
+	})
+
+	rootCmd.SetArgs([]string{"init", "--all", "--output", outPath})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("init --all failed: %v", err)
+	}
+
+	emitted, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("reading init output: %v", err)
+	}
+
+	// Comments on Jina/GITHUB_TOKEN providers must land at the provider indent
+	// (8 spaces) rather than the topic indent (6 spaces); the latter made the
+	// following provider parse as a topic.
+	for _, line := range strings.Split(string(emitted), "\n") {
+		if !strings.HasPrefix(strings.TrimLeft(line, " "), "#") {
+			continue
+		}
+		leading := len(line) - len(strings.TrimLeft(line, " "))
+		if leading != 0 && leading != 8 {
+			t.Errorf("comment at unexpected indent %d (want 0 or 8): %q", leading, line)
+		}
+	}
+
+	// Round-trip through validate.
+	rootCmd.SetArgs([]string{"validate", "--config", outPath})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("validate rejected init output: %v\n---output---\n%s", err, emitted)
+	}
+}
+
 func findProjectRoot(t *testing.T) string {
 	t.Helper()
 	dir, err := os.Getwd()
