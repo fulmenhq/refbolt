@@ -24,6 +24,11 @@ services:
       - ./archive:/data/archive
     environment:
       - REFBOLT_CONFIG=/work/providers.yaml
+      # Pin archive_root to the bind-mount target so writes land on the host
+      # regardless of what the mounted providers.yaml specifies (refbolt init
+      # emits a cwd-relative ./archive, which would resolve to /app/archive
+      # inside the container and never reach the bind mount).
+      - REFBOLT_ARCHIVE_ROOT=/data/archive
   runner:
     build:
       context: .
@@ -35,6 +40,7 @@ services:
       - ./archive:/data/archive
     environment:
       - REFBOLT_CONFIG=/work/providers.yaml
+      - REFBOLT_ARCHIVE_ROOT=/data/archive
       - TZ=UTC
     restart: unless-stopped
   runner-git:
