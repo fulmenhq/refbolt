@@ -41,6 +41,11 @@ make build
 ./bin/refbolt sync --all --verbose
 ```
 
+### Run in Docker
+
+Prefer containers? The repo ships a `docker-compose.yml` with a one-shot CLI
+and a scheduled runner — see the [Docker section](#docker) below.
+
 ## Prerequisites
 
 refbolt works out of the box for most providers. Two optional API keys unlock higher rate limits:
@@ -100,22 +105,45 @@ refbolt sync --provider aws-bedrock-userguide
 
 ## Docker
 
+The repo ships a `docker-compose.yml` with three services — a one-shot CLI, a
+scheduled runner, and a git-aware runner profile. All three share a host
+bind-mounted `./archive/` directory so snapshots stay visible to your editor.
+
 ```bash
-# Generate config locally, then mount it
+# 1. Generate a providers.yaml at the repo root (the compose services mount it)
 refbolt init --all --output providers.yaml
 
-# One-shot sync
+# 2. Build the images
+docker compose build
+
+# 3. Run a one-shot sync
+docker compose run --rm refbolt sync --all --verbose
+
+# 4. Or start the scheduled runner (daily 06:00 UTC by default)
+docker compose up -d runner
+docker compose logs -f runner
+
+# 5. Git-aware scheduled runner (mounts worktree + ~/.ssh for signed pushes)
+docker compose --profile git up -d runner-git
+
+# Stop everything — the ./archive/ directory persists
+docker compose down
+```
+
+Archive storage is a host bind mount by default so the snapshot tree is
+directly visible to your editor and diff tools. For orchestrated or NFS
+deployments, add a `compose.override.yml` — see
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the override pattern and
+forward plan for object-store backends.
+
+For scripting or CI without compose, the raw `docker run` recipes still work:
+
+```bash
+# One-shot sync with explicit mounts
 docker run --rm \
   -v ./providers.yaml:/work/providers.yaml:ro \
   -v ./archive:/data/archive \
   refbolt:local sync --all --verbose
-
-# Scheduled runner (cron-based)
-docker run -d \
-  -v ./providers.yaml:/work/providers.yaml:ro \
-  -v ./archive:/data/archive \
-  -v ./crontab:/etc/refbolt/crontab:ro \
-  refbolt-runner:local
 ```
 
 ## Intended Use
