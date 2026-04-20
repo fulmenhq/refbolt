@@ -30,11 +30,20 @@ refbolt uses environment variables for credentials and configuration. Secrets ar
 
 ### Configuration Variables
 
-| Variable                     | Purpose                                       | Default                  |
-| ---------------------------- | --------------------------------------------- | ------------------------ |
-| `REFBOLT_CONFIG`             | Path to providers config file                 | `configs/providers.yaml` |
-| `REFBOLT_ARCHIVE_ROOT`       | Base directory for archive output             | `/data/archive`          |
-| `REFBOLT_GIT_SAFE_DIRECTORY` | Git safe.directory path for mounted worktrees | `/workspace`             |
+| Variable                     | Purpose                                       | Default                                                                      |
+| ---------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `REFBOLT_CONFIG`             | Path to providers config file                 | _(unset)_ — resolution chain below                                           |
+| `REFBOLT_ARCHIVE_ROOT`       | Base directory for archive output             | from `archive_root:` in config; `./archive` when running on embedded catalog |
+| `REFBOLT_GIT_SAFE_DIRECTORY` | Git safe.directory path for mounted worktrees | `/workspace` (runner image only; no default for the CLI)                     |
+
+`REFBOLT_CONFIG` follows a resolution chain rather than a single default (see
+[docs/ARCHITECTURE.md → Configuration Model](ARCHITECTURE.md#resolution-chain)):
+
+1. `--config <path>` (explicit flag)
+2. `REFBOLT_CONFIG` env var
+3. `./providers.yaml`
+4. `~/.config/refbolt/providers.yaml`
+5. Embedded catalog (zero-config fallback)
 
 All config keys can be overridden via env vars with the `REFBOLT_` prefix (e.g., `REFBOLT_ARCHIVE_ROOT=/tmp/archive`).
 
@@ -54,12 +63,15 @@ Provider credentials (e.g., `OPENAI_API_KEY`, `GITHUB_TOKEN`) are used only for 
 
 ## Fetch Strategies
 
-| Strategy     | When Used                                            | Auth                         |
-| ------------ | ---------------------------------------------------- | ---------------------------- |
-| `native`     | Provider serves `.md` or `llms-full.txt` directly    | None needed                  |
-| `jina`       | Provider serves HTML only                            | `JINA_API_KEY` (optional)    |
-| `auto`       | Try native first, fall back to Jina if HTML detected | `JINA_API_KEY` (optional)    |
-| `github-raw` | Docs hosted as Markdown in a GitHub repo             | `GITHUB_TOKEN` (recommended) |
+| Strategy               | When Used                                                                    | Auth                         |
+| ---------------------- | ---------------------------------------------------------------------------- | ---------------------------- |
+| `native`               | Provider serves `.md`, `llms.txt`, `llms-full.txt`, or an OpenAPI endpoint   | None needed                  |
+| `jina`                 | Provider serves HTML only                                                    | `JINA_API_KEY` (optional)    |
+| `auto`                 | Try native first, fall back to Jina if HTML detected                         | `JINA_API_KEY` (optional)    |
+| `github-raw`           | Docs hosted as Markdown in a GitHub repo                                     | `GITHUB_TOKEN` (recommended) |
+| `llmstxt-hierarchical` | Cloud-provider aggregate indexes (AWS, Azure, GCP) with per-service llms.txt | None needed                  |
+
+See [docs/ARCHITECTURE.md → Fetch Strategies](ARCHITECTURE.md#4-fetch-strategies) for splitter variants and implementation pointers.
 
 ## Running a Sync
 
@@ -81,8 +93,8 @@ At least one selector is required: `--all`, `--provider`, or `--topic`.
 # Exclude from --all
 ./bin/refbolt sync --all --exclude-provider trino
 
-# Output lands in the archive_root (default: /data/archive)
-# Override with REFBOLT_ARCHIVE_ROOT=/tmp/archive
+# Output lands in archive_root from your providers.yaml (or ./archive on embedded catalog).
+# Override per-run with REFBOLT_ARCHIVE_ROOT=/tmp/archive
 ```
 
 ### Selection Semantics
@@ -157,7 +169,7 @@ For containerized `--git-commit` and `--git-push` runs, mount a git worktree ins
 
 ```bash
 docker run --rm \
-  -e REFBOLT_CONFIG=/workspace/configs/providers.yaml \
+  -e REFBOLT_CONFIG=/workspace/providers.yaml \
   -e REFBOLT_ARCHIVE_ROOT=/workspace/archive \
   -e REFBOLT_GIT_SAFE_DIRECTORY=/workspace \
   -e TZ=America/New_York \

@@ -8,9 +8,9 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 
 ## Features
 
-- 24 providers across 7 topics (LLM APIs, cloud infra, data platforms, and more)
+- 23 providers across 7 topics (LLM APIs, cloud infra, data platforms, and more)
 - 5 fetch strategies: native, jina, auto, github-raw, llmstxt-hierarchical
-- Incremental sync — skips unchanged providers using tree SHA / HEAD hints
+- Incremental sync — skips unchanged providers via per-provider `.sync-meta.json` hints
 - Provider/topic filtering: `--provider`, `--topic`, `--exclude-provider`
 - Git automation: `--git-commit`, `--git-push`, `--git-trailer`
 - Built-in provider catalog — works without cloning the repo
@@ -87,7 +87,7 @@ refbolt validate --config my-config.yaml  # check a specific file
 
 ### Selective sync
 
-Not every project needs all 24 providers. Pick what you need:
+Not every project needs all 23 providers. Pick what you need:
 
 ```bash
 # Just the LLM API docs
