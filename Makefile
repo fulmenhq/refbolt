@@ -216,6 +216,8 @@ embed-assets: ## Sync embedded assets from source of truth
 	@echo "# Source of truth: schemas/providers/v0/providers.schema.yaml" >> assets/schema.yaml
 	@echo "# Run 'make embed-assets' to regenerate." >> assets/schema.yaml
 	@cat schemas/providers/v0/providers.schema.yaml >> assets/schema.yaml
+	@# JSONL is parsed line-by-line — cannot carry a comment header. Copy verbatim.
+	@cp registry/providers.jsonl assets/registry.jsonl
 
 build: dependencies embed-assets ## Build binary for current platform
 	@echo "→ Building $(BINARY_NAME) v$(VERSION)..."
