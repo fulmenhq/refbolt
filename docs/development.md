@@ -73,6 +73,41 @@ Provider credentials (e.g., `OPENAI_API_KEY`, `GITHUB_TOKEN`) are used only for 
 
 See [docs/ARCHITECTURE.md → Fetch Strategies](ARCHITECTURE.md#4-fetch-strategies) for splitter variants and implementation pointers.
 
+## Browsing the Catalog
+
+`refbolt catalog` is a read-only view over the embedded catalog (with registry
+metadata joined in by slug). No `providers.yaml` or network access required.
+
+```bash
+# Human-readable table of all providers
+./bin/refbolt catalog list
+
+# Filters
+./bin/refbolt catalog list --topic llm-api
+./bin/refbolt catalog list --strategy jina
+
+# JSON output (self-describing envelope; nullable estimated_pages/description)
+./bin/refbolt catalog list --json
+
+# Full detail for one provider
+./bin/refbolt catalog show anthropic
+
+# Topic summary with counts and descriptions
+./bin/refbolt catalog topics
+```
+
+Notes:
+
+- The `--config` flag is accepted (since it's a persistent flag on the root
+  command) but is silently ignored on catalog subcommands — they always read
+  from embedded data. This is enforced by a regression test in
+  `internal/cmd/catalog_test.go`.
+- Unknown slugs on `show` return a "Did you mean?" suggestion computed by a
+  small Levenshtein/prefix matcher in `internal/config/catalog.go`.
+- Registry-only slugs (currently `aws-cli`) do not appear in `list` or `show`
+  — listing a provider that `sync` can't fetch would be misleading. See
+  `docs/ARCHITECTURE.md` for the catalog-vs-registry distinction.
+
 ## Running a Sync
 
 At least one selector is required: `--all`, `--provider`, or `--topic`.

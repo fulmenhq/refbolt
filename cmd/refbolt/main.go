@@ -19,6 +19,7 @@ var (
 func main() {
 	cmd.SetVersionInfo(version, commit, buildDate)
 	config.SetEmbeddedAssets(assets.Catalog, assets.Schema)
+	config.SetEmbeddedRegistry(assets.Registry)
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

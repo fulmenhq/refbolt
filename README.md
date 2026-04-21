@@ -85,6 +85,22 @@ refbolt validate                        # check ./providers.yaml
 refbolt validate --config my-config.yaml  # check a specific file
 ```
 
+### Browse the catalog
+
+See everything refbolt knows about before you sync:
+
+```bash
+refbolt catalog list                    # table of all providers
+refbolt catalog list --topic llm-api    # filter by topic
+refbolt catalog list --strategy jina    # filter by fetch strategy
+refbolt catalog list --json             # machine-readable JSON
+refbolt catalog show anthropic          # full detail for one provider
+refbolt catalog topics                  # topic summary with counts
+```
+
+The `catalog` command reads from data embedded in the binary — it runs without
+a `providers.yaml` and has no network dependency.
+
 ### Selective sync
 
 Not every project needs all 23 providers. Pick what you need:

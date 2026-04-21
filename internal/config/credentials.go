@@ -9,6 +9,21 @@ type CredentialRequirement struct {
 	Reason    string // e.g., "jina strategy, rate-limited without key"
 }
 
+// ProviderCredentials returns the env var names a single provider will consult
+// at runtime. Order is stable: JINA_API_KEY (if applicable) first, then any
+// explicit auth_env_var. Shared by CredentialRequirements (sync/init) and the
+// catalog browse command (FA-101) so the heuristic lives in one place.
+func ProviderCredentials(p provider.ProviderConfig) []string {
+	var out []string
+	if p.FetchStrategy == provider.StrategyJina || p.FetchStrategy == provider.StrategyAuto {
+		out = append(out, "JINA_API_KEY")
+	}
+	if p.AuthEnvVar != "" && p.AuthEnvVar != "JINA_API_KEY" {
+		out = append(out, p.AuthEnvVar)
+	}
+	return out
+}
+
 // CredentialRequirements scans a list of topics for providers that need
 // API keys or tokens, grouped by env var.
 func CredentialRequirements(topics []Topic) []CredentialRequirement {
@@ -20,28 +35,18 @@ func CredentialRequirements(topics []Topic) []CredentialRequirement {
 				continue
 			}
 
-			// Jina strategy requires JINA_API_KEY.
-			if p.FetchStrategy == provider.StrategyJina || p.FetchStrategy == provider.StrategyAuto {
-				req, ok := byVar["JINA_API_KEY"]
+			for _, envVar := range ProviderCredentials(p) {
+				req, ok := byVar[envVar]
 				if !ok {
-					req = &CredentialRequirement{
-						EnvVar: "JINA_API_KEY",
-						Reason: "jina strategy, rate-limited without key",
+					reason := "rate-limited without token"
+					if envVar == "JINA_API_KEY" {
+						reason = "jina strategy, rate-limited without key"
 					}
-					byVar["JINA_API_KEY"] = req
-				}
-				req.Providers = append(req.Providers, p.Slug)
-			}
-
-			// Providers with explicit auth_env_var.
-			if p.AuthEnvVar != "" && p.AuthEnvVar != "JINA_API_KEY" {
-				req, ok := byVar[p.AuthEnvVar]
-				if !ok {
 					req = &CredentialRequirement{
-						EnvVar: p.AuthEnvVar,
-						Reason: "rate-limited without token",
+						EnvVar: envVar,
+						Reason: reason,
 					}
-					byVar[p.AuthEnvVar] = req
+					byVar[envVar] = req
 				}
 				req.Providers = append(req.Providers, p.Slug)
 			}

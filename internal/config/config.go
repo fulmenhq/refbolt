@@ -299,9 +299,13 @@ func TopicSlugs() []string {
 }
 
 // Topic holds a parsed topic from config with its providers.
+// Name and Description are optional in the schema; when absent, callers
+// that need a display label should fall back to Slug.
 type Topic struct {
-	Slug      string
-	Providers []provider.ProviderConfig
+	Slug        string
+	Name        string
+	Description string
+	Providers   []provider.ProviderConfig
 }
 
 // Topics returns all configured topics with fully typed provider configs.
@@ -321,7 +325,9 @@ func Topics() []Topic {
 			continue
 		}
 		topic := Topic{
-			Slug: stringVal(tm, "slug"),
+			Slug:        stringVal(tm, "slug"),
+			Name:        stringVal(tm, "name"),
+			Description: stringVal(tm, "description"),
 		}
 		rawProviders, ok := tm["providers"].([]interface{})
 		if !ok {
@@ -369,17 +375,25 @@ func Topics() []Topic {
 	return topics
 }
 
-// CatalogTopics returns topics from the embedded catalog (for init command).
+// CatalogTopics returns topics from the embedded catalog (for init command
+// and any other caller that needs a pure catalog view, independent of user
+// config).
 func CatalogTopics() ([]Topic, error) {
 	if len(embeddedCatalog) == 0 {
 		return nil, fmt.Errorf("no embedded catalog available")
 	}
+	return parseCatalogBytes(embeddedCatalog)
+}
 
-	// Parse embedded catalog into a temporary viper instance.
+// parseCatalogBytes parses a catalog YAML blob into a []Topic without
+// disturbing the package-level cfg. Kept private so every catalog-bytes
+// consumer funnels through the same codepath — avoids the cfg-swap footgun
+// creeping into multiple callers.
+func parseCatalogBytes(data []byte) ([]Topic, error) {
 	v := viper.New()
 	v.SetConfigType("yaml")
-	if err := v.ReadConfig(strings.NewReader(string(embeddedCatalog))); err != nil {
-		return nil, fmt.Errorf("parsing embedded catalog: %w", err)
+	if err := v.ReadConfig(strings.NewReader(string(data))); err != nil {
+		return nil, fmt.Errorf("parsing catalog: %w", err)
 	}
 
 	// Temporarily swap cfg to parse topics, then restore.
