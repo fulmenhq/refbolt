@@ -250,3 +250,20 @@ topics:
         auth_env_var: GITHUB_TOKEN
         paths:
           - "**/*.md"
+  - slug: design-platform
+    name: Design Platform APIs
+    description: Design tool API specs and developer documentation
+    providers:
+      # Figma REST API — OpenAPI 3.1.0 spec from figma/rest-api-spec (MIT licensed).
+      # Spec-only by design: developers.figma.com robots.txt blocks AI crawlers
+      # (anthropic-ai, GPTBot, CCBot); SDR-0001 respects that, so we do not archive
+      # the narrative docs. github_branch omitted — fetcher resolves repo default.
+      - slug: figma-api
+        name: Figma REST API
+        base_url: https://www.figma.com/developers/api
+        fetch_strategy: github-raw
+        github_repo: figma/rest-api-spec
+        github_docs_path: openapi/
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.yaml"

@@ -111,7 +111,7 @@ Sources: `internal/cmd/{init,validate,sync,version}.go`, `internal/cmd/root.go`.
 
 ### 2. Embedded Catalog and Schema
 
-The binary ships with a curated catalog of 23 providers across 7 topics plus
+The binary ships with a curated catalog of 24 providers across 8 topics plus
 the JSON Schema that validates them:
 
 - Source of truth: `configs/providers.yaml`, `schemas/providers/v0/providers.schema.yaml`
@@ -119,7 +119,7 @@ the JSON Schema that validates them:
 - Zero-config fallback: when no user config is found, `sync` runs against the embedded catalog
 
 Topics: `llm-api`, `python-libs`, `cloud-infra`, `data-platform`,
-`container-platform`, `collaboration`, `self-hosted-suite`.
+`container-platform`, `collaboration`, `self-hosted-suite`, `design-platform`.
 
 ### 3. Provider Registry
 

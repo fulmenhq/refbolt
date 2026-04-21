@@ -320,3 +320,35 @@ Verified. ~173 RST files archived.
 ### Status
 
 Verified. ~270 Markdown files archived.
+
+## Figma
+
+**Strategy**: `github-raw`
+**Source**: `figma/rest-api-spec`, path `openapi/`
+**Format**: OpenAPI 3.1.0 YAML
+
+### Scope: API spec only
+
+refbolt archives the official Figma REST API OpenAPI specification from
+GitHub. We deliberately do not archive Figma's narrative developer
+documentation at `developers.figma.com` — their `robots.txt` explicitly
+blocks AI crawlers (`anthropic-ai`, `GPTBot`, `CCBot`, etc.). Per
+[SDR-0001](../decisions/SDR-0001-ethical-fetching-policy.md) (ethical
+fetching policy), we respect this restriction.
+
+The OpenAPI spec is MIT licensed, covers all REST API endpoints, and is
+the authoritative machine-readable reference. Contributors adding Figma
+surfaces should keep this provider scoped to the GitHub spec repo — if
+narrative docs become useful, open a separate ticket rather than
+extending this entry.
+
+### Notes
+
+- Single YAML file (~368KB, ~10K lines) — `estimated_pages: 1` in the registry
+- MIT licensed
+- `GITHUB_TOKEN` recommended for tree-API rate limits on repeated syncs
+- `github_branch` is intentionally omitted; the fetcher resolves the repo default
+
+### Status
+
+Verified.

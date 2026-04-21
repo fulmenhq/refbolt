@@ -64,9 +64,9 @@ func TestCatalogEntries_CountAndSort(t *testing.T) {
 		t.Fatal("got zero entries")
 	}
 
-	// Expected: 23 providers. Exact count guards against future drift; if
+	// Expected: 24 providers. Exact count guards against future drift; if
 	// the catalog grows on purpose, update this number alongside the change.
-	const expected = 23
+	const expected = 24
 	if len(entries) != expected {
 		t.Errorf("CatalogEntries count = %d, want %d", len(entries), expected)
 	}
@@ -198,8 +198,8 @@ func TestTopicSummaries_CountsMatchEntries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TopicSummaries: %v", err)
 	}
-	if len(summaries) != 7 {
-		t.Errorf("want 7 topics, got %d", len(summaries))
+	if len(summaries) != 8 {
+		t.Errorf("want 8 topics, got %d", len(summaries))
 	}
 
 	// Verify counts sum back to the total provider count.
