@@ -161,11 +161,34 @@ func writeListTable(stdout, stderr io.Writer, entries []config.CatalogEntry) err
 		return err
 	}
 
-	// Hint line goes to stderr so `catalog list > out.txt` stays clean.
-	topics, _ := config.TopicSummaries()
-	fmt.Fprintf(stderr, "\n%d providers across %d topics. Use `refbolt catalog show <slug>` for details.\n",
-		len(entries), len(topics))
+	// Hint line describes the rendered result set — not the full catalog —
+	// so filtered invocations report their own totals, not the embedded
+	// catalog's. `catalog topics` is the right command for catalog-wide
+	// totals.
+	topicCount := distinctTopics(entries)
+	fmt.Fprintf(stderr, "\n%d %s across %d %s. Use `refbolt catalog show <slug>` for details.\n",
+		len(entries), pluralize(len(entries), "provider", "providers"),
+		topicCount, pluralize(topicCount, "topic", "topics"))
 	return nil
+}
+
+// distinctTopics returns the number of unique topic slugs referenced by the
+// given entries. Used for rendering result-set summaries on filtered output.
+func distinctTopics(entries []config.CatalogEntry) int {
+	seen := make(map[string]struct{}, len(entries))
+	for _, e := range entries {
+		seen[e.TopicSlug] = struct{}{}
+	}
+	return len(seen)
+}
+
+// pluralize picks singular vs plural based on n. Simple helper — kept local
+// because we use it in two places and a library would be overkill.
+func pluralize(n int, singular, plural string) string {
+	if n == 1 {
+		return singular
+	}
+	return plural
 }
 
 // providerJSON is the per-provider shape in `catalog list --json`. Kept
@@ -191,11 +214,14 @@ type listEnvelope struct {
 }
 
 func writeListJSON(stdout io.Writer, entries []config.CatalogEntry) error {
-	topics, _ := config.TopicSummaries()
-
+	// topics_total and providers_total describe the rendered result set.
+	// Filtered invocations (--topic / --strategy) therefore report their
+	// own totals, not the embedded catalog's. Consumers that want catalog-
+	// wide totals should run `catalog topics` (or `catalog list` without
+	// filters) — keeps each call's envelope self-describing.
 	out := listEnvelope{
 		Version:        currentVersion(),
-		TopicsTotal:    len(topics),
+		TopicsTotal:    distinctTopics(entries),
 		ProvidersTotal: len(entries),
 		Providers:      make([]providerJSON, 0, len(entries)),
 	}

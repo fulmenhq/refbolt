@@ -191,7 +191,7 @@ func TestCatalogList_FilterByTopic(t *testing.T) {
 	setupCatalogFixture(t)
 	clearCatalogFlags(t)
 
-	stdout, _, err := runCatalog(t, "catalog", "list", "--topic", "llm-api")
+	stdout, stderr, err := runCatalog(t, "catalog", "list", "--topic", "llm-api")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -203,6 +203,67 @@ func TestCatalogList_FilterByTopic(t *testing.T) {
 	}
 	if strings.Contains(stdout, "trino") {
 		t.Error("llm-api filter should not contain trino")
+	}
+	// Result-set totals: the hint line must describe what was rendered,
+	// not the full catalog. llm-api is 1 topic (singular, not "1 topics").
+	if !strings.Contains(stderr, "across 1 topic.") {
+		t.Errorf("stderr should say 'across 1 topic.' for a single-topic filter, got: %q", stderr)
+	}
+	if strings.Contains(stderr, "across 7 topics") {
+		t.Errorf("stderr should not report full-catalog totals on filtered output, got: %q", stderr)
+	}
+}
+
+// TestCatalogList_FilteredJSONReportsResultTotals regression-locks the
+// contract that --topic / --strategy filters shrink topics_total and
+// providers_total to describe the rendered result set, not the full
+// embedded catalog. Consumers that want catalog-wide totals run the
+// unfiltered `catalog list` or `catalog topics`.
+func TestCatalogList_FilteredJSONReportsResultTotals(t *testing.T) {
+	setupCatalogFixture(t)
+	clearCatalogFlags(t)
+
+	stdout, _, err := runCatalog(t, "catalog", "list", "--topic", "llm-api", "--json")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var envelope struct {
+		TopicsTotal    int              `json:"topics_total"`
+		ProvidersTotal int              `json:"providers_total"`
+		Providers      []map[string]any `json:"providers"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
+		t.Fatalf("json parse: %v", err)
+	}
+	if envelope.TopicsTotal != 1 {
+		t.Errorf("topics_total = %d, want 1 (result set, not catalog)", envelope.TopicsTotal)
+	}
+	if envelope.ProvidersTotal != len(envelope.Providers) {
+		t.Errorf("providers_total %d != providers array length %d",
+			envelope.ProvidersTotal, len(envelope.Providers))
+	}
+	for _, p := range envelope.Providers {
+		if p["topic"] != "llm-api" {
+			t.Errorf("filtered payload should contain only llm-api entries, got %v", p["topic"])
+		}
+	}
+}
+
+// TestCatalogList_PluralizationSingleResult covers the edge case where the
+// result set collapses to a single provider (e.g., `--strategy jina` with
+// the current catalog); both hint-line counts become "1" and should be
+// grammatically singular.
+func TestCatalogList_PluralizationSingleResult(t *testing.T) {
+	setupCatalogFixture(t)
+	clearCatalogFlags(t)
+
+	_, stderr, err := runCatalog(t, "catalog", "list", "--strategy", "jina")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(stderr, "1 provider across 1 topic.") {
+		t.Errorf("want singular 'provider' and 'topic' for a single-result set, got: %q", stderr)
 	}
 }
 
