@@ -126,7 +126,7 @@ Topics: `llm-api`, `python-libs`, `cloud-infra`, `data-platform`,
 `registry/providers.jsonl` records capability metadata (llms.txt availability,
 `md_suffix` pattern, GitHub source, OpenAPI, ToS-review status, verification
 date, site quirks) for every provider known to the project. It currently
-contains 24 entries, one more than the shipped catalog — `aws-cli` is
+contains 28 entries, one more than the shipped catalog — `aws-cli` is
 described in the registry but not yet wired into `configs/providers.yaml`.
 See the Open Questions section.
 

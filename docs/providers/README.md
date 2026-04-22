@@ -313,7 +313,8 @@ credential requirements.
    The asymmetry vs. our Figma pattern matters: Figma's official repo
    _is_ the authoritative source; this one is a derivative, so users are
    getting a github-raw-fetchable, codegen-friendly version of the
-   Hetzner spec — not the canonical Hetzner-published YAML.
+   Hetzner spec — not the canonical Hetzner-published JSON served via
+   `docs.hetzner.cloud`.
 2. **Exit criteria for the unofficial spec.** If the upstream repo goes
    90+ days without commits, or demonstrably diverges from the official
    spec, we file a follow-up to reassess — either switch to a Jina-based
