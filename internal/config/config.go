@@ -34,6 +34,10 @@ type LoadOptions struct {
 	// UseEmbedded forces use of the embedded catalog even if ConfigPath is set.
 	// Applies archive_root override for local CLI use.
 	UseEmbedded bool
+	// Verbose toggles debug-level logging on the package-wide logger so
+	// existing log.Debug(...) calls surface. Set from the `--verbose/-v`
+	// persistent flag on the root command (FA-111 item #8).
+	Verbose bool
 }
 
 // Load initializes configuration from the resolved config source and env vars.
@@ -43,6 +47,9 @@ func Load(opts LoadOptions) error {
 	log, err = logging.NewCLI("refbolt")
 	if err != nil {
 		return fmt.Errorf("initializing logger: %w", err)
+	}
+	if opts.Verbose {
+		log.SetLevel(logging.DEBUG)
 	}
 
 	cfg = viper.New()

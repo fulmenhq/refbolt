@@ -46,6 +46,38 @@ make build
 Prefer containers? The repo ships a `docker-compose.yml` with a one-shot CLI
 and a scheduled runner — see the [Docker section](#docker) below.
 
+## Getting Started (5 minutes)
+
+Fresh install from brew or scoop — here's the end-to-end flow:
+
+```bash
+# 1. Browse what's available without syncing anything
+refbolt catalog list
+
+# 2. Try a zero-config sync — uses the built-in catalog, writes to ./archive
+refbolt sync --all
+
+# 3. Customize — generate a providers.yaml you can edit
+refbolt init --all --output providers.yaml
+
+# 4. (Edit providers.yaml — delete topics/providers you don't want)
+
+# 5. Sync with your curated config
+refbolt sync --all
+```
+
+Credentials are optional but recommended for higher rate limits:
+
+```bash
+export JINA_API_KEY=jina_...     # https://jina.ai/reader
+export GITHUB_TOKEN=ghp_...      # https://github.com/settings/tokens
+```
+
+`refbolt catalog show <slug>` shows per-provider detail including which
+credentials (if any) help that source sync reliably. `refbolt validate`
+checks your `providers.yaml` against the embedded schema and warns on any
+missing env vars.
+
 ## Prerequisites
 
 refbolt works out of the box for most providers. Two optional API keys unlock higher rate limits:

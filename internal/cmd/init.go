@@ -40,7 +40,7 @@ Output goes to stdout by default (pipe to file), or use --output.`,
 						enabledCount++
 					}
 				}
-				fmt.Fprintf(os.Stderr, "  %s (%d providers)\n", t.Slug, enabledCount)
+				fmt.Fprintf(os.Stderr, "  %s (%d %s)\n", t.Slug, enabledCount, pluralize(enabledCount, "provider", "providers"))
 			}
 			return fmt.Errorf("no topics selected; use --topic <slug> or --all")
 		}
@@ -98,16 +98,34 @@ Output goes to stdout by default (pipe to file), or use --output.`,
 			os.Stdout.Write(content)
 		}
 
-		// Credential hints to stderr.
+		// Credential hints to stderr. When the env var has a canonical
+		// "get a key" URL, surface it inline so users don't have to
+		// chase the README for it (FA-111 item #3).
 		creds := config.CredentialRequirements(selected)
 		if len(creds) > 0 {
 			fmt.Fprintln(os.Stderr)
 			fmt.Fprintln(os.Stderr, "Heads up: some providers need API keys for reliable syncs:")
 			for _, c := range creds {
-				fmt.Fprintf(os.Stderr, "  %-15s — %s (%s)\n", c.EnvVar, joinSlugs(c.Providers), c.Reason)
+				url := config.CredentialURL(c.EnvVar)
+				if url != "" {
+					fmt.Fprintf(os.Stderr, "  %-15s — %s (%s). Get a key: %s\n",
+						c.EnvVar, joinSlugs(c.Providers), c.Reason, url)
+				} else {
+					fmt.Fprintf(os.Stderr, "  %-15s — %s (%s)\n",
+						c.EnvVar, joinSlugs(c.Providers), c.Reason)
+				}
 			}
 			fmt.Fprintln(os.Stderr)
 			fmt.Fprintln(os.Stderr, "See: docs/development.md → Environment Variables")
+		}
+
+		// Seed-flow hint for stdout mode: new users often miss that the
+		// generated YAML is on stdout and expect a file (FA-111 item #6).
+		// Only fire when no --output was specified — users who piped to
+		// a file or used --output already know the pattern.
+		if initOutput == "" {
+			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(os.Stderr, "Tip: to write this to a file, rerun with --output providers.yaml")
 		}
 
 		return nil

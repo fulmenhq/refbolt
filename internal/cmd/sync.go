@@ -271,7 +271,15 @@ func resolveProviders(
 	providerFlags, topicFlags, excludeFlags []string,
 ) ([]selectedProvider, error) {
 	if !all && len(providerFlags) == 0 && len(topicFlags) == 0 {
-		return nil, fmt.Errorf("no providers selected; use --all, --provider, or --topic")
+		// Multi-line error with concrete next-step hints. The first line
+		// is prefixed with "Error: " by cmd/refbolt/main.go; subsequent
+		// lines (the hint list) indent with two spaces and render cleanly
+		// in the terminal (FA-111 item #4).
+		return nil, fmt.Errorf(`no providers selected. Choose one of:
+  refbolt sync --all             # use built-in catalog
+  refbolt sync --topic <slug>    # enable one topic
+  refbolt sync --provider <slug> # enable specific providers
+  refbolt catalog list           # browse available topics and providers`)
 	}
 
 	// Build lookup indexes.

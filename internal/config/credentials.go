@@ -2,6 +2,23 @@ package config
 
 import "github.com/fulmenhq/refbolt/internal/provider"
 
+// credentialURLs maps the env var names refbolt recognizes to their
+// "where do I get one" URLs. Kept as a small map — new entries land
+// alongside new credential-needing providers, and unknown env vars fall
+// through to "no URL" rather than guessing.
+var credentialURLs = map[string]string{
+	"JINA_API_KEY": "https://jina.ai/reader",
+	"GITHUB_TOKEN": "https://github.com/settings/tokens",
+}
+
+// CredentialURL returns the "get a key" URL for the given env var, or
+// the empty string when we don't have a canonical URL. Used by `init`
+// stderr hints, `validate` warnings, and `catalog show` credential
+// lines so the CLI surfaces the same URL in every place (FA-111).
+func CredentialURL(envVar string) string {
+	return credentialURLs[envVar]
+}
+
 // CredentialRequirement maps an env var to the providers that need it.
 type CredentialRequirement struct {
 	EnvVar    string

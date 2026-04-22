@@ -182,15 +182,6 @@ func distinctTopics(entries []config.CatalogEntry) int {
 	return len(seen)
 }
 
-// pluralize picks singular vs plural based on n. Simple helper — kept local
-// because we use it in two places and a library would be overkill.
-func pluralize(n int, singular, plural string) string {
-	if n == 1 {
-		return singular
-	}
-	return plural
-}
-
 // providerJSON is the per-provider shape in `catalog list --json`. Kept
 // flat and explicit (rather than reusing provider.ProviderConfig) so the
 // JSON contract is stable independent of internal struct reshuffling.
@@ -356,12 +347,22 @@ func formatCredentials(vars []string) string {
 }
 
 // formatCredentialsLong is the `show` variant — lists full env var names and
-// a human-readable "none required" when empty.
+// a human-readable "none required" when empty. For env vars with a canonical
+// "get a key" URL, appends `(get: <url>)` so users see the source inline
+// (FA-111 item #3).
 func formatCredentialsLong(vars []string) string {
 	if len(vars) == 0 {
 		return "none required"
 	}
-	return strings.Join(vars, ", ")
+	parts := make([]string, 0, len(vars))
+	for _, v := range vars {
+		if url := config.CredentialURL(v); url != "" {
+			parts = append(parts, v+" (get: "+url+")")
+		} else {
+			parts = append(parts, v)
+		}
+	}
+	return strings.Join(parts, ", ")
 }
 
 func shortCredentialLabel(envVar string) string {

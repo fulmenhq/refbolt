@@ -16,6 +16,11 @@ var rootCmd = &cobra.Command{
 	Long: `refbolt snapshots documentation sites (especially LLM APIs)
 into date-versioned Markdown + JSON archives for offline use.`,
 	SilenceUsage: true,
+	// Cobra prints RunE errors by default; `cmd/refbolt/main.go` also
+	// prints them. Silence cobra so main.go is the single "Error: …"
+	// source and we don't get duplicate lines on every failed command.
+	// (FA-111 item #1)
+	SilenceErrors: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Commands that operate purely on embedded data skip user-config
 		// loading entirely. init/version self-manage their lifecycle; the
@@ -34,6 +39,7 @@ into date-versioned Markdown + JSON archives for offline use.`,
 			ConfigPath:  resolved,
 			Strict:      strict,
 			UseEmbedded: resolved == "",
+			Verbose:     verbose,
 		})
 	},
 }
