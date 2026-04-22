@@ -14,6 +14,7 @@ This document tracks release notes for refbolt releases.
 - **`refbolt catalog` command**: Browse the embedded catalog without cloning the repo. `list` / `show <slug>` / `topics` subcommands with registry enrichment, `--topic` / `--strategy` filters, `--json` envelope, and "did you mean?" suggestions. (FA-101)
 - **27 providers total**: +Figma REST API (new `design-platform` topic), +Hetzner Cloud API / Cloud Docs / Networking Docs. 23 → 27 providers, 7 → 8 topics. (FA-104, FA-091)
 - **Doc refresh**: `docs/ARCHITECTURE.md` fully rewritten for v0.0.3 reality; DDR-0001 reconciled against the writer; runner examples standardized on `TZ=UTC`. (FA-100, FA-105)
+- **First-run usability polish** (FA-111): `refbolt --version` now works; `--verbose` actually enables debug output; every credential warning surfaces a get-a-key URL; `refbolt sync` with no selectors shows concrete hints; duplicate `Error:` lines fixed. New "Getting Started (5 minutes)" numbered walkthrough in the README.
 - **Bundled fixes**: `refbolt init` now emits schema-valid YAML; compose correctly honors user config and archive root; catalog filtered totals describe the result set, not the full catalog.
 
 ### New Providers

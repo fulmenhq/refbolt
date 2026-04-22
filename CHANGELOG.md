@@ -18,6 +18,12 @@ Operational foundation, provider browsing, and four new providers.
 - **Hetzner multi-surface family**: `hetzner-cloud-api` (OpenAPI via github-raw from `MaximilianKoestler/hcloud-openapi`), `hetzner-cloud` (Jina, narrative cloud docs), `hetzner-networking` (Jina, networking docs). User-configurable per-surface, like AWS/DO. (PR#37)
 - **Embedded registry**: `registry/providers.jsonl` (28 entries) now embedded via `go:embed` and joined by slug into `refbolt catalog` output. (PR#34)
 - **`Topic.Description` accessor**: `Topic` struct carries `Name` / `Description` from the catalog so `catalog topics` can render human-readable descriptions. (PR#34)
+- **`refbolt --version` flag**: works alongside the existing `version` subcommand; same output format. (FA-111, PR#38)
+- **`--verbose` / `-v` actually wired**: was parsed-and-ignored dead code. Now enables gofulmen debug-level logging in `config.Load()`, surfacing existing `log.Debug(...)` calls. Deeper verbose-logging design (per-page fetch, HTTP traces) remains v0.0.5+ work. (FA-111, PR#38)
+- **Get-a-key URL hints**: `refbolt init` stderr credential block, `refbolt validate` warnings, and `refbolt catalog show <slug>` credentials line now surface the canonical token URL (`https://jina.ai/reader`, `https://github.com/settings/tokens`). `config.CredentialURL(envVar)` helper; unknown env vars omit the URL cleanly. (FA-111, PR#38)
+- **`refbolt init` seed-flow tip**: when running without `--output`, stderr emits `Tip: to write this to a file, rerun with --output providers.yaml`. Teaches the stdout-by-default pattern without breaking pipe workflows. (FA-111, PR#38)
+- **`refbolt validate` zero-config customization tip**: on the embedded-catalog fallback path, emits a tip pointing at `refbolt init --all --output providers.yaml`. Existing `Config source: (embedded catalog)` output unchanged. (FA-111, PR#38)
+- **README "Getting Started (5 minutes)"**: numbered walkthrough for brew/scoop installers — browse → zero-config sync → init → edit → sync → credentials. (FA-111, PR#38)
 
 ### Changed
 
@@ -27,6 +33,8 @@ Operational foundation, provider browsing, and four new providers.
 - **docs/providers/README.md**: New Figma and Hetzner sections with scoping rationale and selection guidance. (PR#36, PR#37)
 - **docs/development.md**: `REFBOLT_CONFIG` row now shows the real resolution chain (was claiming a stale default); runner-git example uses repo-root `providers.yaml`; fetch-strategy table gains missing `llmstxt-hierarchical` row; archive_root default comment corrected. TZ=UTC consistency across runner examples. (PR#33, PR#35)
 - **examples/crontab, examples/crontab-git**: `TZ=UTC` guidance added with override notes for host-local schedules. (PR#35)
+- **`refbolt sync` no-selector error**: replaced the curt `no providers selected; use --all, --provider, or --topic` one-liner with a multi-line hint block naming `--all`, `--topic`, `--provider`, and `refbolt catalog list`. (FA-111, PR#38)
+- **Pluralization** across `init`, `validate`, and `catalog` surfaces: `1 provider` / `1 topic` instead of `1 providers` / `1 topics`. Shared `pluralize` helper in `internal/cmd/plural.go`. (FA-111, PR#38)
 
 ### Fixed
 
@@ -35,6 +43,7 @@ Operational foundation, provider browsing, and four new providers.
 - **Compose missed `REFBOLT_ARCHIVE_ROOT`**: Writes landed in the container's ephemeral `/app/archive` instead of the host bind mount. Pinned on CLI + runner services. (PR#30)
 - **Catalog list filtered totals misreported**: `--topic` / `--strategy` filters returned the filtered rows but emitted full-catalog `topics_total` in JSON and stderr hint. Now describe the rendered result set. (PR#34)
 - **Singular/plural in catalog hint line**: `1 provider across 1 topic` (not `1 providers across 1 topics`). (PR#34)
+- **Duplicate `Error:` lines on failed commands**: `rootCmd.SilenceErrors = true` so cobra stops auto-printing; `cmd/refbolt/main.go` is now the single stderr error source. Every failed command previously printed the error twice. (FA-111, PR#38)
 
 ## [0.0.3] - 2026-04-02
 
