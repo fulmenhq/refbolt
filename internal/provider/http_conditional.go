@@ -33,6 +33,12 @@ func (f *HTTPFetcher) usesPerPathHints() bool {
 	if f.cfg.FetchStrategy != StrategyNative {
 		return false
 	}
+	// Providers with a bulk llms_txt_url use single-source HEAD on that URL for
+	// provider-level skip (Anthropic, xAI, Pydantic). Per-path HEAD skip applies
+	// only to path-only native providers such as starlink-api-v2-status.
+	if f.cfg.LLMSTxtURL != "" {
+		return false
+	}
 	return len(literalPaths(f.cfg.Paths)) > 1 ||
 		(len(literalPaths(f.cfg.Paths)) > 0 && f.cfg.OpenAPIURL != "")
 }

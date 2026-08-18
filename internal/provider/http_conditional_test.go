@@ -126,6 +126,17 @@ func TestHTTPFetcher_UsesPerPathHints_NativeOnly(t *testing.T) {
 		t.Fatal("native multi-path should use per-path hints")
 	}
 
+	withBulk, _ := NewHTTPFetcher(ProviderConfig{
+		Slug:          "anthropic-like",
+		BaseURL:       "https://example.com/docs",
+		FetchStrategy: StrategyNative,
+		LLMSTxtURL:    "https://example.com/llms-full.txt",
+		Paths:         []string{"a.md", "b.md"},
+	})
+	if withBulk.usesPerPathHints() {
+		t.Fatal("native provider with llms_txt_url must not use per-path provider skip")
+	}
+
 	jina, _ := NewHTTPFetcher(ProviderConfig{
 		Slug:          "y",
 		BaseURL:       "https://example.com",
