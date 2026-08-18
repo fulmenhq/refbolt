@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -468,6 +469,9 @@ func intVal(m map[string]interface{}, key string) int {
 	case uint:
 		return int(v)
 	case uint64:
+		if v > math.MaxInt {
+			return math.MaxInt
+		}
 		return int(v)
 	case float64:
 		return int(v)
