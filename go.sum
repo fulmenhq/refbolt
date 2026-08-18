@@ -9,8 +9,8 @@ github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHk
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
-github.com/fulmenhq/crucible v0.4.12 h1:549xiM9n/bD6powggln/mWgftc+AQYVM10WuR4eZzLY=
-github.com/fulmenhq/crucible v0.4.12/go.mod h1:DiYbzatW+h/snWWNd7mBWg0mV+tHJHIvzi4oJakv79s=
+github.com/fulmenhq/crucible v0.4.18 h1:LBU15x8RotLvPhG3ZZyFA132YVZm9brn1Wc4fm6zld8=
+github.com/fulmenhq/crucible v0.4.18/go.mod h1:DiYbzatW+h/snWWNd7mBWg0mV+tHJHIvzi4oJakv79s=
 github.com/fulmenhq/gofulmen v0.3.5 h1:pYA27BU3I93lgyruMWUl/K7UtlLE4E+mOhFYRCPwFbo=
 github.com/fulmenhq/gofulmen v0.3.5/go.mod h1:zsc9tB8fR8P+uGn5/xgWEJYD1JEhbPJfyKk+/s9lDzs=
 github.com/go-viper/mapstructure/v2 v2.4.0 h1:EBsztssimR/CONLSZZ04E8qAkxNYq4Qp9LvH92wZUgs=
