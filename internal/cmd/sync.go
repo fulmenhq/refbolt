@@ -162,7 +162,14 @@ var syncCmd = &cobra.Command{
 
 			capturedHint := captureFetchHint(cmd.Context(), fetcher)
 
-			if stat.Written > 0 || isColdStart || len(capturedHint.PathHints) > 0 {
+			priorHint := provider.FetchHint{}
+			if existingMeta != nil {
+				priorHint = providerHintFromSync(existingMeta.Hint)
+			}
+			pathHintsChanged := len(capturedHint.PathHints) > 0 &&
+				!provider.PathHintsMatch(priorHint.PathHints, capturedHint.PathHints)
+
+			if stat.Written > 0 || isColdStart || pathHintsChanged {
 				newMeta := &syncpkg.SyncMeta{
 					Provider:    sp.cfg.Slug,
 					Strategy:    string(sp.cfg.FetchStrategy),
@@ -247,17 +254,32 @@ func hintsMatch(meta *syncpkg.SyncMeta, hint provider.FetchHint) bool {
 }
 
 func captureFetchHint(ctx context.Context, fetcher provider.Fetcher) provider.FetchHint {
+	var hint provider.FetchHint
 	if hr, ok := fetcher.(provider.HintRecorder); ok {
-		if hint := hr.LastFetchHint(); len(hint.PathHints) > 0 || hint.ETag != "" {
-			return hint
-		}
+		hint = hr.LastFetchHint()
 	}
 	if hc, ok := fetcher.(provider.HintChecker); ok {
-		if hint, err := hc.CheckHints(ctx); err == nil {
+		checked, err := hc.CheckHints(ctx)
+		if err != nil {
+			if hint.ETag != "" || len(hint.PathHints) > 0 {
+				return hint
+			}
+			return provider.FetchHint{}
+		}
+		// Native providers with llms_txt_url plus supplemental paths record per-path
+		// hints during Fetch but rely on the bulk llms ETag for provider-level skip.
+		if len(hint.PathHints) > 0 && checked.ETag != "" && len(checked.PathHints) == 0 {
+			hint.ETag = checked.ETag
+			hint.LastModified = checked.LastModified
+			hint.ContentLength = checked.ContentLength
 			return hint
 		}
+		if len(hint.PathHints) > 0 || hint.ETag != "" {
+			return hint
+		}
+		return checked
 	}
-	return provider.FetchHint{}
+	return hint
 }
 
 func providerHintFromSync(h syncpkg.FetchHint) provider.FetchHint {

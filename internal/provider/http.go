@@ -127,10 +127,13 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	if f.cfg.LLMSTxtURL != "" {
 		// Derive the archive filename from the URL (e.g. "llms.txt", "llms-full.txt").
 		llmsFilename := llmsTxtFilename(f.cfg.LLMSTxtURL)
-		llmsPage, err := f.fetchURL(ctx, f.cfg.LLMSTxtURL, llmsFilename)
+		llmsPage, llmsHint, err := f.fetchURLWithHint(ctx, f.cfg.LLMSTxtURL, llmsFilename)
 		if err != nil {
 			fmt.Printf("  ⚠ %s: %v (falling back to individual pages)\n", llmsFilename, err)
 		} else {
+			f.lastFetchHint.ETag = llmsHint.ETag
+			f.lastFetchHint.LastModified = llmsHint.LastModified
+			f.lastFetchHint.ContentLength = llmsHint.ContentLength
 			// Split into individual pages.
 			// Try xAI-style delimiters first, then URL-based (Anthropic/DO-style).
 			split, err := SplitLLMSTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
@@ -342,12 +345,18 @@ func isTimeoutError(err error) bool {
 
 // fetchURL does the actual HTTP GET and returns a Page.
 func (f *HTTPFetcher) fetchURL(ctx context.Context, rawURL, archivePath string) (*Page, error) {
+	page, _, err := f.fetchURLWithHint(ctx, rawURL, archivePath)
+	return page, err
+}
+
+// fetchURLWithHint performs an HTTP GET and returns the page plus response hints.
+func (f *HTTPFetcher) fetchURLWithHint(ctx context.Context, rawURL, archivePath string) (*Page, FetchHint, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, f.cfg.EffectiveFetchTimeout())
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, rawURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+		return nil, FetchHint{}, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("User-Agent", "refbolt/0.1 (+https://github.com/fulmenhq/refbolt)")
 	// Do NOT use text/markdown in Accept — some CDNs (docs.x.ai) return 404 for it.
@@ -355,26 +364,26 @@ func (f *HTTPFetcher) fetchURL(ctx context.Context, rawURL, archivePath string) 
 
 	resp, err := f.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("fetching %s: %w", rawURL, err)
+		return nil, FetchHint{}, fmt.Errorf("fetching %s: %w", rawURL, err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
+		return nil, FetchHint{}, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
+		return nil, FetchHint{}, fmt.Errorf("reading response: %w", err)
 	}
 
 	return &Page{
 		SourceURL: rawURL,
 		Path:      archivePath,
 		Content:   body,
-	}, nil
+	}, responseHint(resp), nil
 }
 
 // llmsTxtFilename extracts the filename from an llms_txt_url for use as the
