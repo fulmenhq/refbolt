@@ -24,6 +24,7 @@ bin/
 dist/
 coverage.out
 coverage.html
+sbom/
 
 # Archive data (large, not committed)
 /data/
