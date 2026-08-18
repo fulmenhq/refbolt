@@ -8,7 +8,7 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 
 ## Features
 
-- 27 providers across 8 topics (LLM APIs, cloud infra, data platforms, design platforms, and more)
+- 46 providers across 9 topics (LLM APIs, cloud infra, SpaceX/Starlink data APIs, data platforms, design platforms, and more)
 - 5 fetch strategies: native, jina, auto, github-raw, llmstxt-hierarchical
 - Incremental sync — skips unchanged providers via per-provider `.sync-meta.json` hints
 - Provider/topic filtering: `--provider`, `--topic`, `--exclude-provider`
@@ -135,7 +135,7 @@ a `providers.yaml` and has no network dependency.
 
 ### Selective sync
 
-Not every project needs all 27 providers. Pick what you need:
+Not every project needs all 46 providers. Pick what you need:
 
 ```bash
 # Just the LLM API docs
@@ -149,7 +149,42 @@ refbolt sync --all --exclude-provider trino --exclude-provider kubernetes-kubect
 
 # Only one AWS service
 refbolt sync --provider aws-bedrock-userguide
+
+# SpaceX / Starlink data APIs (opt-in by surface — see below)
+refbolt sync --provider spacex-rockets-v4
+refbolt sync --topic spacex-data --exclude-provider starlink-api-v2-reference
 ```
+
+### SpaceX & Starlink data APIs (`spacex-data`)
+
+refbolt archives two related but distinct documentation families under topic
+`spacex-data`:
+
+| Family                 | Prefix              | Source                                    | Strategy     |
+| ---------------------- | ------------------- | ----------------------------------------- | ------------ |
+| r/SpaceX community API | `spacex-*`          | `r-spacex/SpaceX-API` on GitHub (`docs/`) | `github-raw` |
+| Starlink Public API v2 | `starlink-api-v2-*` | `starlink.readme.io` (native `.md`)       | `native`     |
+
+There is no monolithic "sync all SpaceX" mode. Each resource or API surface is a
+separate provider slug — the same opt-in pattern as AWS (`aws-bedrock-userguide`)
+and DigitalOcean (`digitalocean-api`).
+
+**Quick demos:**
+
+```bash
+refbolt init --topic spacex-data --output providers.yaml
+
+# Fun / new user — read-only rocket specs (~4 pages)
+refbolt sync --provider spacex-rockets-v4
+
+# Involved — aviation flight status + telemetry (docs public; live API needs enterprise OIDC)
+refbolt sync --provider starlink-api-v2-status
+```
+
+Archived docs land at `<archive_root>/spacex-data/<slug>/latest/`. Point Cursor
+`@Docs` or your agent context at that tree for offline reference.
+
+Details: [docs/providers/README.md](docs/providers/README.md#rspacex-api-community-open-data).
 
 ## Docker
 

@@ -111,7 +111,7 @@ Sources: `internal/cmd/{init,validate,sync,version}.go`, `internal/cmd/root.go`.
 
 ### 2. Embedded Catalog and Schema
 
-The binary ships with a curated catalog of 27 providers across 8 topics plus
+The binary ships with a curated catalog of 46 providers across 9 topics plus
 the JSON Schema that validates them:
 
 - Source of truth: `configs/providers.yaml`, `schemas/providers/v0/providers.schema.yaml`
@@ -119,14 +119,21 @@ the JSON Schema that validates them:
 - Zero-config fallback: when no user config is found, `sync` runs against the embedded catalog
 
 Topics: `llm-api`, `python-libs`, `cloud-infra`, `data-platform`,
-`container-platform`, `collaboration`, `self-hosted-suite`, `design-platform`.
+`container-platform`, `collaboration`, `self-hosted-suite`, `spacex-data`,
+`design-platform`.
+
+The `spacex-data` topic groups the r/SpaceX community open REST API (`spacex-*`
+slugs, `github-raw` from `r-spacex/SpaceX-API`) and the official Starlink Public
+API v2 (`starlink-api-v2-*`, native `.md` from `starlink.readme.io`). Each
+resource or API surface is a separate provider entry — opt-in by slug, not a
+monolithic sync.
 
 ### 3. Provider Registry
 
 `registry/providers.jsonl` records capability metadata (llms.txt availability,
 `md_suffix` pattern, GitHub source, OpenAPI, ToS-review status, verification
 date, site quirks) for every provider known to the project. It currently
-contains 28 entries, one more than the shipped catalog — `aws-cli` is
+contains 47 entries, one more than the shipped catalog — `aws-cli` is
 described in the registry but not yet wired into `configs/providers.yaml`.
 See the Open Questions section.
 
