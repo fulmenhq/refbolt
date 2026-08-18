@@ -19,8 +19,11 @@ import (
 // HTTPFetcher is the default fetcher that retrieves pages via HTTP.
 // It handles both direct Markdown URLs and HTML pages (via Jina Reader fallback).
 type HTTPFetcher struct {
-	cfg    ProviderConfig
-	client *http.Client
+	cfg              ProviderConfig
+	client           *http.Client
+	archiveLatestDir string
+	priorHint        FetchHint
+	lastFetchHint    FetchHint
 }
 
 // newHTTPClient creates an HTTP client without a client-level timeout.
@@ -65,8 +68,11 @@ func (f *HTTPFetcher) Name() string {
 func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 	var hint FetchHint
 
-	// Multi-source providers: refuse to offer hints.
-	// A HEAD on one URL cannot represent all upstream sources.
+	if f.usesPerPathHints() {
+		return f.checkPathHints(ctx)
+	}
+
+	// Multi-source providers without per-path support: refuse provider-level HEAD.
 	hasMultipleSources := len(f.cfg.Paths) > 1 || (len(f.cfg.Paths) > 0 && f.cfg.OpenAPIURL != "")
 	if hasMultipleSources {
 		return hint, fmt.Errorf("multi-source provider %s: HEAD check cannot represent all upstream URLs", f.cfg.Slug)
@@ -114,16 +120,20 @@ func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 // Then fetches any literal paths not covered by the llms.txt content.
 func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	var pages []Page
+	f.lastFetchHint = FetchHint{}
 
 	// Strategy 1: If llms_txt_url is configured, fetch and split it.
 	// This is the most efficient path — one HTTP request gets all pages.
 	if f.cfg.LLMSTxtURL != "" {
 		// Derive the archive filename from the URL (e.g. "llms.txt", "llms-full.txt").
 		llmsFilename := llmsTxtFilename(f.cfg.LLMSTxtURL)
-		llmsPage, err := f.fetchURL(ctx, f.cfg.LLMSTxtURL, llmsFilename)
+		llmsPage, llmsHint, err := f.fetchURLWithHint(ctx, f.cfg.LLMSTxtURL, llmsFilename)
 		if err != nil {
 			fmt.Printf("  ⚠ %s: %v (falling back to individual pages)\n", llmsFilename, err)
 		} else {
+			f.lastFetchHint.ETag = llmsHint.ETag
+			f.lastFetchHint.LastModified = llmsHint.LastModified
+			f.lastFetchHint.ContentLength = llmsHint.ContentLength
 			// Split into individual pages.
 			// Try xAI-style delimiters first, then URL-based (Anthropic/DO-style).
 			split, err := SplitLLMSTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
@@ -197,7 +207,7 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 
 // fetchPage fetches a single page by path from the provider's base URL.
 func (f *HTTPFetcher) fetchPage(ctx context.Context, pagePath string) (*Page, error) {
-	fullURL, err := url.JoinPath(f.cfg.BaseURL, pagePath)
+	fullURL, err := pageURL(f.cfg.BaseURL, pagePath)
 	if err != nil {
 		return nil, fmt.Errorf("joining URL: %w", err)
 	}
@@ -211,6 +221,18 @@ func (f *HTTPFetcher) fetchPage(ctx context.Context, pagePath string) (*Page, er
 
 	switch strategy {
 	case StrategyNative:
+		if f.archiveLatestDir != "" {
+			prior := f.priorHint.PathHints[archivePath]
+			page, hint, err := f.fetchNativeConditional(ctx, fullURL, archivePath, prior)
+			if err != nil {
+				return nil, err
+			}
+			if f.lastFetchHint.PathHints == nil {
+				f.lastFetchHint.PathHints = make(map[string]FetchHint)
+			}
+			f.lastFetchHint.PathHints[archivePath] = hint
+			return page, nil
+		}
 		return f.fetchDirect(ctx, fullURL, archivePath)
 	case StrategyJina:
 		return f.fetchViaJina(ctx, fullURL, archivePath)
@@ -323,12 +345,18 @@ func isTimeoutError(err error) bool {
 
 // fetchURL does the actual HTTP GET and returns a Page.
 func (f *HTTPFetcher) fetchURL(ctx context.Context, rawURL, archivePath string) (*Page, error) {
+	page, _, err := f.fetchURLWithHint(ctx, rawURL, archivePath)
+	return page, err
+}
+
+// fetchURLWithHint performs an HTTP GET and returns the page plus response hints.
+func (f *HTTPFetcher) fetchURLWithHint(ctx context.Context, rawURL, archivePath string) (*Page, FetchHint, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, f.cfg.EffectiveFetchTimeout())
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, rawURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+		return nil, FetchHint{}, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("User-Agent", "refbolt/0.1 (+https://github.com/fulmenhq/refbolt)")
 	// Do NOT use text/markdown in Accept — some CDNs (docs.x.ai) return 404 for it.
@@ -336,26 +364,26 @@ func (f *HTTPFetcher) fetchURL(ctx context.Context, rawURL, archivePath string) 
 
 	resp, err := f.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("fetching %s: %w", rawURL, err)
+		return nil, FetchHint{}, fmt.Errorf("fetching %s: %w", rawURL, err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
+		return nil, FetchHint{}, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
+		return nil, FetchHint{}, fmt.Errorf("reading response: %w", err)
 	}
 
 	return &Page{
 		SourceURL: rawURL,
 		Path:      archivePath,
 		Content:   body,
-	}, nil
+	}, responseHint(resp), nil
 }
 
 // llmsTxtFilename extracts the filename from an llms_txt_url for use as the
