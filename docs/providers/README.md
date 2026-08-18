@@ -507,8 +507,9 @@ Device and local-router guides (RADIUS, captive portal, local HTTPS router API) 
 | `starlink-api-v2-reference` | Full v2 endpoint reference | ~67 |
 | `starlink-api-v2-status` | Aviation flight status + telemetry stream/query | 6 |
 
-Paths are curated from `llms.txt`; refbolt fetches each `.md` URL directly. No Jina
-required.
+Paths are curated from `llms.txt`; refbolt fetches each `.md` URL directly. Path
+entries are **relative to `base_url`** (no leading slash) so URLs resolve to
+`…/docs/getting-started.md`, not `…/getting-started.md`. No Jina required.
 
 ### Status
 
