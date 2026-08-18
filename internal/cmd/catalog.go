@@ -75,16 +75,6 @@ func init() {
 	rootCmd.AddCommand(catalogCmd)
 }
 
-// resetCatalogFlags zeroes the command-local package globals. Cobra reuses
-// the same flag variables across Execute calls (our tests drive the full
-// root command), so a test setting --topic=llm-api will bleed into the next
-// test unless we reset explicitly. Called at the top of every RunE.
-func resetCatalogFlags() {
-	// No-op for RunE itself (cobra has already populated the flags), but
-	// useful for PersistentPostRunE-style cleanup. Tests register their own
-	// t.Cleanup to reset between cases.
-}
-
 func runCatalogList(cmd *cobra.Command, _ []string) error {
 	var entries []config.CatalogEntry
 	var err error
@@ -142,20 +132,24 @@ func runCatalogTopics(cmd *cobra.Command, _ []string) error {
 
 func writeListTable(stdout, stderr io.Writer, entries []config.CatalogEntry) error {
 	tw := tabwriter.NewWriter(stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "SLUG\tTOPIC\tSTRATEGY\tCRED\tPAGES")
+	if err := writeln(tw, "SLUG\tTOPIC\tSTRATEGY\tCRED\tPAGES"); err != nil {
+		return err
+	}
 	for _, e := range entries {
 		cred := formatCredentials(config.ProviderCredentials(e.Provider))
 		pages := "—"
 		if e.Registry != nil && e.Registry.EstimatedPages > 0 {
 			pages = fmt.Sprintf("~%d", e.Registry.EstimatedPages)
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n",
+		if err := writef(tw, "%s\t%s\t%s\t%s\t%s\n",
 			e.Provider.Slug,
 			e.TopicSlug,
 			string(e.Provider.FetchStrategy),
 			cred,
 			pages,
-		)
+		); err != nil {
+			return err
+		}
 	}
 	if err := tw.Flush(); err != nil {
 		return err
@@ -166,9 +160,11 @@ func writeListTable(stdout, stderr io.Writer, entries []config.CatalogEntry) err
 	// catalog's. `catalog topics` is the right command for catalog-wide
 	// totals.
 	topicCount := distinctTopics(entries)
-	fmt.Fprintf(stderr, "\n%d %s across %d %s. Use `refbolt catalog show <slug>` for details.\n",
+	if err := writef(stderr, "\n%d %s across %d %s. Use `refbolt catalog show <slug>` for details.\n",
 		len(entries), pluralize(len(entries), "provider", "providers"),
-		topicCount, pluralize(topicCount, "topic", "topics"))
+		topicCount, pluralize(topicCount, "topic", "topics")); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -252,31 +248,53 @@ func writeShowDetail(stdout io.Writer, e config.CatalogEntry) error {
 	if displayName == "" {
 		displayName = p.Slug
 	}
-	fmt.Fprintf(stdout, "%s — %s\n\n", p.Slug, displayName)
+	if err := writef(stdout, "%s — %s\n\n", p.Slug, displayName); err != nil {
+		return err
+	}
 
-	fmt.Fprintf(stdout, "  Topic:           %s\n", topicLabel(e))
-	fmt.Fprintf(stdout, "  Base URL:        %s\n", p.BaseURL)
-	fmt.Fprintf(stdout, "  Strategy:        %s\n", p.FetchStrategy)
+	if err := writef(stdout, "  Topic:           %s\n", topicLabel(e)); err != nil {
+		return err
+	}
+	if err := writef(stdout, "  Base URL:        %s\n", p.BaseURL); err != nil {
+		return err
+	}
+	if err := writef(stdout, "  Strategy:        %s\n", p.FetchStrategy); err != nil {
+		return err
+	}
 	if p.LLMSTxtURL != "" {
-		fmt.Fprintf(stdout, "  llms_txt URL:    %s\n", p.LLMSTxtURL)
+		if err := writef(stdout, "  llms_txt URL:    %s\n", p.LLMSTxtURL); err != nil {
+			return err
+		}
 	}
 	if p.GitHubRepo != "" {
-		fmt.Fprintf(stdout, "  GitHub repo:     %s\n", p.GitHubRepo)
+		if err := writef(stdout, "  GitHub repo:     %s\n", p.GitHubRepo); err != nil {
+			return err
+		}
 	}
-	fmt.Fprintf(stdout, "  Credentials:     %s\n", formatCredentialsLong(config.ProviderCredentials(p)))
+	if err := writef(stdout, "  Credentials:     %s\n", formatCredentialsLong(config.ProviderCredentials(p))); err != nil {
+		return err
+	}
 	if e.Registry != nil && e.Registry.EstimatedPages > 0 {
-		fmt.Fprintf(stdout, "  Estimated:       ~%d pages\n", e.Registry.EstimatedPages)
+		if err := writef(stdout, "  Estimated:       ~%d pages\n", e.Registry.EstimatedPages); err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintf(stdout, "  Estimated:       —\n")
+		if err := writef(stdout, "  Estimated:       —\n"); err != nil {
+			return err
+		}
 	}
 	status := "enabled by default"
 	if !p.IsEnabled() {
 		status = "disabled by default"
 	}
-	fmt.Fprintf(stdout, "  Status:          %s\n", status)
+	if err := writef(stdout, "  Status:          %s\n", status); err != nil {
+		return err
+	}
 
 	if len(p.Paths) > 0 {
-		fmt.Fprintln(stdout, "\nSample paths:")
+		if err := writeln(stdout, "\nSample paths:"); err != nil {
+			return err
+		}
 		// Show the first handful to keep `show` scannable; full list lives
 		// in the catalog source for anyone who needs it.
 		limit := 6
@@ -284,42 +302,72 @@ func writeShowDetail(stdout io.Writer, e config.CatalogEntry) error {
 			limit = len(p.Paths)
 		}
 		for _, path := range p.Paths[:limit] {
-			fmt.Fprintf(stdout, "  - %s\n", path)
+			if err := writef(stdout, "  - %s\n", path); err != nil {
+				return err
+			}
 		}
 		if len(p.Paths) > limit {
-			fmt.Fprintf(stdout, "  … %d more\n", len(p.Paths)-limit)
+			if err := writef(stdout, "  … %d more\n", len(p.Paths)-limit); err != nil {
+				return err
+			}
 		}
 	}
 
 	if e.Registry != nil && e.Registry.Description != "" {
-		fmt.Fprintln(stdout, "\nDescription:")
-		fmt.Fprintf(stdout, "  %s\n", e.Registry.Description)
+		if err := writeln(stdout, "\nDescription:"); err != nil {
+			return err
+		}
+		if err := writef(stdout, "  %s\n", e.Registry.Description); err != nil {
+			return err
+		}
 	}
 
-	fmt.Fprintln(stdout, "\nArchive output:")
+	if err := writeln(stdout, "\nArchive output:"); err != nil {
+		return err
+	}
 	archivePath := filepath.Join("<archive_root>", e.TopicSlug, p.Slug)
-	fmt.Fprintf(stdout, "  %s/<YYYY-MM-DD>/…\n", archivePath)
-	fmt.Fprintf(stdout, "  %s/latest → <latest-date>\n", archivePath)
+	if err := writef(stdout, "  %s/<YYYY-MM-DD>/…\n", archivePath); err != nil {
+		return err
+	}
+	if err := writef(stdout, "  %s/latest → <latest-date>\n", archivePath); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func writeTopicsTable(stdout, stderr io.Writer, summaries []config.TopicSummary) error {
 	tw := tabwriter.NewWriter(stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "TOPIC\tPROVIDERS\tDESCRIPTION")
+	if err := writeln(tw, "TOPIC\tPROVIDERS\tDESCRIPTION"); err != nil {
+		return err
+	}
 	for _, s := range summaries {
 		desc := s.Description
 		if desc == "" {
 			desc = "—"
 		}
-		fmt.Fprintf(tw, "%s\t%d\t%s\n", s.Slug, s.ProviderCount, desc)
+		if err := writef(tw, "%s\t%d\t%s\n", s.Slug, s.ProviderCount, desc); err != nil {
+			return err
+		}
 	}
 	if err := tw.Flush(); err != nil {
 		return err
 	}
 
-	fmt.Fprintf(stderr, "\n%d topics. Use `refbolt catalog list --topic <slug>` for providers in a topic.\n", len(summaries))
+	if err := writef(stderr, "\n%d topics. Use `refbolt catalog list --topic <slug>` for providers in a topic.\n", len(summaries)); err != nil {
+		return err
+	}
 	return nil
+}
+
+func writef(w io.Writer, format string, args ...any) error {
+	_, err := fmt.Fprintf(w, format, args...)
+	return err
+}
+
+func writeln(w io.Writer, args ...any) error {
+	_, err := fmt.Fprintln(w, args...)
+	return err
 }
 
 // ─── Rendering helpers ─────────────────────────────────────────────────────

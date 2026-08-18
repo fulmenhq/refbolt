@@ -95,7 +95,9 @@ Output goes to stdout by default (pipe to file), or use --output.`,
 			fmt.Fprintf(os.Stderr, "Config written to %s\n", initOutput)
 		} else {
 			// stdout — YAML only, no human text.
-			os.Stdout.Write(content)
+			if _, err := os.Stdout.Write(content); err != nil {
+				return fmt.Errorf("writing config to stdout: %w", err)
+			}
 		}
 
 		// Credential hints to stderr. When the env var has a canonical

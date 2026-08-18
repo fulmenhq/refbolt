@@ -23,7 +23,9 @@ func TestJinaRetry_TimeoutThenSuccess(t *testing.T) {
 		}
 		// Second attempt: respond immediately with Markdown.
 		w.Header().Set("Content-Type", "text/markdown")
-		fmt.Fprint(w, "# Success\n\nRetried content.")
+		if _, err := fmt.Fprint(w, "# Success\n\nRetried content."); err != nil {
+			t.Errorf("writing test response: %v", err)
+		}
 	}))
 	defer srv.Close()
 
@@ -60,7 +62,9 @@ func TestJinaRetry_NonTimeoutNotRetried(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempts.Add(1)
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Internal Server Error")
+		if _, err := fmt.Fprint(w, "Internal Server Error"); err != nil {
+			t.Errorf("writing test response: %v", err)
+		}
 	}))
 	defer srv.Close()
 

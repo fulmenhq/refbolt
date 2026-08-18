@@ -174,8 +174,8 @@ func SplitLLMSFullTxt(content []byte, sourceURL string) ([]Page, error) {
 //	# Page Title       (content starts here)
 //
 // The frontmatter `---` block with `title:` is the section boundary.
-// Archive paths are derived from the `[ Edit page ]` GitHub URL if present,
-// or from the frontmatter title as a fallback.
+// Archive paths are derived from its `url:` field when present, or from the
+// frontmatter title as a fallback.
 func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 	var pages []Page
 	var sections []frontmatterSection
@@ -187,6 +187,8 @@ func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 		inFrontmatter bool
 		currentTitle  string // title of the section being collected
 		pendingTitle  string // title being parsed in current frontmatter block
+		currentURL    string // canonical page URL for the section being collected
+		pendingURL    string // URL being parsed in current frontmatter block
 		rawContent    bytes.Buffer
 		collecting    bool
 		foundTitle    bool
@@ -196,10 +198,12 @@ func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 		if currentTitle != "" && rawContent.Len() > 0 {
 			sections = append(sections, frontmatterSection{
 				title:   currentTitle,
+				url:     currentURL,
 				content: copyBytes(rawContent.Bytes()),
 			})
 		}
 		currentTitle = ""
+		currentURL = ""
 		rawContent.Reset()
 		collecting = false
 	}
@@ -212,6 +216,7 @@ func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 		if trimmed == "---" && !inFrontmatter {
 			inFrontmatter = true
 			pendingTitle = ""
+			pendingURL = ""
 			foundTitle = false
 			continue
 		}
@@ -225,6 +230,7 @@ func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 						flushSection()
 					}
 					currentTitle = pendingTitle
+					currentURL = pendingURL
 					inFrontmatter = false
 					collecting = true
 					continue
@@ -237,6 +243,10 @@ func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 			if strings.HasPrefix(trimmed, "title:") {
 				pendingTitle = strings.TrimSpace(strings.TrimPrefix(trimmed, "title:"))
 				foundTitle = true
+				continue
+			}
+			if strings.HasPrefix(trimmed, "url:") {
+				pendingURL = strings.TrimSpace(strings.TrimPrefix(trimmed, "url:"))
 				continue
 			}
 			// Blank lines in potential frontmatter — skip.
@@ -275,12 +285,17 @@ func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 	// Convert sections to pages.
 	for _, s := range sections {
 		archivePath := titleToArchivePath(s.title)
+		pageSourceURL := sourceURL
+		if s.url != "" {
+			archivePath = llmsFullURLToPath(s.url)
+			pageSourceURL = s.url
+		}
 		cleaned := trimTrailingBoundary(s.content)
 		// Also strip any leading blank lines.
 		cleaned = bytes.TrimLeft(cleaned, "\n\r\t ")
 
 		pages = append(pages, Page{
-			SourceURL: sourceURL,
+			SourceURL: pageSourceURL,
 			Path:      archivePath,
 			Content:   cleaned,
 		})
@@ -292,6 +307,7 @@ func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
 // frontmatterSection holds a parsed section from a frontmatter-delimited file.
 type frontmatterSection struct {
 	title   string
+	url     string
 	content []byte
 }
 

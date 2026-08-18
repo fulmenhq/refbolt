@@ -1,0 +1,28 @@
+version: v1
+# License policy remains governed by the existing make license-audit target.
+# A future Goneat license policy needs a maintainer decision for Viper's
+# transitive github.com/hashicorp/hcl GPL-3.0 dependency.
+cooling:
+  enabled: true
+  min_age_days: 7
+  min_downloads: 100
+  min_downloads_recent: 10
+  alert_only: false
+  grace_period_days: 3
+  exceptions:
+    - pattern: "github.com/fulmenhq/*"
+      reason: "FulmenHQ modules are maintained and reviewed within the estate."
+      approved_by: "@3leapsdave"
+      approved_date: "2026-08-18"
+    - pattern: "github.com/3leaps/*"
+      reason: "3 Leaps modules are maintained and reviewed within the estate."
+      approved_by: "@3leapsdave"
+      approved_date: "2026-08-18"
+vulnerabilities:
+  enabled: true
+  tool: grype
+  fail_on: none
+  ignore_unfixed: false
+sbom:
+  output_dir: sbom
+  format: cyclonedx-json

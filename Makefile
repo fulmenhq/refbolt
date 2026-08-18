@@ -53,7 +53,7 @@ BINDIR_RESOLVE = \
 	fi
 
 # Tooling
-GONEAT_VERSION ?= v0.5.8
+GONEAT_VERSION ?= v0.5.16
 
 SFETCH_RESOLVE = \
 	$(BINDIR_RESOLVE); \
@@ -284,7 +284,7 @@ test-cov:  ## Run tests with coverage
 lint:  ## Run lint checks
 	@echo "Running Go vet..."
 	@$(GOCMD) vet ./...
-	@echo "Running goneat assess..."; $(GONEAT_RESOLVE); $$GONEAT assess --categories lint
+	@echo "Running goneat assess..."; $(GONEAT_RESOLVE); $$GONEAT assess --categories lint --fail-on high
 	@echo "✅ Lint checks passed"
 
 fmt:  ## Format code and Markdown with goneat
