@@ -293,6 +293,296 @@ topics:
         auth_env_var: GITHUB_TOKEN
         paths:
           - "**/*.md"
+  - slug: spacex-data
+    name: SpaceX & Starlink Data APIs
+    description: r/SpaceX open REST API and official Starlink Public API v2 (opt-in by surface)
+    providers:
+      # r/SpaceX API — community open REST API (r-spacex/SpaceX-API).
+      # Multi-surface family: each resource/version is a separate provider slug.
+      # Source Markdown lives in GitHub docs/; Postman docs at docs.spacexdata.com
+      # mirror the same content. No llms.txt. github-raw is authoritative.
+      # Opt-in by surface — there is no monolithic "sync all SpaceX" mode.
+      - slug: spacex-api-guides
+        name: SpaceX API Guides
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - README.md
+          - queries.md
+          - clients.md
+          - apps.md
+      - slug: spacex-launches-v4
+        name: SpaceX Launches API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/launches/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-launches-v5
+        name: SpaceX Launches API (v5)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/launches/v5/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-rockets-v4
+        name: SpaceX Rockets API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/rockets/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-capsules-v4
+        name: SpaceX Capsules API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/capsules/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-cores-v4
+        name: SpaceX Cores API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/cores/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-crew-v4
+        name: SpaceX Crew API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/crew/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-dragons-v4
+        name: SpaceX Dragons API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/dragons/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-history-v4
+        name: SpaceX History API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/history/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-company-v4
+        name: SpaceX Company API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/company/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-landpads-v4
+        name: SpaceX Landing Pads API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/landpads/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-launchpads-v4
+        name: SpaceX Launch Pads API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/launchpads/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-payloads-v4
+        name: SpaceX Payloads API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/payloads/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-roadster-v4
+        name: SpaceX Roadster API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/roadster/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-ships-v4
+        name: SpaceX Ships API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/ships/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      - slug: spacex-starlink-v4
+        name: SpaceX Starlink Data API (v4)
+        base_url: https://docs.spacexdata.com
+        fetch_strategy: github-raw
+        github_repo: r-spacex/SpaceX-API
+        github_docs_path: docs/starlink/v4/
+        github_branch: master
+        auth_env_var: GITHUB_TOKEN
+        paths:
+          - "**/*.md"
+      # Starlink Public API v2 — official SpaceX enterprise API docs at starlink.readme.io.
+      # Native .md endpoints (text/markdown). llms.txt is an index, not a content dump.
+      # Device/local-router docs deliberately omitted (see docs/providers/README.md).
+      - slug: starlink-api-v2-guides
+        name: Starlink API v2 Guides
+        base_url: https://starlink.readme.io/docs
+        fetch_strategy: native
+        llms_txt_url: https://starlink.readme.io/llms.txt
+        paths:
+          - /getting-started.md
+          - /api-v2-service-accounts.md
+          - /migrating-from-v1-to-v2.md
+          - /authentication.md
+          - /rate-limits-1.md
+          - /starlink-api-status.md
+          - /60-day-deprecation-policy.md
+          - /starlink-public-ips.md
+          - /managing-addresses.md
+          - /activating-service.md
+          - /pause-and-resume-starlinks.md
+          - /updating-service-line-products.md
+          - /managing-data-plans.md
+          - /data-pools.md
+          - /data-usage-api.md
+          - /understanding-proration.md
+          - /managing-contacts.md
+          - /managing-layer-2-vpn.md
+          - /telemetry-api.md
+          - /alerts.md
+          - /multi-starlink.md
+          - /about-managed-accounts.md
+          - /location-in-aviation.md
+      - slug: starlink-api-v2-reference
+        name: Starlink API v2 Reference
+        base_url: https://starlink.readme.io/reference
+        fetch_strategy: native
+        llms_txt_url: https://starlink.readme.io/llms.txt
+        paths:
+          - /get_public-v2-account.md
+          - /post_public-v2-data-usage-query.md
+          - /get_public-v2-products.md
+          - /get_public-v2-addresses.md
+          - /post_public-v2-addresses.md
+          - /get_public-v2-addresses-addressreferenceid.md
+          - /put_public-v2-addresses-addressreferenceid.md
+          - /get_public-v2-billing-invoices.md
+          - /get_public-v2-billing-invoices-invoiceid.md
+          - /get_public-v2-billing-balance.md
+          - /get_public-v2-contacts.md
+          - /post_public-v2-contacts.md
+          - /delete_public-v2-contacts-subjectid.md
+          - /put_public-v2-contacts-subjectid.md
+          - /get_public-v2-data-pools.md
+          - /get_public-v2-data-pools-usage.md
+          - /post_public-v2-data-pools-datapoolid-set-automatic-top-up.md
+          - /post_public-v2-flights-status.md
+          - /post_public-v2-managed-customers.md
+          - /get_public-v2-managed-accounts-tree.md
+          - /get_public-v2-managed-accounts.md
+          - /get_public-v2-managed-accounts-service-lines.md
+          - /get_public-v2-managed-accounts-user-terminals.md
+          - /get_public-v2-mobile-radio-access-network-timestamp.md
+          - /get_public-v2-mobile-timeseries-timestamp.md
+          - /get_public-v2-mobile-map-timestamp.md
+          - /get_public-v2-routers-routerid.md
+          - /get_public-v2-routers-configs.md
+          - /post_public-v2-routers-configs.md
+          - /get_public-v2-routers-configs-configid.md
+          - /put_public-v2-routers-configs-configid.md
+          - /put_public-v2-routers-configs-assign.md
+          - /get_public-v2-routers-configs-default.md
+          - /put_public-v2-routers-configs-default.md
+          - /post_public-v2-routers-local-content.md
+          - /get_public-v2-routers-local-content.md
+          - /get_public-v2-routers-sandbox-clients.md
+          - /post_public-v2-routers-sandbox-clients.md
+          - /put_public-v2-routers-sandbox-heartbeat.md
+          - /post_public-v2-routers-routerid-reboot.md
+          - /get_public-v2-routers-configs-tls.md
+          - /post_public-v2-routers-configs-tls.md
+          - /delete_public-v2-routers-configs-tls.md
+          - /get_public-v2-service-lines-servicelinenumber.md
+          - /delete_public-v2-service-lines-servicelinenumber.md
+          - /get_public-v2-service-lines.md
+          - /post_public-v2-service-lines.md
+          - /put_public-v2-service-lines-servicelinenumber-nickname.md
+          - /put_public-v2-service-lines-servicelinenumber-product.md
+          - /put_public-v2-service-lines-servicelinenumber-public-ip.md
+          - /post_public-v2-service-lines-servicelinenumber-data-opt-in.md
+          - /post_public-v2-service-lines-servicelinenumber-data-opt-out.md
+          - /post_public-v2-service-lines-servicelinenumber-user-terminals.md
+          - /delete_public-v2-service-lines-servicelinenumber-user-terminals-deviceid.md
+          - /put_public-v2-service-lines-servicelinenumber-data-recurring.md
+          - /post_public-v2-service-lines-servicelinenumber-data-top-up.md
+          - /get_public-v2-service-lines-servicelinenumber-billing-cycles-partial-periods.md
+          - /patch_public-v2-service-lines-servicelinenumber-consume-from-pool.md
+          - /get_public-v2-user-terminals.md
+          - /post_public-v2-user-terminals.md
+          - /delete_public-v2-user-terminals-deviceid.md
+          - /post_public-v2-user-terminals-deviceid-reboot.md
+          - /put_public-v2-user-terminals-configs-assign.md
+          - /get_public-v2-user-terminals-l2vpn.md
+          - /put_public-v2-user-terminals-deviceid-l2vpn.md
+          - /post_public-v2-telemetry-stream.md
+          - /post_public-v2-telemetry-query.md
+      # Aviation flight status + telemetry streaming — the "involved" surfaces.
+      # Flight POST requires aviation account + OIDC service account (see guides).
+      - slug: starlink-api-v2-status
+        name: Starlink API v2 Status & Telemetry
+        base_url: https://starlink.readme.io
+        fetch_strategy: native
+        paths:
+          - /docs/location-in-aviation.md
+          - /docs/multi-starlink.md
+          - /docs/telemetry-api.md
+          - /reference/post_public-v2-flights-status.md
+          - /reference/post_public-v2-telemetry-stream.md
+          - /reference/post_public-v2-telemetry-query.md
   - slug: design-platform
     name: Design Platform APIs
     description: Design tool API specs and developer documentation
