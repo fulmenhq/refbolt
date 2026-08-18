@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -80,15 +82,16 @@ var syncCmd = &cobra.Command{
 			)
 			cfgHash := syncpkg.ConfigHash(cfgFields)
 
+			metaPath := syncpkg.MetaPath(archiveRoot, sp.topicSlug, sp.cfg.Slug)
+			existingMeta, metaErr := syncpkg.Read(metaPath)
+
 			// Check for incremental skip (unless --force).
 			if !syncForce {
-				metaPath := syncpkg.MetaPath(archiveRoot, sp.topicSlug, sp.cfg.Slug)
-				meta, err := syncpkg.Read(metaPath)
-				if err != nil {
-					fmt.Printf("  %s: warning reading metadata: %v\n", sp.cfg.Slug, err)
+				if metaErr != nil {
+					fmt.Printf("  %s: warning reading metadata: %v\n", sp.cfg.Slug, metaErr)
 				}
 
-				if syncpkg.ShouldSkip(meta, cfgHash) {
+				if syncpkg.ShouldSkip(existingMeta, cfgHash) {
 					// Config unchanged — check strategy-specific hints.
 					skipped := false
 
@@ -97,13 +100,13 @@ var syncCmd = &cobra.Command{
 						if hc, ok := fetcher.(provider.HintChecker); ok {
 							hint, hErr := hc.CheckHints(cmd.Context())
 							if hErr == nil {
-								skipped = hintsMatch(meta, hint)
+								skipped = hintsMatch(existingMeta, hint)
 							}
 						}
 					}
 
 					if skipped {
-						elapsed := time.Since(meta.LastSync).Truncate(time.Minute)
+						elapsed := time.Since(existingMeta.LastSync).Truncate(time.Minute)
 						fmt.Printf("  %s: skipped (unchanged, last sync %s ago)\n", sp.cfg.Slug, elapsed)
 						continue
 					}
@@ -116,6 +119,15 @@ var syncCmd = &cobra.Command{
 			if err != nil {
 				fmt.Printf("  %s: error creating fetcher: %v\n", sp.cfg.Slug, err)
 				continue
+			}
+
+			if inc, ok := fetcher.(provider.IncrementalFetcher); ok {
+				latestDir := filepath.Join(archiveRoot, sp.topicSlug, sp.cfg.Slug, "latest")
+				var prior provider.FetchHint
+				if existingMeta != nil {
+					prior = providerHintFromSync(existingMeta.Hint)
+				}
+				inc.SetIncrementalContext(latestDir, prior)
 			}
 
 			pages, err := fetcher.Fetch(cmd.Context())
@@ -141,15 +153,16 @@ var syncCmd = &cobra.Command{
 				fmt.Printf("  %s: wrote %d files\n", sp.cfg.Slug, stat.Total)
 			}
 
-			// Write sync metadata atomically (success-gated).
-			// Only update metadata when files actually changed or on cold start
-			// (no existing metadata). This prevents git noise from LastSync
-			// timestamp updates when nothing in the archive changed.
-			metaPath := syncpkg.MetaPath(archiveRoot, sp.topicSlug, sp.cfg.Slug)
-			existingMeta, _ := syncpkg.Read(metaPath)
+			// Write sync metadata when content changed, on cold start, or when
+			// per-path hints were captured (enables conditional GET on next sync).
+			if existingMeta == nil {
+				existingMeta, _ = syncpkg.Read(metaPath)
+			}
 			isColdStart := existingMeta == nil
 
-			if stat.Written > 0 || isColdStart {
+			capturedHint := captureFetchHint(cmd.Context(), fetcher)
+
+			if stat.Written > 0 || isColdStart || len(capturedHint.PathHints) > 0 {
 				newMeta := &syncpkg.SyncMeta{
 					Provider:    sp.cfg.Slug,
 					Strategy:    string(sp.cfg.FetchStrategy),
@@ -157,17 +170,7 @@ var syncCmd = &cobra.Command{
 					LastSync:    time.Now().UTC(),
 					ContentHash: contentHash,
 					FileCount:   stat.Total,
-				}
-				// Capture hints from the fetcher if available.
-				if hc, ok := fetcher.(provider.HintChecker); ok {
-					if hint, hErr := hc.CheckHints(cmd.Context()); hErr == nil {
-						newMeta.Hint = syncpkg.FetchHint{
-							ETag:          hint.ETag,
-							LastModified:  hint.LastModified,
-							ContentLength: hint.ContentLength,
-							TreeSHA:       hint.TreeSHA,
-						}
-					}
+					Hint:        providerHintToSync(capturedHint),
 				}
 				if wErr := syncpkg.Write(metaPath, newMeta); wErr != nil {
 					fmt.Printf("  %s: warning writing metadata: %v\n", sp.cfg.Slug, wErr)
@@ -222,6 +225,9 @@ var syncCmd = &cobra.Command{
 
 // hintsMatch compares stored metadata hints against current upstream hints.
 func hintsMatch(meta *syncpkg.SyncMeta, hint provider.FetchHint) bool {
+	if len(hint.PathHints) > 0 {
+		return provider.PathHintsMatch(providerHintFromSync(meta.Hint).PathHints, hint.PathHints)
+	}
 	// Tree SHA match (github-raw).
 	if hint.TreeSHA != "" && meta.Hint.TreeSHA != "" {
 		return hint.TreeSHA == meta.Hint.TreeSHA
@@ -238,6 +244,60 @@ func hintsMatch(meta *syncpkg.SyncMeta, hint provider.FetchHint) bool {
 	}
 	// No comparable hints — cannot skip.
 	return false
+}
+
+func captureFetchHint(ctx context.Context, fetcher provider.Fetcher) provider.FetchHint {
+	if hr, ok := fetcher.(provider.HintRecorder); ok {
+		if hint := hr.LastFetchHint(); len(hint.PathHints) > 0 || hint.ETag != "" {
+			return hint
+		}
+	}
+	if hc, ok := fetcher.(provider.HintChecker); ok {
+		if hint, err := hc.CheckHints(ctx); err == nil {
+			return hint
+		}
+	}
+	return provider.FetchHint{}
+}
+
+func providerHintFromSync(h syncpkg.FetchHint) provider.FetchHint {
+	out := provider.FetchHint{
+		ETag:          h.ETag,
+		LastModified:  h.LastModified,
+		ContentLength: h.ContentLength,
+		TreeSHA:       h.TreeSHA,
+	}
+	if len(h.PathHints) > 0 {
+		out.PathHints = make(map[string]provider.FetchHint, len(h.PathHints))
+		for k, v := range h.PathHints {
+			out.PathHints[k] = provider.FetchHint{
+				ETag:          v.ETag,
+				LastModified:  v.LastModified,
+				ContentLength: v.ContentLength,
+			}
+		}
+	}
+	return out
+}
+
+func providerHintToSync(h provider.FetchHint) syncpkg.FetchHint {
+	out := syncpkg.FetchHint{
+		ETag:          h.ETag,
+		LastModified:  h.LastModified,
+		ContentLength: h.ContentLength,
+		TreeSHA:       h.TreeSHA,
+	}
+	if len(h.PathHints) > 0 {
+		out.PathHints = make(map[string]syncpkg.FetchHint, len(h.PathHints))
+		for k, v := range h.PathHints {
+			out.PathHints[k] = syncpkg.FetchHint{
+				ETag:          v.ETag,
+				LastModified:  v.LastModified,
+				ContentLength: v.ContentLength,
+			}
+		}
+	}
+	return out
 }
 
 // computeContentHash hashes the concatenated content of all pages.

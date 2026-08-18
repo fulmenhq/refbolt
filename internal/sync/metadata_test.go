@@ -20,6 +20,9 @@ func TestReadWrite_RoundTrip(t *testing.T) {
 		FileCount:   642,
 		Hint: FetchHint{
 			TreeSHA: "abc123def456",
+			PathHints: map[string]FetchHint{
+				"page.md": {ETag: `"v1"`},
+			},
 		},
 	}
 
@@ -46,6 +49,9 @@ func TestReadWrite_RoundTrip(t *testing.T) {
 	}
 	if got.Hint.TreeSHA != meta.Hint.TreeSHA {
 		t.Errorf("Hint.TreeSHA = %q, want %q", got.Hint.TreeSHA, meta.Hint.TreeSHA)
+	}
+	if got.Hint.PathHints["page.md"].ETag != `"v1"` {
+		t.Errorf("PathHints etag = %q, want %q", got.Hint.PathHints["page.md"].ETag, `"v1"`)
 	}
 }
 

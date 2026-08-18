@@ -28,10 +28,11 @@ type SyncMeta struct {
 
 // FetchHint holds strategy-specific metadata for short-circuiting fetches.
 type FetchHint struct {
-	ETag          string `json:"etag,omitempty"`
-	LastModified  string `json:"last_modified,omitempty"`
-	ContentLength int64  `json:"content_length,omitempty"`
-	TreeSHA       string `json:"tree_sha,omitempty"`
+	ETag          string               `json:"etag,omitempty"`
+	LastModified  string               `json:"last_modified,omitempty"`
+	ContentLength int64                `json:"content_length,omitempty"`
+	TreeSHA       string               `json:"tree_sha,omitempty"`
+	PathHints     map[string]FetchHint `json:"path_hints,omitempty"`
 }
 
 // MetaPath returns the path to .sync-meta.json for a given provider.

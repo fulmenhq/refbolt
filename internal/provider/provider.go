@@ -85,10 +85,17 @@ type Fetcher interface {
 
 // FetchHint holds strategy-specific metadata for incremental sync skip logic.
 type FetchHint struct {
-	ETag          string `json:"etag,omitempty"`
-	LastModified  string `json:"last_modified,omitempty"`
-	ContentLength int64  `json:"content_length,omitempty"`
-	TreeSHA       string `json:"tree_sha,omitempty"`
+	ETag          string               `json:"etag,omitempty"`
+	LastModified  string               `json:"last_modified,omitempty"`
+	ContentLength int64                `json:"content_length,omitempty"`
+	TreeSHA       string               `json:"tree_sha,omitempty"`
+	PathHints     map[string]FetchHint `json:"path_hints,omitempty"`
+}
+
+// HintRecorder is implemented by fetchers that capture upstream hints during
+// Fetch (e.g. per-path ETag for native multi-path providers).
+type HintRecorder interface {
+	LastFetchHint() FetchHint
 }
 
 // HintChecker is an optional interface that fetchers can implement to

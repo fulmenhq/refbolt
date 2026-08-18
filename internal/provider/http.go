@@ -19,8 +19,11 @@ import (
 // HTTPFetcher is the default fetcher that retrieves pages via HTTP.
 // It handles both direct Markdown URLs and HTML pages (via Jina Reader fallback).
 type HTTPFetcher struct {
-	cfg    ProviderConfig
-	client *http.Client
+	cfg              ProviderConfig
+	client           *http.Client
+	archiveLatestDir string
+	priorHint        FetchHint
+	lastFetchHint    FetchHint
 }
 
 // newHTTPClient creates an HTTP client without a client-level timeout.
@@ -65,8 +68,11 @@ func (f *HTTPFetcher) Name() string {
 func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 	var hint FetchHint
 
-	// Multi-source providers: refuse to offer hints.
-	// A HEAD on one URL cannot represent all upstream sources.
+	if f.usesPerPathHints() {
+		return f.checkPathHints(ctx)
+	}
+
+	// Multi-source providers without per-path support: refuse provider-level HEAD.
 	hasMultipleSources := len(f.cfg.Paths) > 1 || (len(f.cfg.Paths) > 0 && f.cfg.OpenAPIURL != "")
 	if hasMultipleSources {
 		return hint, fmt.Errorf("multi-source provider %s: HEAD check cannot represent all upstream URLs", f.cfg.Slug)
@@ -114,6 +120,7 @@ func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 // Then fetches any literal paths not covered by the llms.txt content.
 func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	var pages []Page
+	f.lastFetchHint = FetchHint{}
 
 	// Strategy 1: If llms_txt_url is configured, fetch and split it.
 	// This is the most efficient path — one HTTP request gets all pages.
@@ -197,7 +204,7 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 
 // fetchPage fetches a single page by path from the provider's base URL.
 func (f *HTTPFetcher) fetchPage(ctx context.Context, pagePath string) (*Page, error) {
-	fullURL, err := url.JoinPath(f.cfg.BaseURL, pagePath)
+	fullURL, err := pageURL(f.cfg.BaseURL, pagePath)
 	if err != nil {
 		return nil, fmt.Errorf("joining URL: %w", err)
 	}
@@ -211,6 +218,18 @@ func (f *HTTPFetcher) fetchPage(ctx context.Context, pagePath string) (*Page, er
 
 	switch strategy {
 	case StrategyNative:
+		if f.archiveLatestDir != "" {
+			prior := f.priorHint.PathHints[archivePath]
+			page, hint, err := f.fetchNativeConditional(ctx, fullURL, archivePath, prior)
+			if err != nil {
+				return nil, err
+			}
+			if f.lastFetchHint.PathHints == nil {
+				f.lastFetchHint.PathHints = make(map[string]FetchHint)
+			}
+			f.lastFetchHint.PathHints[archivePath] = hint
+			return page, nil
+		}
 		return f.fetchDirect(ctx, fullURL, archivePath)
 	case StrategyJina:
 		return f.fetchViaJina(ctx, fullURL, archivePath)

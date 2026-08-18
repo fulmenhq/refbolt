@@ -178,7 +178,13 @@ with these fields (`internal/sync/metadata.go`):
 | `last_sync`    | Timestamp of the last successful sync for this provider                                    |
 | `content_hash` | SHA-256 of the aggregate content from the previous sync                                    |
 | `file_count`   | Number of files written in the previous sync                                               |
-| `fetch_hint`   | Strategy-specific upstream signals (`etag`, `last_modified`, `content_length`, `tree_sha`) |
+| `fetch_hint`   | Strategy-specific upstream signals (`etag`, `last_modified`, `content_length`, `tree_sha`, `path_hints`) |
+
+Native multi-path providers (e.g. Starlink `starlink-api-v2-*`) store
+per-page hints under `fetch_hint.path_hints`. `CheckHints` HEADs each literal
+path; when all match, the provider is skipped entirely. During fetch, conditional
+GET (`If-None-Match`) reuses archived content on HTTP 304 without re-downloading
+body bytes.
 
 Two levels of skip during `refbolt sync`:
 
