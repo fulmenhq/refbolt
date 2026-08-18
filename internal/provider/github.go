@@ -330,7 +330,7 @@ func githubAuthToken(cfg ProviderConfig) string {
 	if envVar != "" {
 		return strings.TrimSpace(os.Getenv(envVar))
 	}
-	return strings.TrimSpace(os.Getenv("GITHUB_TOKEN"))
+	return strings.TrimSpace(os.Getenv(EnvGitHubToken))
 }
 
 func githubMinRequestInterval(rateLimit *RateLimitConfig, authenticated bool) time.Duration {
@@ -358,7 +358,7 @@ func githubRateLimitError(resp *http.Response, rawURL, authEnvVar string) error 
 
 	tokenName := strings.TrimSpace(authEnvVar)
 	if tokenName == "" {
-		tokenName = "GITHUB_TOKEN"
+		tokenName = EnvGitHubToken
 	}
 
 	if remaining == "0" || resource != "" || resp.StatusCode == http.StatusTooManyRequests {

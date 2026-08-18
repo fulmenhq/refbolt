@@ -429,7 +429,7 @@ func pathToArchivePath(urlPath string) string {
 // belongs to the provider (e.g. OPENAI_API_KEY) and must never be sent to a
 // third-party service like Jina Reader.
 func jinaAPIKey(_ ProviderConfig) string {
-	return strings.TrimSpace(os.Getenv("JINA_API_KEY"))
+	return strings.TrimSpace(os.Getenv(EnvJinaAPIKey))
 }
 
 // checkJinaResponse inspects an HTTP response from Jina Reader and returns

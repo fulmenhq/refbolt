@@ -7,8 +7,8 @@ import "github.com/fulmenhq/refbolt/internal/provider"
 // alongside new credential-needing providers, and unknown env vars fall
 // through to "no URL" rather than guessing.
 var credentialURLs = map[string]string{
-	"JINA_API_KEY": "https://jina.ai/reader",
-	"GITHUB_TOKEN": "https://github.com/settings/tokens",
+	provider.EnvJinaAPIKey:  "https://jina.ai/reader",
+	provider.EnvGitHubToken: "https://github.com/settings/tokens",
 }
 
 // CredentialURL returns the "get a key" URL for the given env var, or
@@ -33,9 +33,9 @@ type CredentialRequirement struct {
 func ProviderCredentials(p provider.ProviderConfig) []string {
 	var out []string
 	if p.FetchStrategy == provider.StrategyJina || p.FetchStrategy == provider.StrategyAuto {
-		out = append(out, "JINA_API_KEY")
+		out = append(out, provider.EnvJinaAPIKey)
 	}
-	if p.AuthEnvVar != "" && p.AuthEnvVar != "JINA_API_KEY" {
+	if p.AuthEnvVar != "" && p.AuthEnvVar != provider.EnvJinaAPIKey {
 		out = append(out, p.AuthEnvVar)
 	}
 	return out
@@ -56,7 +56,7 @@ func CredentialRequirements(topics []Topic) []CredentialRequirement {
 				req, ok := byVar[envVar]
 				if !ok {
 					reason := "rate-limited without token"
-					if envVar == "JINA_API_KEY" {
+					if envVar == provider.EnvJinaAPIKey {
 						reason = "jina strategy, rate-limited without key"
 					}
 					req = &CredentialRequirement{
@@ -72,7 +72,7 @@ func CredentialRequirements(topics []Topic) []CredentialRequirement {
 
 	// Stable order: JINA_API_KEY first, then GITHUB_TOKEN, then others.
 	var result []CredentialRequirement
-	for _, key := range []string{"JINA_API_KEY", "GITHUB_TOKEN"} {
+	for _, key := range []string{provider.EnvJinaAPIKey, provider.EnvGitHubToken} {
 		if req, ok := byVar[key]; ok {
 			result = append(result, *req)
 			delete(byVar, key)
