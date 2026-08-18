@@ -172,12 +172,12 @@ Each provider writes a `.sync-meta.json` alongside its archive output at
 it's per-provider state, not per-snapshot). The file is a `SyncMeta` struct
 with these fields (`internal/sync/metadata.go`):
 
-| Field          | Purpose                                                                                    |
-| -------------- | ------------------------------------------------------------------------------------------ |
-| `config_hash`  | SHA-256 of the provider's resolved config fields; invalidates meta if config changes       |
-| `last_sync`    | Timestamp of the last successful sync for this provider                                    |
-| `content_hash` | SHA-256 of the aggregate content from the previous sync                                    |
-| `file_count`   | Number of files written in the previous sync                                               |
+| Field          | Purpose                                                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| `config_hash`  | SHA-256 of the provider's resolved config fields; invalidates meta if config changes                     |
+| `last_sync`    | Timestamp of the last successful sync for this provider                                                  |
+| `content_hash` | SHA-256 of the aggregate content from the previous sync                                                  |
+| `file_count`   | Number of files written in the previous sync                                                             |
 | `fetch_hint`   | Strategy-specific upstream signals (`etag`, `last_modified`, `content_length`, `tree_sha`, `path_hints`) |
 
 Native multi-path providers (e.g. Starlink `starlink-api-v2-*`) store
