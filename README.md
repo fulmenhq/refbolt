@@ -160,10 +160,10 @@ refbolt sync --topic spacex-data --exclude-provider starlink-api-v2-reference
 refbolt archives two related but distinct documentation families under topic
 `spacex-data`:
 
-| Family | Prefix | Source | Strategy |
-| ------ | ------ | ------ | ---------- |
-| r/SpaceX community API | `spacex-*` | `r-spacex/SpaceX-API` on GitHub (`docs/`) | `github-raw` |
-| Starlink Public API v2 | `starlink-api-v2-*` | `starlink.readme.io` (native `.md`) | `native` |
+| Family                 | Prefix              | Source                                    | Strategy     |
+| ---------------------- | ------------------- | ----------------------------------------- | ------------ |
+| r/SpaceX community API | `spacex-*`          | `r-spacex/SpaceX-API` on GitHub (`docs/`) | `github-raw` |
+| Starlink Public API v2 | `starlink-api-v2-*` | `starlink.readme.io` (native `.md`)       | `native`     |
 
 There is no monolithic "sync all SpaceX" mode. Each resource or API surface is a
 separate provider slug — the same opt-in pattern as AWS (`aws-bedrock-userguide`)

@@ -456,24 +456,24 @@ refbolt archives Markdown from the GitHub `docs/` tree — the same content serv
 **Opt-in by surface** — like AWS and DigitalOcean, each resource/version is a separate
 provider slug under topic `spacex-data`. There is no monolithic "sync all SpaceX" mode.
 
-| Slug | Resource | ~files |
-| ---- | -------- | ------ |
-| `spacex-api-guides` | Cross-cutting guides (pagination, queries, clients) | 4 |
-| `spacex-launches-v4` | Launches v4 | 9 |
-| `spacex-launches-v5` | Launches v5 | 9 |
-| `spacex-rockets-v4` | Rockets | 4 |
-| `spacex-capsules-v4` | Capsules | 4 |
-| `spacex-cores-v4` | Cores | 4 |
-| `spacex-crew-v4` | Crew | 4 |
-| `spacex-dragons-v4` | Dragons | 4 |
-| `spacex-history-v4` | History | 4 |
-| `spacex-company-v4` | Company info | 2 |
-| `spacex-landpads-v4` | Landing pads | 4 |
-| `spacex-launchpads-v4` | Launch pads | 4 |
-| `spacex-payloads-v4` | Payloads | 4 |
-| `spacex-roadster-v4` | Roadster ephemeris | 3 |
-| `spacex-ships-v4` | Recovery ships | 4 |
-| `spacex-starlink-v4` | Starlink *satellite catalog* (r/SpaceX data API) | 4 |
+| Slug                   | Resource                                            | ~files |
+| ---------------------- | --------------------------------------------------- | ------ |
+| `spacex-api-guides`    | Cross-cutting guides (pagination, queries, clients) | 4      |
+| `spacex-launches-v4`   | Launches v4                                         | 9      |
+| `spacex-launches-v5`   | Launches v5                                         | 9      |
+| `spacex-rockets-v4`    | Rockets                                             | 4      |
+| `spacex-capsules-v4`   | Capsules                                            | 4      |
+| `spacex-cores-v4`      | Cores                                               | 4      |
+| `spacex-crew-v4`       | Crew                                                | 4      |
+| `spacex-dragons-v4`    | Dragons                                             | 4      |
+| `spacex-history-v4`    | History                                             | 4      |
+| `spacex-company-v4`    | Company info                                        | 2      |
+| `spacex-landpads-v4`   | Landing pads                                        | 4      |
+| `spacex-launchpads-v4` | Launch pads                                         | 4      |
+| `spacex-payloads-v4`   | Payloads                                            | 4      |
+| `spacex-roadster-v4`   | Roadster ephemeris                                  | 3      |
+| `spacex-ships-v4`      | Recovery ships                                      | 4      |
+| `spacex-starlink-v4`   | Starlink _satellite catalog_ (r/SpaceX data API)    | 4      |
 
 **Demo surfaces:**
 
@@ -501,11 +501,11 @@ enterprise account with a V2 service account (OIDC); **documentation is public**
 Device and local-router guides (RADIUS, captive portal, local HTTPS router API) are
 **deliberately omitted** — device integration, not the public REST API surface.
 
-| Slug | Surface | ~pages |
-| ---- | ------- | ------ |
-| `starlink-api-v2-guides` | Getting started, auth, service lines, data pools | ~23 |
-| `starlink-api-v2-reference` | Full v2 endpoint reference | ~67 |
-| `starlink-api-v2-status` | Aviation flight status + telemetry stream/query | 6 |
+| Slug                        | Surface                                          | ~pages |
+| --------------------------- | ------------------------------------------------ | ------ |
+| `starlink-api-v2-guides`    | Getting started, auth, service lines, data pools | ~23    |
+| `starlink-api-v2-reference` | Full v2 endpoint reference                       | ~67    |
+| `starlink-api-v2-status`    | Aviation flight status + telemetry stream/query  | 6      |
 
 Paths are curated from `llms.txt`; refbolt fetches each `.md` URL directly. Path
 entries are **relative to `base_url`** (no leading slash) so URLs resolve to
