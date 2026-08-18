@@ -95,7 +95,7 @@ func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 	if err != nil {
 		return hint, fmt.Errorf("HEAD %s: %w", targetURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// HEAD not supported or error — caller falls back to full fetch.
 	if resp.StatusCode == http.StatusMethodNotAllowed || resp.StatusCode >= 400 {

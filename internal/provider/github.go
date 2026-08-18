@@ -116,7 +116,7 @@ func (f *GitHubRawFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 	if err != nil {
 		return hint, fmt.Errorf("checking GitHub tree SHA for %s: %w", f.cfg.Slug, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var payload gitHubTreeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {

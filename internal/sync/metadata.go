@@ -76,7 +76,9 @@ func Write(path string, meta *SyncMeta) error {
 		return fmt.Errorf("writing temp metadata: %w", err)
 	}
 	if err := os.Rename(tmp, path); err != nil {
-		os.Remove(tmp) // best-effort cleanup
+		if cleanupErr := os.Remove(tmp); cleanupErr != nil && !os.IsNotExist(cleanupErr) {
+			return fmt.Errorf("renaming temp metadata: %w (removing temp metadata: %v)", err, cleanupErr)
+		}
 		return fmt.Errorf("renaming temp metadata: %w", err)
 	}
 	return nil
@@ -94,7 +96,7 @@ func ConfigHash(fields map[string]string) string {
 
 	h := sha256.New()
 	for _, k := range keys {
-		fmt.Fprintf(h, "%s=%s\n", k, fields[k])
+		_, _ = fmt.Fprintf(h, "%s=%s\n", k, fields[k])
 	}
 	return fmt.Sprintf("sha256:%x", h.Sum(nil))
 }

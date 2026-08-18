@@ -431,6 +431,30 @@ func TestSplitFrontmatterFullTxt_NoFrontmatter(t *testing.T) {
 	}
 }
 
+func TestSplitFrontmatterFullTxt_UsesURLForPathAndSource(t *testing.T) {
+	content := []byte(`---
+title: Tool use overview
+url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
+---
+
+# Tool use overview
+`)
+
+	pages, err := SplitFrontmatterFullTxt(content, "https://platform.claude.com/llms-full.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pages) != 1 {
+		t.Fatalf("expected 1 page, got %d", len(pages))
+	}
+	if pages[0].Path != "en/agents-and-tools/tool-use/overview.md" {
+		t.Errorf("Path = %q", pages[0].Path)
+	}
+	if pages[0].SourceURL != "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" {
+		t.Errorf("SourceURL = %q", pages[0].SourceURL)
+	}
+}
+
 func TestTitleToArchivePath(t *testing.T) {
 	tests := []struct {
 		title string

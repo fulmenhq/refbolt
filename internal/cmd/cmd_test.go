@@ -107,7 +107,9 @@ func TestValidateCmd_InvalidYAML(t *testing.T) {
 
 	// Write invalid YAML to a temp file.
 	tmp := filepath.Join(t.TempDir(), "bad.yaml")
-	os.WriteFile(tmp, []byte("{{{{not yaml"), 0o644)
+	if err := os.WriteFile(tmp, []byte("{{{{not yaml"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	rootCmd.SetArgs([]string{"validate", "--config", tmp})
 	err := rootCmd.Execute()
@@ -121,7 +123,9 @@ func TestInitCmd_NoOverwrite(t *testing.T) {
 
 	// Create existing file.
 	tmp := filepath.Join(t.TempDir(), "providers.yaml")
-	os.WriteFile(tmp, []byte("existing"), 0o644)
+	if err := os.WriteFile(tmp, []byte("existing"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	rootCmd.SetArgs([]string{"init", "--all", "--output", tmp})
 	err := rootCmd.Execute()

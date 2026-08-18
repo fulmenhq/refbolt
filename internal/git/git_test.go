@@ -32,9 +32,7 @@ func initTestRepo(t *testing.T) string {
 
 func TestNewClient_GitNotOnPath(t *testing.T) {
 	// Temporarily clear PATH to simulate git not found.
-	origPath := os.Getenv("PATH")
 	t.Setenv("PATH", "")
-	defer os.Setenv("PATH", origPath)
 
 	_, err := NewClient("/tmp/fake-archive")
 	if err == nil {
