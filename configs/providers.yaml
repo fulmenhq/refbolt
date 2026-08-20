@@ -4,17 +4,19 @@ archive_root: /data/archive
 topics:
   - slug: llm-api
     name: LLM API Documentation
-    description: Frontier LLM provider API reference and guides
+    description: Frontier LLM provider API reference, Grok Bot, and agent IDE integrations (Cursor MCP, hooks)
     providers:
-      # xAI — best case: llms.txt gives us the entire site in one request,
-      # plus individual .md pages are available at /developers/**/*.md
+      # xAI — llms.txt archives the full docs.x.ai site in one request (~164 sections).
+      # Includes /developers/** (REST API), /grok-bot/** (Grok Bot + Cursor SSO/dashboard),
+      # and /build/features/** (Cursor .cursor/mcp.json, .cursor/hooks.json compat).
+      # Supplemental paths below are for targeted refresh between full syncs.
       - slug: xai
         name: xAI / Grok
         base_url: https://docs.x.ai
         fetch_strategy: native
         llms_txt_url: https://docs.x.ai/llms.txt
         paths:
-          # Individual .md pages for targeted fetching (supplement llms.txt)
+          # Developer API (REST inference, tools, models)
           - /developers/introduction.md
           - /developers/quickstart.md
           - /developers/models.md
@@ -22,6 +24,15 @@ topics:
           - /developers/tools/function-calling.md
           - /developers/tools/web-search.md
           - /developers/rest-api-reference/inference/chat.md
+          - /developers/docs-mcp.md
+          # Grok Bot — Cursor account, SSO, dashboard admin, team rollout
+          - /grok-bot/overview.md
+          - /grok-bot/get-started.md
+          - /grok-bot/teams-and-enterprises.md
+          - /grok-bot/approvals-security-and-privacy.md
+          # Grok CLI agent compat — reads Cursor MCP and hook configs
+          - /build/features/mcp-servers.md
+          - /build/features/hooks.md
       # Anthropic — native llms-full.txt at platform.claude.com (24MB, 488 pages).
       # URL-based section delimiters (not xAI-style). SplitLLMSFullTxt handles parsing.
       # Note: llms-full.txt is at the domain root, NOT under /docs/.

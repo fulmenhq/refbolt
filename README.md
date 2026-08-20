@@ -138,8 +138,11 @@ a `providers.yaml` and has no network dependency.
 Not every project needs all 46 providers. Pick what you need:
 
 ```bash
-# Just the LLM API docs
+# Just the LLM API docs (includes Grok Bot + Cursor integration via xai)
 refbolt sync --topic llm-api
+
+# Grok Bot / Cursor agent docs only (~164 pages from docs.x.ai llms.txt)
+refbolt sync --provider xai
 
 # Only Anthropic and OpenAI
 refbolt sync --provider anthropic --provider openai
@@ -184,7 +187,22 @@ refbolt sync --provider starlink-api-v2-status
 Archived docs land at `<archive_root>/spacex-data/<slug>/latest/`. Point Cursor
 `@Docs` or your agent context at that tree for offline reference.
 
-Details: [docs/providers/README.md](docs/providers/README.md#rspacex-api-community-open-data).
+### xAI / Grok Bot + Cursor agent docs (`xai`)
+
+The `xai` provider archives the **full** docs.x.ai site — REST API, Grok Bot team
+rollout (Cursor SSO/dashboard), and Grok CLI compat with `.cursor/mcp.json` and
+`.cursor/hooks.json`. One sync covers it:
+
+```bash
+refbolt sync --provider xai
+# → <archive_root>/llm-api/xai/latest/
+```
+
+Key pages for Cursor/local agents: `developers/docs-mcp.md`, `grok-bot/overview.md`,
+`grok-bot/teams-and-enterprises.md`, `build/features/mcp-servers.md`,
+`build/features/hooks.md`. Live docs MCP: `https://docs.x.ai/api/mcp`.
+
+Details: [docs/providers/README.md](docs/providers/README.md#xai--grok).
 
 ## Docker
 
