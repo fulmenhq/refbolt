@@ -57,22 +57,22 @@ Providers using the `github-raw` strategy rely on two GitHub surfaces:
 A single `refbolt sync --provider xai` archives the **entire** docs.x.ai site — not
 just the REST API. For Cursor and local Grok agents, the high-value surfaces are:
 
-| Path prefix | ~sections | What agents get |
-| ----------- | --------- | --------------- |
-| `/developers/**` | ~80 | Grok REST API — inference, tools, voice, files, models |
-| `/grok-bot/**` | 13 | Grok Bot product docs — Cursor SSO, dashboard admin, team rollout, privacy |
-| `/build/features/**` | ~20 | Grok CLI/TUI — reads `.cursor/mcp.json`, `.cursor/hooks.json`, `.cursor/rules/` |
-| `/build/cli/**`, `/build/headless/**` | ~30 | Grok CLI reference, config, permissions, sandbox |
+| Path prefix                           | ~sections | What agents get                                                                 |
+| ------------------------------------- | --------- | ------------------------------------------------------------------------------- |
+| `/developers/**`                      | ~80       | Grok REST API — inference, tools, voice, files, models                          |
+| `/grok-bot/**`                        | 13        | Grok Bot product docs — Cursor SSO, dashboard admin, team rollout, privacy      |
+| `/build/features/**`                  | ~20       | Grok CLI/TUI — reads `.cursor/mcp.json`, `.cursor/hooks.json`, `.cursor/rules/` |
+| `/build/cli/**`, `/build/headless/**` | ~30       | Grok CLI reference, config, permissions, sandbox                                |
 
 **Cursor-specific entry points** (also listed as supplemental paths in `providers.yaml`):
 
-| Page | Archive path (under `llm-api/xai/latest/`) |
-| ---- | ------------------------------------------ |
-| Docs MCP setup for Cursor | `developers/docs-mcp.md` |
-| Grok Bot overview | `grok-bot/overview.md` |
-| Team admin (Cursor dashboard, MCP policy) | `grok-bot/teams-and-enterprises.md` |
-| Cursor MCP config compat | `build/features/mcp-servers.md` |
-| Cursor hooks compat | `build/features/hooks.md` |
+| Page                                      | Archive path (under `llm-api/xai/latest/`) |
+| ----------------------------------------- | ------------------------------------------ |
+| Docs MCP setup for Cursor                 | `developers/docs-mcp.md`                   |
+| Grok Bot overview                         | `grok-bot/overview.md`                     |
+| Team admin (Cursor dashboard, MCP policy) | `grok-bot/teams-and-enterprises.md`        |
+| Cursor MCP config compat                  | `build/features/mcp-servers.md`            |
+| Cursor hooks compat                       | `build/features/hooks.md`                  |
 
 Live MCP endpoint (not archived — connect at runtime): `https://docs.x.ai/api/mcp`
 
