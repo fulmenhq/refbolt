@@ -3,6 +3,16 @@ set -euo pipefail
 
 export PATH="${HOME}/.local/bin:${HOME}/go/bin:${PATH}"
 
+ensure_node_npm() {
+  if command -v npm >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs npm
+  fi
+}
+
 install_sfetch() {
   if command -v sfetch >/dev/null 2>&1; then
     return 0
@@ -14,6 +24,8 @@ install_sfetch() {
   curl -sSfL https://github.com/3leaps/sfetch/releases/latest/download/install-sfetch.sh | bash
   export PATH="${HOME}/.local/bin:${PATH}"
 }
+
+ensure_node_npm
 
 if command -v goneat >/dev/null 2>&1; then
   make dependencies
