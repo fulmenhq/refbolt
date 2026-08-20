@@ -129,11 +129,11 @@ func TestCatalogList_JSONEnvelope(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout)
 	}
-	if envelope.TopicsTotal != 9 {
-		t.Errorf("topics_total = %d, want 9", envelope.TopicsTotal)
+	if envelope.TopicsTotal != 10 {
+		t.Errorf("topics_total = %d, want 10", envelope.TopicsTotal)
 	}
-	if envelope.ProvidersTotal != 46 {
-		t.Errorf("providers_total = %d, want 46", envelope.ProvidersTotal)
+	if envelope.ProvidersTotal != 53 {
+		t.Errorf("providers_total = %d, want 53", envelope.ProvidersTotal)
 	}
 	if envelope.Version == "" {
 		t.Error("version should not be empty")
@@ -209,7 +209,7 @@ func TestCatalogList_FilterByTopic(t *testing.T) {
 	if !strings.Contains(stderr, "across 1 topic.") {
 		t.Errorf("stderr should say 'across 1 topic.' for a single-topic filter, got: %q", stderr)
 	}
-	if strings.Contains(stderr, "across 9 topics") {
+	if strings.Contains(stderr, "across 10 topics") {
 		t.Errorf("stderr should not report full-catalog totals on filtered output, got: %q", stderr)
 	}
 }
@@ -395,8 +395,8 @@ func TestCatalogTopics_RendersTableAndCounts(t *testing.T) {
 			t.Errorf("topics output missing %q", slug)
 		}
 	}
-	if !strings.Contains(stderr, "9 topics") {
-		t.Errorf("stderr should mention '9 topics', got: %q", stderr)
+	if !strings.Contains(stderr, "10 topics") {
+		t.Errorf("stderr should mention '10 topics', got: %q", stderr)
 	}
 }
 

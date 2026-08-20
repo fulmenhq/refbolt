@@ -542,3 +542,92 @@ entries are **relative to `base_url`** (no leading slash) so URLs resolve to
 ### Status
 
 Verified (`starlink-api-v2-status` live fetch).
+
+## Social Platform APIs (X & YouTube)
+
+Topic `social-platform` archives **official X (Twitter) Platform API** and **YouTube Data API v3**
+documentation. Opt-in by surface — there is no monolithic firehose sync.
+
+**Important:** This topic is distinct from:
+
+| Topic / provider | What it is                                     | What it is NOT                      |
+| ---------------- | ---------------------------------------------- | ----------------------------------- |
+| `llm-api/xai`    | xAI Grok API, Grok Bot, Cursor MCP             | X Platform REST API for posting/DMs |
+| `spacex-data/*`  | r/SpaceX launch data + Starlink enterprise API | X/Twitter social platform           |
+
+### X Developer Platform (`docs.x.com`)
+
+**Base URL**: `https://docs.x.com`
+**Strategy**: `native` — append `.md` to any docs URL
+**Index**: nested `llms.txt` per surface (not the 5.4MB root `llms-full.txt` firehose)
+
+X publishes agent-friendly docs: nested indexes, native Markdown, OpenAPI at
+`openapi.json`, and MCP/skill.md tooling. refbolt curates paths from each nested
+`llms.txt` (probed 2026-08-20) and fetches individual `.md` pages — incremental,
+surface-scoped sync without re-downloading `llms-full.txt` per provider.
+
+#### Selection guidance
+
+| Use case                                        | Start with                                    |
+| ----------------------------------------------- | --------------------------------------------- |
+| "Build messaging/DM integrations on X"          | `xdev-api-messaging` + `xdev-platform-guides` |
+| "Full X API v2 reference (posts, users, media)" | `xdev-api-v2`                                 |
+| "Official Python/TypeScript SDKs"               | `xdev-xdk-python` / `xdev-xdk-typescript`     |
+| "Onboarding, auth, rate limits, OpenAPI"        | `xdev-platform-guides`                        |
+
+#### Opt-in surfaces
+
+| Slug                   | Surface                                                         | ~pages |
+| ---------------------- | --------------------------------------------------------------- | ------ |
+| `xdev-platform-guides` | Overview, auth fundamentals, tutorials, AI/agent tools, OpenAPI | 16     |
+| `xdev-api-messaging`   | DMs, X Chat, webhooks, Account Activity, X Activity             | 66     |
+| `xdev-api-v2`          | Core v2 reference (posts, users, lists, spaces, media, streams) | 316    |
+| `xdev-xdk-python`      | Python XDK                                                      | 68     |
+| `xdev-xdk-typescript`  | TypeScript/JavaScript XDK                                       | 105    |
+
+Paths are listed explicitly in `configs/providers.yaml` (generated from nested
+`llms.txt` indexes). To refresh after X doc changes, re-probe
+`docs.x.com/<surface>/llms.txt` and update the path lists.
+
+#### Known quirks
+
+- Slugs use `xdev-` prefix (not `x-`) — provider slug schema requires `[a-z][a-z0-9]+` after the first character; single-letter `x-` prefixes fail validation.
+- Native `.md` pages may contain JSX component stubs (`export const Button`); content is still usable for agents.
+- Use HTTP/1.1 (refbolt default) — same compatibility note as xAI docs.
+
+#### Status
+
+Verified (`xdev-platform-guides`, `xdev-api-messaging` live fetch 2026-08-20).
+
+### YouTube Data API v3 (`developers.google.com/youtube/v3`)
+
+**Base URL**: `https://developers.google.com`
+**Strategy**: `jina` for HTML narrative/reference pages; Discovery REST JSON via `openapi_url`
+**Auth**: `JINA_API_KEY` recommended (rate limits without key)
+
+Google publishes HTML-only developer docs — no `llms.txt`, no native `.md` suffix.
+robots.txt is permissive (only `/youtube/partner/` disallowed). refbolt uses Jina
+Reader for guides and reference pages, plus the Google Discovery REST document
+(~520KB JSON) as machine-readable schema.
+
+#### Selection guidance
+
+| Use case                             | Start with                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| "Search YouTube programmatically"    | `youtube-data-api-guides` (implementation/search) + `youtube-data-api-reference` (search.list) |
+| "OAuth setup, quotas, quickstarts"   | `youtube-data-api-guides`                                                                      |
+| "Endpoint shapes, parameters, types" | `youtube-data-api-reference` (includes Discovery JSON)                                         |
+
+#### Opt-in surfaces
+
+| Slug                         | Surface                                                               | ~pages |
+| ---------------------------- | --------------------------------------------------------------------- | ------ |
+| `youtube-data-api-guides`    | Getting started, OAuth, implementation guides, quickstarts, libraries | 43     |
+| `youtube-data-api-reference` | REST resource/method reference + Discovery JSON                       | 77     |
+
+Key search endpoint: `GET https://www.googleapis.com/youtube/v3/search` — documented at
+`/youtube/v3/docs/search/list`.
+
+#### Status
+
+Verified (`youtube-data-api-guides` live fetch 2026-08-20).
