@@ -132,8 +132,8 @@ func TestCatalogList_JSONEnvelope(t *testing.T) {
 	if envelope.TopicsTotal != 10 {
 		t.Errorf("topics_total = %d, want 10", envelope.TopicsTotal)
 	}
-	if envelope.ProvidersTotal != 53 {
-		t.Errorf("providers_total = %d, want 53", envelope.ProvidersTotal)
+	if envelope.ProvidersTotal != 54 {
+		t.Errorf("providers_total = %d, want 54", envelope.ProvidersTotal)
 	}
 	if envelope.Version == "" {
 		t.Error("version should not be empty")

@@ -571,19 +571,42 @@ surface-scoped sync without re-downloading `llms-full.txt` per provider.
 | Use case                                        | Start with                                    |
 | ----------------------------------------------- | --------------------------------------------- |
 | "Build messaging/DM integrations on X"          | `xdev-api-messaging` + `xdev-platform-guides` |
-| "Full X API v2 reference (posts, users, media)" | `xdev-api-v2`                                 |
-| "Official Python/TypeScript SDKs"               | `xdev-xdk-python` / `xdev-xdk-typescript`     |
+| "Full X API v2 reference (posts, users, media)" | `xdev-api-v2` (fat surface — see below)       |
+| "Enterprise GNIP / PowerTrack / Firehose"       | `xdev-enterprise-gnip`                        |
+| "Official Python SDK"                           | `xdev-xdk-python`                             |
 | "Onboarding, auth, rate limits, OpenAPI"        | `xdev-platform-guides`                        |
+
+`xdev-xdk-typescript` is **parked** (`enabled: false`) — the reference is mostly
+generated `Schemas.*` pages. Enable in `providers.yaml` when a consumer needs it.
 
 #### Opt-in surfaces
 
-| Slug                   | Surface                                                         | ~pages |
-| ---------------------- | --------------------------------------------------------------- | ------ |
-| `xdev-platform-guides` | Overview, auth fundamentals, tutorials, AI/agent tools, OpenAPI | 16     |
-| `xdev-api-messaging`   | DMs, X Chat, webhooks, Account Activity, X Activity             | 66     |
-| `xdev-api-v2`          | Core v2 reference (posts, users, lists, spaces, media, streams) | 316    |
-| `xdev-xdk-python`      | Python XDK                                                      | 68     |
-| `xdev-xdk-typescript`  | TypeScript/JavaScript XDK                                       | 105    |
+| Slug                   | Surface                                                          | ~pages |
+| ---------------------- | ---------------------------------------------------------------- | ------ |
+| `xdev-platform-guides` | Overview, auth fundamentals, tutorials, AI/agent tools, OpenAPI  | 15     |
+| `xdev-api-messaging`   | DMs, X Chat (`xchat/introduction` lives here), webhooks, streams | 65     |
+| `xdev-enterprise-gnip` | GNIP 2.0, PowerTrack, Firehose, Decahose (enterprise tier)       | 14     |
+| `xdev-api-v2`          | Core v2 reference — **fat surface, ~302 pages**                  | 302    |
+| `xdev-xdk-python`      | Python XDK                                                       | 68     |
+| `xdev-xdk-typescript`  | TypeScript XDK (**disabled / parked**)                           | 105    |
+
+#### Sync cautions
+
+Treat `xdev-api-v2` like AWS per-service providers: **~302 individual HTTP fetches**.
+Do not include it in casual `refbolt sync --all` runs.
+
+After merge, sync **named providers** or `--topic social-platform` — never `--all`:
+
+```bash
+# Messaging use case
+refbolt sync --provider xdev-api-messaging
+
+# Full social-platform topic (includes fat xdev-api-v2 — know what you're doing)
+refbolt sync --topic social-platform
+```
+
+Enterprise GNIP pages were mixed into the `x-api/llms.txt` index; they are split
+into `xdev-enterprise-gnip` rather than bundled in `xdev-api-v2`.
 
 Paths are listed explicitly in `configs/providers.yaml` (generated from nested
 `llms.txt` indexes). To refresh after X doc changes, re-probe
@@ -622,8 +645,11 @@ Reader for guides and reference pages, plus the Google Discovery REST document
 
 | Slug                         | Surface                                                               | ~pages |
 | ---------------------------- | --------------------------------------------------------------------- | ------ |
-| `youtube-data-api-guides`    | Getting started, OAuth, implementation guides, quickstarts, libraries | 43     |
-| `youtube-data-api-reference` | REST resource/method reference + Discovery JSON                       | 77     |
+| `youtube-data-api-guides`    | Getting started, OAuth, implementation guides, quickstarts, libraries | 42     |
+| `youtube-data-api-reference` | REST resource/method reference + Discovery JSON (`search.list` here)  | 76     |
+
+`search.list` is archived only under reference (not duplicated in guides).
+Guides still include `/youtube/v3/guides/implementation/search` for narrative context.
 
 Key search endpoint: `GET https://www.googleapis.com/youtube/v3/search` — documented at
 `/youtube/v3/docs/search/list`.

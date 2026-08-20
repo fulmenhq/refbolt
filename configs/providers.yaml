@@ -621,7 +621,6 @@ topics:
           - /tutorials.md
           - /what-to-build.md
           - /x-api/fundamentals/data-dictionary.md
-          - /xchat/introduction.md
       # Direct Messages, X Chat, webhooks, Account Activity, X Activity streams — for building messaging integrations.
       - slug: xdev-api-messaging
         name: X API v2 — Messaging & Real-Time
@@ -681,7 +680,6 @@ topics:
           - /x-api/direct-messages/manage/introduction.md
           - /x-api/direct-messages/manage/migrate.md
           - /x-api/direct-messages/manage/quickstart.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/account-activity.md
           - /x-api/webhooks/create-replay-job-for-webhook.md
           - /x-api/webhooks/create-stream-link.md
           - /x-api/webhooks/create-webhook.md
@@ -695,15 +693,35 @@ topics:
           - /x-api/webhooks/stream/quickstart.md
           - /x-api/webhooks/validate-webhook.md
           - /xchat/introduction.md
+      # Enterprise GNIP / PowerTrack historical APIs — separate from standard v2 tier.
+      - slug: xdev-enterprise-gnip
+        name: X Enterprise GNIP & PowerTrack
+        base_url: https://docs.x.com
+        fetch_strategy: native
+        llms_txt_url: https://docs.x.com/enterprise-api/llms.txt
+        paths:
+          - /x-api/enterprise-gnip-2.0/enterprise-gnip.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/account-activity.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/data-dictionary.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/data-enrichments.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/decahose-api.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/edit-tweets.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/engagement-api.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/firehouse.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/overview.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/rate-limits.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/rules-filtering.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/search-api.md
+          - /x-api/enterprise-gnip-2.0/fundamentals/usage.md
+          - /x-api/enterprise-gnip-2.0/powertrack-api.md
       # Posts, users, lists, spaces, media, streams, trends, compliance — full v2 reference
-      # minus messaging surfaces (see xdev-api-messaging).
+      # minus messaging and enterprise GNIP surfaces. ~302 pages: treat like AWS (never --all).
       - slug: xdev-api-v2
         name: X API v2 — Core Reference
         base_url: https://docs.x.com
         fetch_strategy: native
         llms_txt_url: https://docs.x.com/x-api/llms.txt
         paths:
-          - /AGENTS.md
           - /x-api/articles/create-draft-article.md
           - /x-api/articles/introduction.md
           - /x-api/articles/publish-article.md
@@ -735,19 +753,6 @@ topics:
           - /x-api/connections/terminate-all-connections.md
           - /x-api/connections/terminate-connections-by-endpoint.md
           - /x-api/connections/terminate-multiple-connections.md
-          - /x-api/enterprise-gnip-2.0/enterprise-gnip.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/data-dictionary.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/data-enrichments.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/decahose-api.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/edit-tweets.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/engagement-api.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/firehouse.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/overview.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/rate-limits.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/rules-filtering.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/search-api.md
-          - /x-api/enterprise-gnip-2.0/fundamentals/usage.md
-          - /x-api/enterprise-gnip-2.0/powertrack-api.md
           - /x-api/fundamentals/consistency.md
           - /x-api/fundamentals/consuming-streaming-data.md
           - /x-api/fundamentals/conversation-id.md
@@ -1094,11 +1099,12 @@ topics:
           - /xdks/python/reference/xdk.webhooks.md
           - /xdks/python/reference/xdk.webhooks.models.md
           - /xdks/python/streaming.md
-      # Official TypeScript/JavaScript XDK reference.
+      # Parked: TS XDK reference is mostly generated Schemas.* pages — enable when needed.
       - slug: xdev-xdk-typescript
         name: X TypeScript SDK (XDK)
         base_url: https://docs.x.com
         fetch_strategy: native
+        enabled: false
         llms_txt_url: https://docs.x.com/xdks/typescript/llms.txt
         paths:
           - /xdks/typescript/authentication.md
@@ -1206,7 +1212,7 @@ topics:
           - /xdks/typescript/reference/modules/Users.md
           - /xdks/typescript/reference/modules/Webhooks.md
           - /xdks/typescript/streaming.md
-      # Getting started, OAuth, implementation guides (including search), quickstarts, client libraries. HTML-only — Jina Reader required.
+      # YouTube getting started, OAuth, implementation guides (including search), quickstarts, client libraries.
       - slug: youtube-data-api-guides
         name: YouTube Data API v3 Guides
         base_url: https://developers.google.com
@@ -1217,7 +1223,6 @@ topics:
           - /youtube/v3/code_samples
           - /youtube/v3/determine_quota_cost
           - /youtube/v3/docs
-          - /youtube/v3/docs/search/list
           - /youtube/v3/docs/videos/insert
           - /youtube/v3/getting-started
           - /youtube/v3/guides/auth/client-side-web-apps
@@ -1257,7 +1262,7 @@ topics:
           - /youtube/v3/quickstart/ruby
           - /youtube/v3/sample_requests
           - /youtube/v3/support
-      # REST API resource and method reference — search.list, videos, channels, playlists, etc. HTML-only — Jina Reader required.
+      # YouTube REST resource/method reference plus Google Discovery REST schema (search.list lives here).
       - slug: youtube-data-api-reference
         name: YouTube Data API v3 Reference
         base_url: https://developers.google.com

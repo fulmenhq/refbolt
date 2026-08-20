@@ -64,9 +64,9 @@ func TestCatalogEntries_CountAndSort(t *testing.T) {
 		t.Fatal("got zero entries")
 	}
 
-	// Expected: 53 providers. Exact count guards against future drift; if
+	// Expected: 54 providers. Exact count guards against future drift; if
 	// the catalog grows on purpose, update this number alongside the change.
-	const expected = 53
+	const expected = 54
 	if len(entries) != expected {
 		t.Errorf("CatalogEntries count = %d, want %d", len(entries), expected)
 	}
