@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/fulmenhq/refbolt/internal/config"
+	"github.com/fulmenhq/refbolt/internal/provider"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,6 +40,73 @@ properties:
 `),
 	)
 	t.Cleanup(func() { config.SetEmbeddedAssets(nil, nil) })
+}
+
+func TestInitProviderFromConfig_PreservesEnabledFalse(t *testing.T) {
+	disabled := false
+	p := provider.ProviderConfig{
+		Slug:          "parked-provider",
+		Name:          "Parked",
+		BaseURL:       "https://example.com",
+		FetchStrategy: provider.StrategyNative,
+		Enabled:       &disabled,
+		Paths:         []string{"/a.md", "/b.md"},
+	}
+
+	po := initProviderFromConfig(p)
+	if po.Enabled == nil || *po.Enabled {
+		t.Fatalf("Enabled = %v, want false pointer", po.Enabled)
+	}
+
+	yamlBytes, err := yaml.Marshal(po)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if !strings.Contains(string(yamlBytes), "enabled: false") {
+		t.Fatalf("init output missing enabled: false:\n%s", yamlBytes)
+	}
+}
+
+func TestInitCmd_OmitsDisabledProviders(t *testing.T) {
+	root := findProjectRoot(t)
+	configPath := filepath.Join(root, "configs", "providers.yaml")
+	schemaPath := filepath.Join(root, "schemas", "providers", "v0", "providers.schema.yaml")
+	catalogBytes, _ := os.ReadFile(configPath)
+	schemaBytes, _ := os.ReadFile(schemaPath)
+	config.SetEmbeddedAssets(catalogBytes, schemaBytes)
+	t.Cleanup(func() { config.SetEmbeddedAssets(nil, nil) })
+
+	initAll, initForce = false, false
+	initOutput = ""
+	initTopics = []string{"social-platform"}
+	t.Cleanup(func() {
+		initAll, initForce = false, false
+		initOutput = ""
+		initTopics = nil
+	})
+
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	rootCmd.SetArgs([]string{"init", "--topic", "social-platform"})
+	err := rootCmd.Execute()
+
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	if err != nil {
+		t.Fatalf("init --topic social-platform failed: %v", err)
+	}
+
+	emitted, _ := io.ReadAll(r)
+	out := string(emitted)
+	if strings.Contains(out, "xdev-xdk-typescript") {
+		t.Fatalf("init output should omit disabled xdev-xdk-typescript")
+	}
+	if !strings.Contains(out, "xdev-api-messaging") {
+		t.Fatal("init output should include enabled social-platform providers")
+	}
 }
 
 func TestInitCmd_StdoutIsValidYAML(t *testing.T) {
