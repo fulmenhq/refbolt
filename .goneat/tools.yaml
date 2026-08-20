@@ -190,7 +190,7 @@ tools:
       darwin:
         - brew
       linux:
-        - brew
+        - npm
       windows:
         - bun
         - npm
