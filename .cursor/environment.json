@@ -1,0 +1,4 @@
+{
+  "name": "refbolt dev",
+  "install": "bash .cursor/install.sh"
+}
