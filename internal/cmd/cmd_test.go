@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,35 +42,70 @@ properties:
 	t.Cleanup(func() { config.SetEmbeddedAssets(nil, nil) })
 }
 
-func TestBuildInitConfig_PreservesEnabledFalse(t *testing.T) {
+func TestInitProviderFromConfig_PreservesEnabledFalse(t *testing.T) {
 	disabled := false
-	topics := []config.Topic{{
-		Slug: "test-topic",
-		Providers: []provider.ProviderConfig{{
-			Slug:          "parked-provider",
-			Name:          "Parked",
-			BaseURL:       "https://example.com",
-			FetchStrategy: provider.StrategyNative,
-			Enabled:       &disabled,
-			Paths:         []string{"/a.md", "/b.md"},
-		}},
-	}}
-
-	out := buildInitConfig(topics)
-	if len(out.Topics) != 1 || len(out.Topics[0].Providers) != 1 {
-		t.Fatalf("expected one provider in init output, got %+v", out.Topics)
+	p := provider.ProviderConfig{
+		Slug:          "parked-provider",
+		Name:          "Parked",
+		BaseURL:       "https://example.com",
+		FetchStrategy: provider.StrategyNative,
+		Enabled:       &disabled,
+		Paths:         []string{"/a.md", "/b.md"},
 	}
-	po := out.Topics[0].Providers[0]
+
+	po := initProviderFromConfig(p)
 	if po.Enabled == nil || *po.Enabled {
 		t.Fatalf("Enabled = %v, want false pointer", po.Enabled)
 	}
 
-	yamlBytes, err := yaml.Marshal(out)
+	yamlBytes, err := yaml.Marshal(po)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
 	if !strings.Contains(string(yamlBytes), "enabled: false") {
 		t.Fatalf("init output missing enabled: false:\n%s", yamlBytes)
+	}
+}
+
+func TestInitCmd_OmitsDisabledProviders(t *testing.T) {
+	root := findProjectRoot(t)
+	configPath := filepath.Join(root, "configs", "providers.yaml")
+	schemaPath := filepath.Join(root, "schemas", "providers", "v0", "providers.schema.yaml")
+	catalogBytes, _ := os.ReadFile(configPath)
+	schemaBytes, _ := os.ReadFile(schemaPath)
+	config.SetEmbeddedAssets(catalogBytes, schemaBytes)
+	t.Cleanup(func() { config.SetEmbeddedAssets(nil, nil) })
+
+	initAll, initForce = false, false
+	initOutput = ""
+	initTopics = []string{"social-platform"}
+	t.Cleanup(func() {
+		initAll, initForce = false, false
+		initOutput = ""
+		initTopics = nil
+	})
+
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	rootCmd.SetArgs([]string{"init", "--topic", "social-platform"})
+	err := rootCmd.Execute()
+
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	if err != nil {
+		t.Fatalf("init --topic social-platform failed: %v", err)
+	}
+
+	emitted, _ := io.ReadAll(r)
+	out := string(emitted)
+	if strings.Contains(out, "xdev-xdk-typescript") {
+		t.Fatalf("init output should omit disabled xdev-xdk-typescript")
+	}
+	if !strings.Contains(out, "xdev-api-messaging") {
+		t.Fatal("init output should include enabled social-platform providers")
 	}
 }
 

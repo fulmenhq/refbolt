@@ -172,33 +172,40 @@ func buildInitConfig(topics []config.Topic) initConfigOutput {
 			Slug: t.Slug,
 		}
 		for _, p := range t.Providers {
-			po := initProviderOutput{
-				Slug:           p.Slug,
-				Name:           p.Name,
-				BaseURL:        p.BaseURL,
-				FetchStrategy:  string(p.FetchStrategy),
-				LLMSTxtURL:     p.LLMSTxtURL,
-				OpenAPIURL:     p.OpenAPIURL,
-				GitHubRepo:     p.GitHubRepo,
-				GitHubDocsPath: p.GitHubDocsPath,
-				GitHubBranch:   p.GitHubBranch,
-				AuthEnvVar:     p.AuthEnvVar,
-				Paths:          p.Paths,
-			}
-			if p.FetchTimeout > 0 {
-				// Emit in single-unit seconds ("90s") to satisfy the schema pattern,
-				// which rejects compound forms like "1m30s" that time.Duration.String() produces.
-				po.FetchTimeout = fmt.Sprintf("%ds", int64(p.FetchTimeout.Seconds()))
-			}
 			if !p.IsEnabled() {
-				enabled := false
-				po.Enabled = &enabled
+				continue
 			}
-			topicOut.Providers = append(topicOut.Providers, po)
+			topicOut.Providers = append(topicOut.Providers, initProviderFromConfig(p))
 		}
 		out.Topics = append(out.Topics, topicOut)
 	}
 	return out
+}
+
+func initProviderFromConfig(p provider.ProviderConfig) initProviderOutput {
+	po := initProviderOutput{
+		Slug:           p.Slug,
+		Name:           p.Name,
+		BaseURL:        p.BaseURL,
+		FetchStrategy:  string(p.FetchStrategy),
+		LLMSTxtURL:     p.LLMSTxtURL,
+		OpenAPIURL:     p.OpenAPIURL,
+		GitHubRepo:     p.GitHubRepo,
+		GitHubDocsPath: p.GitHubDocsPath,
+		GitHubBranch:   p.GitHubBranch,
+		AuthEnvVar:     p.AuthEnvVar,
+		Paths:          p.Paths,
+	}
+	if p.FetchTimeout > 0 {
+		// Emit in single-unit seconds ("90s") to satisfy the schema pattern,
+		// which rejects compound forms like "1m30s" that time.Duration.String() produces.
+		po.FetchTimeout = fmt.Sprintf("%ds", int64(p.FetchTimeout.Seconds()))
+	}
+	if !p.IsEnabled() {
+		enabled := false
+		po.Enabled = &enabled
+	}
+	return po
 }
 
 // marshalInitConfig serializes the init output and attaches credential-hint
