@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/fulmenhq/refbolt/internal/config"
+	"github.com/fulmenhq/refbolt/internal/provider"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,6 +39,38 @@ properties:
 `),
 	)
 	t.Cleanup(func() { config.SetEmbeddedAssets(nil, nil) })
+}
+
+func TestBuildInitConfig_PreservesEnabledFalse(t *testing.T) {
+	disabled := false
+	topics := []config.Topic{{
+		Slug: "test-topic",
+		Providers: []provider.ProviderConfig{{
+			Slug:          "parked-provider",
+			Name:          "Parked",
+			BaseURL:       "https://example.com",
+			FetchStrategy: provider.StrategyNative,
+			Enabled:       &disabled,
+			Paths:         []string{"/a.md", "/b.md"},
+		}},
+	}}
+
+	out := buildInitConfig(topics)
+	if len(out.Topics) != 1 || len(out.Topics[0].Providers) != 1 {
+		t.Fatalf("expected one provider in init output, got %+v", out.Topics)
+	}
+	po := out.Topics[0].Providers[0]
+	if po.Enabled == nil || *po.Enabled {
+		t.Fatalf("Enabled = %v, want false pointer", po.Enabled)
+	}
+
+	yamlBytes, err := yaml.Marshal(out)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if !strings.Contains(string(yamlBytes), "enabled: false") {
+		t.Fatalf("init output missing enabled: false:\n%s", yamlBytes)
+	}
 }
 
 func TestInitCmd_StdoutIsValidYAML(t *testing.T) {

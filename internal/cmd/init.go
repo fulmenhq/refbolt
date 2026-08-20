@@ -159,6 +159,7 @@ type initProviderOutput struct {
 	GitHubBranch   string   `yaml:"github_branch,omitempty"`
 	AuthEnvVar     string   `yaml:"auth_env_var,omitempty"`
 	FetchTimeout   string   `yaml:"fetch_timeout,omitempty"`
+	Enabled        *bool    `yaml:"enabled,omitempty"`
 	Paths          []string `yaml:"paths,omitempty"`
 }
 
@@ -188,6 +189,10 @@ func buildInitConfig(topics []config.Topic) initConfigOutput {
 				// Emit in single-unit seconds ("90s") to satisfy the schema pattern,
 				// which rejects compound forms like "1m30s" that time.Duration.String() produces.
 				po.FetchTimeout = fmt.Sprintf("%ds", int64(p.FetchTimeout.Seconds()))
+			}
+			if !p.IsEnabled() {
+				enabled := false
+				po.Enabled = &enabled
 			}
 			topicOut.Providers = append(topicOut.Providers, po)
 		}
