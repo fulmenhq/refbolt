@@ -49,10 +49,38 @@ Providers using the `github-raw` strategy rely on two GitHub surfaces:
 ## xAI / Grok
 
 **Base URL**: `https://docs.x.ai`
-**llms.txt**: `https://docs.x.ai/llms.txt` — 96 sections, ~875KB, `===/<path>===` delimited
-**Individual .md**: Available at `/developers/**/*.md` (append `.md` to HTML paths)
+**llms.txt**: `https://docs.x.ai/llms.txt` — ~164 sections, ~1.4MB, `===/<path>===` delimited
+**Individual .md**: Available at `/developers/**/*.md`, `/grok-bot/**/*.md`, `/build/features/**/*.md`
 
-### Fetch Quirks (as of 2026-03-21)
+### Content map (full sync via llms.txt)
+
+A single `refbolt sync --provider xai` archives the **entire** docs.x.ai site — not
+just the REST API. For Cursor and local Grok agents, the high-value surfaces are:
+
+| Path prefix                           | ~sections | What agents get                                                                 |
+| ------------------------------------- | --------- | ------------------------------------------------------------------------------- |
+| `/developers/**`                      | ~80       | Grok REST API — inference, tools, voice, files, models                          |
+| `/grok-bot/**`                        | 13        | Grok Bot product docs — Cursor SSO, dashboard admin, team rollout, privacy      |
+| `/build/features/**`                  | ~20       | Grok CLI/TUI — reads `.cursor/mcp.json`, `.cursor/hooks.json`, `.cursor/rules/` |
+| `/build/cli/**`, `/build/headless/**` | ~30       | Grok CLI reference, config, permissions, sandbox                                |
+
+**Cursor-specific entry points** (also listed as supplemental paths in `providers.yaml`):
+
+| Page                                      | Archive path (under `llm-api/xai/latest/`) |
+| ----------------------------------------- | ------------------------------------------ |
+| Docs MCP setup for Cursor                 | `developers/docs-mcp.md`                   |
+| Grok Bot overview                         | `grok-bot/overview.md`                     |
+| Team admin (Cursor dashboard, MCP policy) | `grok-bot/teams-and-enterprises.md`        |
+| Cursor MCP config compat                  | `build/features/mcp-servers.md`            |
+| Cursor hooks compat                       | `build/features/hooks.md`                  |
+
+Live MCP endpoint (not archived — connect at runtime): `https://docs.x.ai/api/mcp`
+
+**Agent usage:** sync once, then point Cursor `@Docs` or a local agent context root at
+`<archive_root>/llm-api/xai/latest/`. Grok Bot and Cursor integration docs are **not**
+under `spacex-data` — that topic is REST API reference only.
+
+### Fetch Quirks (as of 2026-08-20)
 
 - **Accept header**: Returns 404 for `Accept: text/markdown`. Use `Accept: */*`.
 - **TLS ALPN**: Go's default HTTP/2 ALPN negotiation causes 404. Use HTTP/1.1 only (`NextProtos: ["http/1.1"]`).
