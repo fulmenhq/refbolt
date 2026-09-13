@@ -44,6 +44,7 @@ type ProviderConfig struct {
 	Paths          []string         `yaml:"paths"`
 	FetchStrategy  FetchStrategy    `yaml:"fetch_strategy"`
 	LLMSTxtURL     string           `yaml:"llms_txt_url,omitempty"`
+	LLMSFullTxtURL string           `yaml:"llms_full_txt_url,omitempty"`
 	OpenAPIURL     string           `yaml:"openapi_url,omitempty"`
 	GitHubRepo     string           `yaml:"github_repo,omitempty"`
 	GitHubDocsPath string           `yaml:"github_docs_path,omitempty"`

@@ -78,8 +78,12 @@ func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 		return hint, fmt.Errorf("multi-source provider %s: HEAD check cannot represent all upstream URLs", f.cfg.Slug)
 	}
 
-	// Determine which single URL to HEAD.
-	targetURL := f.cfg.LLMSTxtURL
+	// Determine which single URL to HEAD. Prefer the full dump when configured
+	// — that is the content source used for section splitting.
+	targetURL := f.cfg.LLMSFullTxtURL
+	if targetURL == "" {
+		targetURL = f.cfg.LLMSTxtURL
+	}
 	if targetURL == "" && len(f.cfg.Paths) > 0 {
 		targetURL = f.cfg.BaseURL + f.cfg.Paths[0]
 	}
@@ -116,64 +120,46 @@ func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 }
 
 // Fetch retrieves pages for all configured paths.
-// If llms_txt_url is set, fetches and splits that first (most efficient).
-// Then fetches any literal paths not covered by the llms.txt content.
+// If llms_txt_url or llms_full_txt_url is set, fetches and splits that first.
+// When llms.txt is an index (zero sections), falls back to llms-full.txt.
+// Then fetches any literal paths not covered by the bulk dump.
 func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	var pages []Page
 	f.lastFetchHint = FetchHint{}
 
-	// Strategy 1: If llms_txt_url is configured, fetch and split it.
-	// This is the most efficient path — one HTTP request gets all pages.
-	if f.cfg.LLMSTxtURL != "" {
-		// Derive the archive filename from the URL (e.g. "llms.txt", "llms-full.txt").
-		llmsFilename := llmsTxtFilename(f.cfg.LLMSTxtURL)
-		llmsPage, llmsHint, err := f.fetchURLWithHint(ctx, f.cfg.LLMSTxtURL, llmsFilename)
+	// Strategy 1: If a bulk llms.txt / llms-full.txt URL is configured, fetch
+	// and split it. When llms.txt is a markdown index (zero sections), fall back
+	// to llms-full.txt (explicit URL, index link, or sibling).
+	primaryURL := f.cfg.LLMSTxtURL
+	if primaryURL == "" {
+		primaryURL = f.cfg.LLMSFullTxtURL
+	}
+	if primaryURL != "" {
+		rawPages, split, llmsHint, err := f.fetchLLMSWithFallback(ctx, primaryURL)
 		if err != nil {
-			fmt.Printf("  ⚠ %s: %v (falling back to individual pages)\n", llmsFilename, err)
+			fmt.Printf("  ⚠ %s: %v (falling back to individual pages)\n", llmsTxtFilename(primaryURL), err)
 		} else {
 			f.lastFetchHint.ETag = llmsHint.ETag
 			f.lastFetchHint.LastModified = llmsHint.LastModified
 			f.lastFetchHint.ContentLength = llmsHint.ContentLength
-			// Split into individual pages.
-			// Try xAI-style delimiters first, then URL-based (Anthropic/DO-style).
-			split, err := SplitLLMSTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
-			if err != nil {
-				fmt.Printf("  ⚠ %s: split error: %v\n", llmsFilename, err)
-			}
-			if len(split) == 0 {
-				var fullErr error
-				split, fullErr = SplitLLMSFullTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
-				if fullErr != nil {
-					fmt.Printf("  ⚠ %s: full-split error: %v\n", llmsFilename, fullErr)
-				}
-			}
-			// Try frontmatter-based splitting (Cloudflare-style).
-			if len(split) == 0 {
-				var fmErr error
-				split, fmErr = SplitFrontmatterFullTxt(llmsPage.Content, f.cfg.LLMSTxtURL)
-				if fmErr != nil {
-					fmt.Printf("  ⚠ %s: frontmatter-split error: %v\n", llmsFilename, fmErr)
-				}
-			}
 
-			// Apply base_url prefix filter for scoped providers (e.g., DO).
-			// If filtering reduces the set, this is a scoped provider — skip
-			// the raw bulk file to avoid archiving 40MB per scoped entry.
-			// If filtering passes everything through, archive the raw file
-			// (backwards-compat with Anthropic, Pydantic, xAI).
 			preFilterCount := len(split)
 			split = FilterByBaseURL(split, f.cfg.BaseURL)
 			scoped := len(split) < preFilterCount
 
 			if scoped && len(split) == 0 {
-				return nil, fmt.Errorf("no pages matched base_url scope %q in %s", f.cfg.BaseURL, f.cfg.LLMSTxtURL)
+				return nil, fmt.Errorf("no pages matched base_url scope %q in %s", f.cfg.BaseURL, primaryURL)
 			}
 
 			if !scoped {
-				pages = append(pages, *llmsPage)
+				pages = append(pages, rawPages...)
 			}
 			pages = append(pages, split...)
-			fmt.Printf("  ✓ %s: %d sections extracted\n", llmsFilename, len(split))
+			dumpName := llmsTxtFilename(primaryURL)
+			if len(rawPages) > 0 {
+				dumpName = rawPages[len(rawPages)-1].Path
+			}
+			fmt.Printf("  ✓ %s: %d sections extracted\n", dumpName, len(split))
 		}
 	}
 
@@ -399,6 +385,137 @@ func llmsTxtFilename(rawURL string) string {
 		}
 	}
 	return "llms.txt"
+}
+
+const llmsFullPeekBytes = 8192
+
+// fetchLLMSWithFallback fetches the primary bulk URL, splits it, and when that
+// yields no sections (or is a markdown index) tries llms-full.txt.
+func (f *HTTPFetcher) fetchLLMSWithFallback(ctx context.Context, primaryURL string) ([]Page, []Page, FetchHint, error) {
+	filename := llmsTxtFilename(primaryURL)
+	primaryPage, primaryHint, err := f.fetchURLWithHint(ctx, primaryURL, filename)
+	if err != nil {
+		fallbackURL := f.llmsFullFallbackURL(primaryURL, nil)
+		if fallbackURL == "" || fallbackURL == primaryURL {
+			return nil, nil, FetchHint{}, err
+		}
+		optedIn := f.cfg.LLMSFullTxtURL != "" && fallbackURL == f.cfg.LLMSFullTxtURL
+		fmt.Printf("  ⚠ %s: %v; trying %s\n", filename, err, llmsTxtFilename(fallbackURL))
+		return f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+	}
+
+	split := splitLLMSDump(primaryPage.Content, primaryURL)
+	if len(split) > 0 {
+		return []Page{*primaryPage}, split, primaryHint, nil
+	}
+
+	if looksLikeLLMSIndex(primaryPage.Content) {
+		fmt.Printf("  ⚠ %s: 0 sections (markdown index); trying llms-full.txt\n", filename)
+	}
+
+	fallbackURL := f.llmsFullFallbackURL(primaryURL, primaryPage)
+	if fallbackURL == "" || fallbackURL == primaryURL {
+		// Single-file dump with no delimiters (e.g. Pydantic) — archive as-is.
+		return []Page{*primaryPage}, nil, primaryHint, nil
+	}
+
+	optedIn := f.cfg.LLMSFullTxtURL != "" && fallbackURL == f.cfg.LLMSFullTxtURL
+	fullRaw, fullSplit, fullHint, fullErr := f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+	if fullErr != nil || len(fullSplit) == 0 {
+		if fullErr != nil {
+			fmt.Printf("  ⚠ %s: %v\n", llmsTxtFilename(fallbackURL), fullErr)
+		}
+		return []Page{*primaryPage}, nil, primaryHint, nil
+	}
+
+	raw := []Page{*primaryPage}
+	raw = append(raw, fullRaw...)
+	return raw, fullSplit, fullHint, nil
+}
+
+// llmsFullFallbackURL resolves the full-dump URL: explicit config, then a
+// markdown link in the index, then a sibling llms-full.txt path.
+func (f *HTTPFetcher) llmsFullFallbackURL(primaryURL string, primaryPage *Page) string {
+	if f.cfg.LLMSFullTxtURL != "" && f.cfg.LLMSFullTxtURL != primaryURL {
+		return f.cfg.LLMSFullTxtURL
+	}
+	if primaryPage != nil {
+		if u := llmsFullURLFromIndex(primaryPage.Content); u != "" && u != primaryURL {
+			return u
+		}
+	}
+	return siblingLLMSFullTxtURL(primaryURL)
+}
+
+// fetchLLMSFullCandidate fetches a candidate full dump. When xaiOnly is true
+// (auto-detect, not an explicit catalog URL), the dump is accepted only if it
+// uses ===/<path>=== delimiters — this avoids ingesting unrelated firehoses
+// such as docs.x.com/llms-full.txt (Source: delimited).
+func (f *HTTPFetcher) fetchLLMSFullCandidate(ctx context.Context, fullURL string, xaiOnly bool) ([]Page, []Page, FetchHint, error) {
+	filename := llmsTxtFilename(fullURL)
+	if xaiOnly {
+		page, hint, err := f.fetchIfHasXAIDelimiters(ctx, fullURL, filename)
+		if err != nil {
+			return nil, nil, FetchHint{}, err
+		}
+		if page == nil {
+			return nil, nil, FetchHint{}, nil
+		}
+		split, splitErr := SplitLLMSTxt(page.Content, fullURL)
+		if splitErr != nil {
+			fmt.Printf("  ⚠ %s: split error: %v\n", filename, splitErr)
+			return nil, nil, hint, splitErr
+		}
+		return []Page{*page}, split, hint, nil
+	}
+
+	page, hint, err := f.fetchURLWithHint(ctx, fullURL, filename)
+	if err != nil {
+		return nil, nil, FetchHint{}, err
+	}
+	return []Page{*page}, splitLLMSDump(page.Content, fullURL), hint, nil
+}
+
+// fetchIfHasXAIDelimiters GETs a URL, peeking at the first 8KB (Range when
+// supported) and only completing the download when xAI ===/ delimiters appear.
+func (f *HTTPFetcher) fetchIfHasXAIDelimiters(ctx context.Context, rawURL, archivePath string) (*Page, FetchHint, error) {
+	reqCtx, cancel := context.WithTimeout(ctx, f.cfg.EffectiveFetchTimeout())
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, FetchHint{}, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("User-Agent", "refbolt/0.1 (+https://github.com/fulmenhq/refbolt)")
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Range", fmt.Sprintf("bytes=0-%d", llmsFullPeekBytes-1))
+	req.Close = true
+
+	resp, err := f.client.Do(req)
+	if err != nil {
+		return nil, FetchHint{}, fmt.Errorf("fetching %s: %w", rawURL, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
+		return nil, FetchHint{}, fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
+	}
+
+	peek, err := io.ReadAll(io.LimitReader(resp.Body, llmsFullPeekBytes))
+	if err != nil {
+		return nil, FetchHint{}, fmt.Errorf("reading response: %w", err)
+	}
+	if !hasXAISectionDelimiters(peek) {
+		return nil, FetchHint{}, nil
+	}
+
+	// Delimiters present. Re-fetch the complete body unless this response
+	// already is the whole file (206 with a tiny dump, or 200 shorter than peek).
+	if resp.StatusCode == http.StatusOK && (resp.ContentLength >= 0 && resp.ContentLength <= int64(len(peek))) {
+		return &Page{SourceURL: rawURL, Path: archivePath, Content: peek}, responseHint(resp), nil
+	}
+
+	return f.fetchURLWithHint(ctx, rawURL, archivePath)
 }
 
 // pathToArchivePath converts a URL path to a filesystem-safe archive path.

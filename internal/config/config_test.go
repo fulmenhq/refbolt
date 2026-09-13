@@ -47,6 +47,18 @@ func TestLoad_WithConfigFile(t *testing.T) {
 		}
 	}
 
+	var xai provider.ProviderConfig
+	for _, topic := range config.Topics() {
+		for _, p := range topic.Providers {
+			if p.Slug == "xai" {
+				xai = p
+			}
+		}
+	}
+	if xai.LLMSFullTxtURL != "https://docs.x.ai/llms-full.txt" {
+		t.Errorf("xai.LLMSFullTxtURL = %q, want https://docs.x.ai/llms-full.txt", xai.LLMSFullTxtURL)
+	}
+
 	topics := config.TopicSlugs()
 	if len(topics) == 0 {
 		t.Error("Expected at least one topic")

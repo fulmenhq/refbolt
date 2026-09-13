@@ -159,7 +159,7 @@ The `native` strategy supports three splitter variants for `llms.txt` / `llms-fu
 - **Source-delimited**: `URL: <url>` markers between `# Title` headings
 - **YAML frontmatter**: sections separated by `---` frontmatter blocks
 
-Splitter dispatch lives in `internal/provider/llmstxt.go`.
+When `llms_txt_url` yields zero sections (a markdown index), native fetch falls back to `llms_full_txt_url` or a sibling `llms-full.txt`. Splitter dispatch lives in `internal/provider/llmstxt.go`; fallback lives in `internal/provider/http.go`.
 
 Hierarchical resolution (DDR-0002) requires every hierarchical provider entry
 to use a guide-specific `base_url` that matches exactly one entry in the upstream

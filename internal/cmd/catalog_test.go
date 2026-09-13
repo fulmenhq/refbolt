@@ -333,6 +333,26 @@ func TestCatalogList_ConfigFlagSilentlyIgnored(t *testing.T) {
 	t.Cleanup(func() { configFlag = "" })
 }
 
+func TestCatalogShow_XAIIncludesFullDumpURL(t *testing.T) {
+	setupCatalogFixture(t)
+	clearCatalogFlags(t)
+
+	stdout, _, err := runCatalog(t, "catalog", "show", "xai")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, want := range []string{
+		"llms_txt URL:",
+		"https://docs.x.ai/llms.txt",
+		"llms_full URL:",
+		"https://docs.x.ai/llms-full.txt",
+	} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("stdout missing %q\n%s", want, stdout)
+		}
+	}
+}
+
 func TestCatalogShow_KnownSlug(t *testing.T) {
 	setupCatalogFixture(t)
 	clearCatalogFlags(t)

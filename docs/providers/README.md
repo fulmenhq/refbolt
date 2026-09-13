@@ -49,10 +49,11 @@ Providers using the `github-raw` strategy rely on two GitHub surfaces:
 ## xAI / Grok
 
 **Base URL**: `https://docs.x.ai`
-**llms.txt**: `https://docs.x.ai/llms.txt` — ~164 sections, ~1.4MB, `===/<path>===` delimited
+**llms.txt**: `https://docs.x.ai/llms.txt` — ~16KB markdown **index** of page links (as of 2026-09)
+**llms-full.txt**: `https://docs.x.ai/llms-full.txt` — ~1.5MB, ~181 sections, `===/<path>===` delimited
 **Individual .md**: Available at `/developers/**/*.md`, `/grok-bot/**/*.md`, `/build/features/**/*.md`
 
-### Content map (full sync via llms.txt)
+### Content map (full sync via llms-full.txt)
 
 A single `refbolt sync --provider xai` archives the **entire** docs.x.ai site — not
 just the REST API. For Cursor and local Grok agents, the high-value surfaces are:
@@ -80,17 +81,25 @@ Live MCP endpoint (not archived — connect at runtime): `https://docs.x.ai/api/
 `<archive_root>/llm-api/xai/latest/`. Grok Bot and Cursor integration docs are **not**
 under `spacex-data` — that topic is REST API reference only.
 
-### Fetch Quirks (as of 2026-08-20)
+### Fetch Quirks (as of 2026-09-13)
 
-- **Accept header**: Returns 404 for `Accept: text/markdown`. Use `Accept: */*`.
+- **llms.txt is an index, not a dump**: Around 2026-09, docs.x.ai stopped serving the full `===/<path>===` dump at `/llms.txt`. That file is now a ~16KB markdown catalog of links (including a link to `llms-full.txt`). The complete dump lives at `/llms-full.txt` (~181 sections, ~1.5MB) using the same delimiters. Native fetch falls back to `llms_full_txt_url` (or a sibling `llms-full.txt`) when the primary file yields zero sections.
+- **Accept header**: Individual `.md` paths and the `.txt` dumps can 404 for `Accept: text/markdown`. Use `Accept: */*` (refbolt default).
 - **TLS ALPN**: Go's default HTTP/2 ALPN negotiation causes 404. Use HTTP/1.1 only (`NextProtos: ["http/1.1"]`).
-- **No sitemap.xml**: 404. Use llms.txt as the page index instead.
+- **No sitemap.xml**: 404. Use llms.txt as the page index and llms-full.txt as the dump.
 - **No OpenAPI spec**: Not published. API is OpenAI-compatible but with extensions (tools, model names).
 
 ### Recommended Strategy
 
-Primary: Fetch `llms.txt` and split on delimiters (one HTTP request, full site).
+Primary: Fetch `llms-full.txt` (via `llms_full_txt_url`, or auto-detect beside an index `llms.txt`) and split on `===/<path>===` delimiters.
 Supplement: Fetch individual `.md` pages for targeted updates between full syncs.
+
+Verify a force sync restores a large tree:
+
+```bash
+refbolt sync --provider xai --force
+# expect: llms-full.txt: ~181 sections extracted (not "llms.txt: 0 sections extracted")
+```
 
 ## Anthropic
 

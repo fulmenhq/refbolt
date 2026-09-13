@@ -122,15 +122,16 @@ func ShouldSkip(meta *SyncMeta, currentConfigHash string) bool {
 }
 
 // ProviderConfigFields extracts the config fields that affect output for hashing.
-func ProviderConfigFields(slug, baseURL, strategy, llmsTxtURL, githubRepo, githubDocsPath, githubBranch string, paths []string) map[string]string {
+func ProviderConfigFields(slug, baseURL, strategy, llmsTxtURL, llmsFullTxtURL, githubRepo, githubDocsPath, githubBranch string, paths []string) map[string]string {
 	return map[string]string{
-		"slug":             slug,
-		"base_url":         baseURL,
-		"fetch_strategy":   strategy,
-		"llms_txt_url":     llmsTxtURL,
-		"github_repo":      githubRepo,
-		"github_docs_path": githubDocsPath,
-		"github_branch":    githubBranch,
-		"paths":            strings.Join(paths, ","),
+		"slug":              slug,
+		"base_url":          baseURL,
+		"fetch_strategy":    strategy,
+		"llms_txt_url":      llmsTxtURL,
+		"llms_full_txt_url": llmsFullTxtURL,
+		"github_repo":       githubRepo,
+		"github_docs_path":  githubDocsPath,
+		"github_branch":     githubBranch,
+		"paths":             strings.Join(paths, ","),
 	}
 }

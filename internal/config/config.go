@@ -352,6 +352,7 @@ func Topics() []Topic {
 				BaseURL:        stringVal(pm, "base_url"),
 				FetchStrategy:  provider.FetchStrategy(stringVal(pm, "fetch_strategy")),
 				LLMSTxtURL:     stringVal(pm, "llms_txt_url"),
+				LLMSFullTxtURL: stringVal(pm, "llms_full_txt_url"),
 				OpenAPIURL:     stringVal(pm, "openapi_url"),
 				GitHubRepo:     stringVal(pm, "github_repo"),
 				GitHubDocsPath: stringVal(pm, "github_docs_path"),

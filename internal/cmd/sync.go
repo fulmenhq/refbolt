@@ -77,7 +77,7 @@ var syncCmd = &cobra.Command{
 			// Compute config hash for this provider.
 			cfgFields := syncpkg.ProviderConfigFields(
 				sp.cfg.Slug, sp.cfg.BaseURL, string(sp.cfg.FetchStrategy),
-				sp.cfg.LLMSTxtURL, sp.cfg.GitHubRepo, sp.cfg.GitHubDocsPath,
+				sp.cfg.LLMSTxtURL, sp.cfg.LLMSFullTxtURL, sp.cfg.GitHubRepo, sp.cfg.GitHubDocsPath,
 				sp.cfg.GitHubBranch, sp.cfg.Paths,
 			)
 			cfgHash := syncpkg.ConfigHash(cfgFields)
