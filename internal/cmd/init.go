@@ -153,6 +153,7 @@ type initProviderOutput struct {
 	BaseURL        string   `yaml:"base_url"`
 	FetchStrategy  string   `yaml:"fetch_strategy"`
 	LLMSTxtURL     string   `yaml:"llms_txt_url,omitempty"`
+	LLMSFullTxtURL string   `yaml:"llms_full_txt_url,omitempty"`
 	OpenAPIURL     string   `yaml:"openapi_url,omitempty"`
 	GitHubRepo     string   `yaml:"github_repo,omitempty"`
 	GitHubDocsPath string   `yaml:"github_docs_path,omitempty"`
@@ -189,6 +190,7 @@ func initProviderFromConfig(p provider.ProviderConfig) initProviderOutput {
 		BaseURL:        p.BaseURL,
 		FetchStrategy:  string(p.FetchStrategy),
 		LLMSTxtURL:     p.LLMSTxtURL,
+		LLMSFullTxtURL: p.LLMSFullTxtURL,
 		OpenAPIURL:     p.OpenAPIURL,
 		GitHubRepo:     p.GitHubRepo,
 		GitHubDocsPath: p.GitHubDocsPath,

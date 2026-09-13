@@ -10,10 +10,11 @@ func TestHTTPFetcher_XAI_LLMSTxt(t *testing.T) {
 		t.Skip("skipping network test in short mode")
 	}
 	cfg := ProviderConfig{
-		Slug:       "xai",
-		Name:       "xAI",
-		BaseURL:    "https://docs.x.ai",
-		LLMSTxtURL: "https://docs.x.ai/llms.txt",
+		Slug:           "xai",
+		Name:           "xAI",
+		BaseURL:        "https://docs.x.ai",
+		LLMSTxtURL:     "https://docs.x.ai/llms.txt",
+		LLMSFullTxtURL: "https://docs.x.ai/llms-full.txt",
 	}
 	f, err := NewHTTPFetcher(cfg)
 	if err != nil {

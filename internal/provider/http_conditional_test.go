@@ -137,6 +137,17 @@ func TestHTTPFetcher_UsesPerPathHints_NativeOnly(t *testing.T) {
 		t.Fatal("native provider with llms_txt_url must not use per-path provider skip")
 	}
 
+	withFullOnly, _ := NewHTTPFetcher(ProviderConfig{
+		Slug:           "xai-like",
+		BaseURL:        "https://example.com",
+		FetchStrategy:  StrategyNative,
+		LLMSFullTxtURL: "https://example.com/llms-full.txt",
+		Paths:          []string{"a.md", "b.md"},
+	})
+	if withFullOnly.usesPerPathHints() {
+		t.Fatal("native provider with llms_full_txt_url must not use per-path provider skip")
+	}
+
 	jina, _ := NewHTTPFetcher(ProviderConfig{
 		Slug:          "y",
 		BaseURL:       "https://example.com",

@@ -17,15 +17,16 @@ When a provider offers a `llms.txt` or `llms-full.txt` endpoint, refbolt uses it
 3. Write each section as a separate file in the archive tree.
 4. Supplement with individual `.md` page fetches for targeted updates.
 
-The `llms_txt_url` field in provider config controls this. When absent, refbolt falls back to fetching individual paths.
+The `llms_txt_url` field in provider config controls this. When absent, refbolt falls back to fetching individual paths. Optional `llms_full_txt_url` names the complete dump when `llms.txt` is only an index (see the 2026-09 note below).
 
 ## Consequences
 
-- **Efficiency**: One HTTP request archives an entire documentation site (xAI: 96 sections, 875KB, <0.5s).
+- **Efficiency**: One HTTP request archives an entire documentation site (xAI: ~181 sections from `llms-full.txt`, ~1.5MB).
 - **Reliability**: Single endpoint is less likely to hit rate limits or trigger bot detection than crawling dozens of pages.
-- **Provider alignment**: `llms.txt` files are explicitly published for programmatic consumption — fetching them is the intended use case.
-- **Format dependency**: We depend on the delimiter format (`===/<path>===`), which could change. The splitter is isolated in `internal/provider/llmstxt.go` for easy adaptation.
+- **Provider alignment**: `llms.txt` / `llms-full.txt` files are explicitly published for programmatic consumption — fetching them is the intended use case.
+- **Format dependency**: We depend on the delimiter format (`===/<path>===` for xAI; `URL:` / `Source:` / YAML frontmatter elsewhere), which could change. The splitter is isolated in `internal/provider/llmstxt.go` for easy adaptation.
 - **Not universal**: Not all providers offer `llms.txt`. The fallback to individual page fetching must remain robust.
+- **Index vs dump (2026-09)**: Some sites now publish `llms.txt` as a markdown link catalog and put the concatenated dump at `llms-full.txt`. Native fetch treats zero split sections as a signal to try `llms_full_txt_url` or a sibling `llms-full.txt`. Auto-detected siblings are accepted only when they use xAI-style `===/<path>===` markers, so unrelated firehoses (e.g. docs.x.com) are not ingested.
 
 ## Alternatives Considered
 

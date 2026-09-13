@@ -266,6 +266,11 @@ func writeShowDetail(stdout io.Writer, e config.CatalogEntry) error {
 			return err
 		}
 	}
+	if p.LLMSFullTxtURL != "" {
+		if err := writef(stdout, "  llms_full URL:   %s\n", p.LLMSFullTxtURL); err != nil {
+			return err
+		}
+	}
 	if p.GitHubRepo != "" {
 		if err := writef(stdout, "  GitHub repo:     %s\n", p.GitHubRepo); err != nil {
 			return err

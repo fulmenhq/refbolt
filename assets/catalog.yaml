@@ -18,6 +18,7 @@ topics:
         base_url: https://docs.x.ai
         fetch_strategy: native
         llms_txt_url: https://docs.x.ai/llms.txt
+        llms_full_txt_url: https://docs.x.ai/llms-full.txt
         paths:
           # Developer API (REST inference, tools, models)
           - /developers/introduction.md

@@ -107,7 +107,7 @@ properties:
       paths:
         type: array
         description: >-
-          List of URL path patterns to fetch, resolved relative to base_url. Supports doublestar glob patterns. Fetched in order; duplicates are deduplicated. Can be empty when llms_txt_url is set (bulk fetch covers all content).
+          List of URL path patterns to fetch, resolved relative to base_url. Supports doublestar glob patterns. Fetched in order; duplicates are deduplicated. Can be empty when llms_txt_url or llms_full_txt_url is set (bulk fetch covers all content).
         minItems: 0
         default: []
         items:
@@ -122,10 +122,18 @@ properties:
         type: string
         format: uri
         description: >-
-          Optional URL to a llms.txt or llms-full.txt file — a single-file Markdown dump of the entire doc site. When set, refbolt fetches this first and splits it into individual pages using section delimiters (e.g. ===/<path>===). Most efficient fetch strategy.
+          Optional URL to a llms.txt or llms-full.txt file. When this is a section-delimited dump, refbolt fetches it once and splits it into pages. After 2026-09 some sites (notably docs.x.ai) publish llms.txt as a markdown *index* of links; in that case native fetch falls back to llms_full_txt_url or a sibling llms-full.txt. Can be omitted when llms_full_txt_url is set.
         examples:
           - https://docs.x.ai/llms.txt
           - https://docs.anthropic.com/llms-full.txt
+      llms_full_txt_url:
+        type: string
+        format: uri
+        description: >-
+          Optional URL to a llms-full.txt complete content dump. When llms_txt_url yields zero split sections (markdown index), the native fetcher fetches this URL and splits it. Prefer an explicit URL over sibling auto-detect when a provider publishes both files.
+        examples:
+          - https://docs.x.ai/llms-full.txt
+          - https://platform.claude.com/llms-full.txt
       # ── Fetch strategy ───────────────────────────────────────────
       fetch_strategy:
         type: string
@@ -232,8 +240,8 @@ properties:
             - llms_txt_url
         else:
           # Non-hierarchical providers must have either paths (non-empty)
-          # or llms_txt_url for bulk fetch. Prevents configs that silently
-          # fetch nothing.
+          # or llms_txt_url / llms_full_txt_url for bulk fetch. Prevents configs
+          # that silently fetch nothing.
           anyOf:
             - required:
                 - paths
@@ -242,4 +250,6 @@ properties:
                   minItems: 1
             - required:
                 - llms_txt_url
+            - required:
+                - llms_full_txt_url
     additionalProperties: false

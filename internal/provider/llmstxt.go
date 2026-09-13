@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 )
 
@@ -27,6 +28,8 @@ func SplitLLMSTxt(content []byte, sourceURL string) ([]Page, error) {
 	var currentContent bytes.Buffer
 
 	scanner := bufio.NewScanner(bytes.NewReader(content))
+	// Full dumps moved to llms-full.txt can be >1MB with long lines.
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -66,6 +69,78 @@ func SplitLLMSTxt(content []byte, sourceURL string) ([]Page, error) {
 	}
 
 	return pages, nil
+}
+
+// splitLLMSDump tries every known bulk-dump delimiter format and returns the
+// first non-empty result. Order matches historical native fetch: xAI ===
+// markers, then URL/Source lines, then YAML frontmatter.
+func splitLLMSDump(content []byte, sourceURL string) []Page {
+	split, err := SplitLLMSTxt(content, sourceURL)
+	if err == nil && len(split) > 0 {
+		return split
+	}
+	split, err = SplitLLMSFullTxt(content, sourceURL)
+	if err == nil && len(split) > 0 {
+		return split
+	}
+	split, err = SplitFrontmatterFullTxt(content, sourceURL)
+	if err == nil && len(split) > 0 {
+		return split
+	}
+	return nil
+}
+
+// looksLikeLLMSIndex reports whether content is a markdown link catalog rather
+// than a section-delimited dump. Used to decide when to try llms-full.txt.
+func looksLikeLLMSIndex(content []byte) bool {
+	if len(bytes.TrimSpace(content)) == 0 {
+		return false
+	}
+	if hasXAISectionDelimiters(content) {
+		return false
+	}
+	// URL:/Source: dumps and frontmatter dumps are content, not indexes.
+	if bytes.Contains(content, []byte("\nURL: http")) || bytes.Contains(content, []byte("\nSource: http")) {
+		return false
+	}
+	if bytes.Contains(content, []byte("\ntitle:")) && bytes.Contains(content, []byte("---")) {
+		return false
+	}
+	return bytes.Contains(content, []byte("](http://")) ||
+		bytes.Contains(content, []byte("](https://")) ||
+		bytes.Contains(content, []byte("](/"))
+}
+
+// hasXAISectionDelimiters reports whether content uses xAI-style ===/<path>===
+// section markers.
+func hasXAISectionDelimiters(content []byte) bool {
+	return bytes.Contains(content, []byte("===/"))
+}
+
+// siblingLLMSFullTxtURL derives llms-full.txt next to an llms.txt URL.
+// Returns empty when the URL is not named llms.txt (already a full dump, etc.).
+func siblingLLMSFullTxtURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	if path.Base(u.Path) != "llms.txt" {
+		return ""
+	}
+	dir := path.Dir(u.Path)
+	u.Path = path.Join(dir, "llms-full.txt")
+	return u.String()
+}
+
+// llmsFullURLFromIndex returns the first markdown link to an llms-full.txt
+// file in an index document, if any.
+func llmsFullURLFromIndex(content []byte) string {
+	for _, u := range parseIndexLLMSTxtURLs(content) {
+		if strings.HasSuffix(u, "llms-full.txt") {
+			return u
+		}
+	}
+	return ""
 }
 
 // SplitLLMSFullTxt parses llms-full.txt files that use URL-based section delimiters.

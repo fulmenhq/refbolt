@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file. Older entri
 
 ## [Unreleased]
 
+### Fixed
+
+- **xAI native sync after the 2026-09 docs.x.ai layout change**: `https://docs.x.ai/llms.txt` is now a ~16KB markdown index (0 `===/<path>===` sections). The full dump is `https://docs.x.ai/llms-full.txt` (~1.5MB, ~181 sections). Native fetch falls back to `llms_full_txt_url` (or a sibling `llms-full.txt` that uses xAI delimiters) when the primary file yields zero sections, so `refbolt sync --provider xai --force` restores a full date-versioned tree. Auto-detected siblings that use Anthropic/DO `URL:`/`Source:` delimiters are ignored so X Platform's `llms-full.txt` firehose is not ingested. (xAI catalog sets `llms_full_txt_url` explicitly.)
+
+### Changed
+
+- **Provider schema**: optional `llms_full_txt_url` on native providers. Incremental HEAD prefers this URL when set.
+
 ## [0.0.4] - 2026-04-22
 
 Operational foundation, provider browsing, and four new providers.
