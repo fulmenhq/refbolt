@@ -212,9 +212,9 @@ Details: [docs/providers/README.md](docs/providers/README.md#xai--grok).
 “Inference providers” is a documentation umbrella, not a nested archive
 directory. Topics stay flat per [DDR-0001](docs/decisions/DDR-0001-archive-tree-structure.md):
 
-| Topic            | Who                                                                 | Archive path                                   |
-| ---------------- | ------------------------------------------------------------------- | ---------------------------------------------- |
-| `frontier-labs`  | First-party lab APIs: `xai`, `anthropic`, `openai`                  | `<archive_root>/frontier-labs/<slug>/latest/`  |
+| Topic            | Who                                                                                                                                         | Archive path                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `frontier-labs`  | First-party lab APIs: `xai`, `anthropic`, `openai`                                                                                          | `<archive_root>/frontier-labs/<slug>/latest/`  |
 | `inference-host` | Serverless open-weights hosts: `deepinfra`, `fireworks`, `together`, `groq`, `cerebras`, `sambanova`, `hyperbolic`, `featherless`, `novita` | `<archive_root>/inference-host/<slug>/latest/` |
 
 AWS Bedrock stays under `cloud-infra`. OpenRouter is not in the catalog.

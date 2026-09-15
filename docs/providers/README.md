@@ -219,11 +219,11 @@ The documentation umbrella “inference providers” covers both `frontier-labs`
 (lab APIs) and `inference-host`. AWS Bedrock stays under `cloud-infra`. OpenRouter
 is not in the catalog.
 
-| Wave | Slugs                                                                      |
-| ---- | -------------------------------------------------------------------------- |
-| P0   | `deepinfra`, `fireworks`, `together`                                       |
-| P1   | `groq`, `cerebras`, `sambanova`, `hyperbolic`                              |
-| P2   | `featherless`, `novita`                                                    |
+| Wave | Slugs                                         |
+| ---- | --------------------------------------------- |
+| P0   | `deepinfra`, `fireworks`, `together`          |
+| P1   | `groq`, `cerebras`, `sambanova`, `hyperbolic` |
+| P2   | `featherless`, `novita`                       |
 
 Most hosts are Mintlify (or Groq console) sites with:
 
