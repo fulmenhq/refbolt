@@ -129,11 +129,11 @@ func TestCatalogList_JSONEnvelope(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout)
 	}
-	if envelope.TopicsTotal != 10 {
-		t.Errorf("topics_total = %d, want 10", envelope.TopicsTotal)
+	if envelope.TopicsTotal != 11 {
+		t.Errorf("topics_total = %d, want 11", envelope.TopicsTotal)
 	}
-	if envelope.ProvidersTotal != 54 {
-		t.Errorf("providers_total = %d, want 54", envelope.ProvidersTotal)
+	if envelope.ProvidersTotal != 57 {
+		t.Errorf("providers_total = %d, want 57", envelope.ProvidersTotal)
 	}
 	if envelope.Version == "" {
 		t.Error("version should not be empty")
@@ -191,25 +191,25 @@ func TestCatalogList_FilterByTopic(t *testing.T) {
 	setupCatalogFixture(t)
 	clearCatalogFlags(t)
 
-	stdout, stderr, err := runCatalog(t, "catalog", "list", "--topic", "llm-api")
+	stdout, stderr, err := runCatalog(t, "catalog", "list", "--topic", "frontier-labs")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Every data row should mention llm-api as topic column (or the slug is
-	// a known llm-api provider). Quick check: expect anthropic present,
+	// Every data row should mention frontier-labs as topic column (or the slug is
+	// a known frontier-labs provider). Quick check: expect anthropic present,
 	// trino (data-platform) absent.
 	if !strings.Contains(stdout, "anthropic") {
-		t.Error("llm-api filter missing anthropic")
+		t.Error("frontier-labs filter missing anthropic")
 	}
 	if strings.Contains(stdout, "trino") {
-		t.Error("llm-api filter should not contain trino")
+		t.Error("frontier-labs filter should not contain trino")
 	}
 	// Result-set totals: the hint line must describe what was rendered,
-	// not the full catalog. llm-api is 1 topic (singular, not "1 topics").
+	// not the full catalog. frontier-labs is 1 topic (singular, not "1 topics").
 	if !strings.Contains(stderr, "across 1 topic.") {
 		t.Errorf("stderr should say 'across 1 topic.' for a single-topic filter, got: %q", stderr)
 	}
-	if strings.Contains(stderr, "across 10 topics") {
+	if strings.Contains(stderr, "across 11 topics") {
 		t.Errorf("stderr should not report full-catalog totals on filtered output, got: %q", stderr)
 	}
 }
@@ -223,7 +223,7 @@ func TestCatalogList_FilteredJSONReportsResultTotals(t *testing.T) {
 	setupCatalogFixture(t)
 	clearCatalogFlags(t)
 
-	stdout, _, err := runCatalog(t, "catalog", "list", "--topic", "llm-api", "--json")
+	stdout, _, err := runCatalog(t, "catalog", "list", "--topic", "frontier-labs", "--json")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -244,8 +244,8 @@ func TestCatalogList_FilteredJSONReportsResultTotals(t *testing.T) {
 			envelope.ProvidersTotal, len(envelope.Providers))
 	}
 	for _, p := range envelope.Providers {
-		if p["topic"] != "llm-api" {
-			t.Errorf("filtered payload should contain only llm-api entries, got %v", p["topic"])
+		if p["topic"] != "frontier-labs" {
+			t.Errorf("filtered payload should contain only frontier-labs entries, got %v", p["topic"])
 		}
 	}
 }
@@ -366,7 +366,7 @@ func TestCatalogShow_KnownSlug(t *testing.T) {
 		"Topic:",
 		"Strategy:",
 		"Archive output:",
-		"<archive_root>/llm-api/anthropic",
+		"<archive_root>/frontier-labs/anthropic",
 	} {
 		if !strings.Contains(stdout, want) {
 			t.Errorf("stdout missing %q", want)
@@ -409,14 +409,14 @@ func TestCatalogTopics_RendersTableAndCounts(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	for _, slug := range []string{
-		"llm-api", "cloud-infra", "python-libs",
+		"frontier-labs", "inference-host", "cloud-infra", "python-libs",
 	} {
 		if !strings.Contains(stdout, slug) {
 			t.Errorf("topics output missing %q", slug)
 		}
 	}
-	if !strings.Contains(stderr, "10 topics") {
-		t.Errorf("stderr should mention '10 topics', got: %q", stderr)
+	if !strings.Contains(stderr, "11 topics") {
+		t.Errorf("stderr should mention '11 topics', got: %q", stderr)
 	}
 }
 

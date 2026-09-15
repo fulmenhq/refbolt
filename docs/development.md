@@ -83,7 +83,7 @@ metadata joined in by slug). No `providers.yaml` or network access required.
 ./bin/refbolt catalog list
 
 # Filters
-./bin/refbolt catalog list --topic llm-api
+./bin/refbolt catalog list --topic frontier-labs
 ./bin/refbolt catalog list --strategy jina
 
 # JSON output (self-describing envelope; nullable estimated_pages/description)
@@ -120,10 +120,10 @@ At least one selector is required: `--all`, `--provider`, or `--topic`.
 ./bin/refbolt sync --provider openai --provider anthropic
 
 # All providers in a topic
-./bin/refbolt sync --topic llm-api
+./bin/refbolt sync --topic frontier-labs
 
 # Union: topic + explicit provider
-./bin/refbolt sync --topic llm-api --provider trino
+./bin/refbolt sync --topic frontier-labs --provider trino
 
 # Exclude from --all
 ./bin/refbolt sync --all --exclude-provider trino
@@ -183,8 +183,8 @@ After a sync writes files, refbolt can optionally stage, commit, and push the ar
 refbolt sync: 2026-03-22
 
 Providers updated:
-- xai: 96 files (llm-api)
-- anthropic: 488 files (llm-api)
+- xai: 96 files (frontier-labs)
+- anthropic: 488 files (frontier-labs)
 
 Archive root: /data/archive
 ```

@@ -5,9 +5,10 @@
 # Schema: schemas/providers/v0/providers.schema.yaml
 archive_root: /data/archive
 topics:
-  - slug: llm-api
-    name: LLM API Documentation
-    description: Frontier LLM provider API reference, Grok Bot, and agent IDE integrations (Cursor MCP, hooks)
+  - slug: frontier-labs
+    name: Frontier Labs
+    description: >-
+      First-party frontier lab APIs (xAI, Anthropic, OpenAI) plus Grok Bot and agent IDE integrations. Documentation umbrella "inference providers" is not a nested directory — topics stay flat (DDR-0001). Former topic slug: llm-api.
     providers:
       # xAI — llms.txt archives the full docs.x.ai site in one request (~164 sections).
       # Includes /developers/** (REST API), /grok-bot/** (Grok Bot + Cursor SSO/dashboard),
@@ -62,6 +63,64 @@ topics:
           - /docs/api-reference/responses
           - /docs/api-reference/assistants
         openapi_url: https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/manual_spec/openapi.yaml
+  - slug: inference-host
+    name: Inference Hosts
+    description: >-
+      Third-party serverless open-weights inference hosts (DeepInfra, Fireworks, Together). Distinct from frontier-labs (first-party lab APIs) and from cloud-infra AWS Bedrock. Nested inference-providers/ directories are not supported.
+    providers:
+      # DeepInfra — Mintlify native .md + llms.txt index; dump is llms-full.txt
+      # (Source: delimiters, DigitalOcean-style). OpenAI-compatible base
+      # https://api.deepinfra.com/v1/openai. robots.txt Content-Signal:
+      # ai-train=yes, search=yes, ai-input=yes.
+      - slug: deepinfra
+        name: DeepInfra
+        base_url: https://docs.deepinfra.com
+        fetch_strategy: native
+        llms_txt_url: https://docs.deepinfra.com/llms.txt
+        llms_full_txt_url: https://docs.deepinfra.com/llms-full.txt
+        openapi_url: https://api.deepinfra.com/openapi.json
+        paths:
+          - /quickstart.md
+          - /chat/overview.md
+          - /account/data-privacy.md
+          - /account/subprocessors.md
+      # Fireworks AI — Mintlify native .md + llms.txt / llms-full.txt (Source:).
+      # Supplemental paths cover serverless serving paths, US-only serverless,
+      # enterprise data residency, and ZDR. robots.txt Content-Signal: ai-input=yes.
+      - slug: fireworks
+        name: Fireworks AI
+        base_url: https://docs.fireworks.ai
+        fetch_strategy: native
+        llms_txt_url: https://docs.fireworks.ai/llms.txt
+        llms_full_txt_url: https://docs.fireworks.ai/llms-full.txt
+        paths:
+          - /getting-started/introduction.md
+          - /serverless/overview.md
+          - /serverless/pricing.md
+          - /serverless/us-only-serverless.md
+          - /serverless/serving-paths.md
+          - /accounts/data-residency.md
+          - /guides/security_compliance/data_handling.md
+          - /guides/security_compliance/data_security.md
+          - /tools-sdks/openai-compatibility.md
+      # Together AI — Mintlify native .md + llms.txt / llms-full.txt (Source:).
+      # Curated paths cover quickstart, chat, OpenAI-compat, auth, and ZDR/privacy.
+      # Serverless region pin is limited; dedicated/VPC for residency. Watch
+      # passthrough models (traffic can leave Together). robots.txt Content-Signal:
+      # ai-input=yes.
+      - slug: together
+        name: Together AI
+        base_url: https://docs.together.ai
+        fetch_strategy: native
+        llms_txt_url: https://docs.together.ai/llms.txt
+        llms_full_txt_url: https://docs.together.ai/llms-full.txt
+        paths:
+          - /intro.md
+          - /docs/quickstart.md
+          - /docs/inference/chat/overview.md
+          - /docs/inference/openai-compatibility.md
+          - /docs/api-keys-authentication.md
+          - /docs/privacy-and-security.md
   - slug: python-libs
     name: Python Libraries
     description: Key Python library documentation
@@ -602,7 +661,7 @@ topics:
     name: Social Platform APIs
     description: Official X (Twitter) Platform API and YouTube Data API v3 — opt-in by surface, not monolithic firehose
     providers:
-      # X Platform onboarding — overview, auth fundamentals, AI/agent tools, tutorials. Not the xAI Grok API (see llm-api/xai).
+      # X Platform onboarding — overview, auth fundamentals, AI/agent tools, tutorials. Not the xAI Grok API (see frontier-labs/xai).
       - slug: xdev-platform-guides
         name: X Developer Platform Guides
         base_url: https://docs.x.com

@@ -8,7 +8,7 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 
 ## Features
 
-- 46 providers across 9 topics (LLM APIs, cloud infra, SpaceX/Starlink data APIs, data platforms, design platforms, and more)
+- 57 providers across 11 topics (frontier labs, inference hosts, cloud infra, SpaceX/Starlink data APIs, data platforms, design platforms, and more)
 - 5 fetch strategies: native, jina, auto, github-raw, llmstxt-hierarchical
 - Incremental sync — skips unchanged providers via per-provider `.sync-meta.json` hints
 - Provider/topic filtering: `--provider`, `--topic`, `--exclude-provider`
@@ -25,7 +25,7 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 brew install fulmenhq/tap/refbolt
 
 # Generate a config with the topics you need
-refbolt init --topic llm-api --output providers.yaml
+refbolt init --topic frontier-labs --output providers.yaml
 
 # Or start with everything and trim later
 refbolt init --all --output providers.yaml
@@ -123,7 +123,7 @@ See everything refbolt knows about before you sync:
 
 ```bash
 refbolt catalog list                    # table of all providers
-refbolt catalog list --topic llm-api    # filter by topic
+refbolt catalog list --topic frontier-labs    # filter by topic
 refbolt catalog list --strategy jina    # filter by fetch strategy
 refbolt catalog list --json             # machine-readable JSON
 refbolt catalog show anthropic          # full detail for one provider
@@ -135,11 +135,14 @@ a `providers.yaml` and has no network dependency.
 
 ### Selective sync
 
-Not every project needs all 46 providers. Pick what you need:
+Not every project needs all 57 providers. Pick what you need:
 
 ```bash
-# Just the LLM API docs (includes Grok Bot + Cursor integration via xai)
-refbolt sync --topic llm-api
+# Frontier lab APIs (xAI / Grok Bot + Cursor, Anthropic, OpenAI)
+refbolt sync --topic frontier-labs
+
+# Third-party serverless inference hosts (DeepInfra, Fireworks, Together)
+refbolt sync --topic inference-host
 
 # Grok Bot / Cursor agent docs only (~164 pages from docs.x.ai llms.txt)
 refbolt sync --provider xai
@@ -195,7 +198,7 @@ rollout (Cursor SSO/dashboard), and Grok CLI compat with `.cursor/mcp.json` and
 
 ```bash
 refbolt sync --provider xai
-# → <archive_root>/llm-api/xai/latest/
+# → <archive_root>/frontier-labs/xai/latest/
 ```
 
 Key pages for Cursor/local agents: `developers/docs-mcp.md`, `grok-bot/overview.md`,
@@ -203,6 +206,26 @@ Key pages for Cursor/local agents: `developers/docs-mcp.md`, `grok-bot/overview.
 `build/features/hooks.md`. Live docs MCP: `https://docs.x.ai/api/mcp`.
 
 Details: [docs/providers/README.md](docs/providers/README.md#xai--grok).
+
+### Inference providers (two flat topics)
+
+“Inference providers” is a documentation umbrella, not a nested archive
+directory. Topics stay flat per [DDR-0001](docs/decisions/DDR-0001-archive-tree-structure.md):
+
+| Topic            | Who                                                                 | Archive path                                   |
+| ---------------- | ------------------------------------------------------------------- | ---------------------------------------------- |
+| `frontier-labs`  | First-party lab APIs: `xai`, `anthropic`, `openai`                  | `<archive_root>/frontier-labs/<slug>/latest/`  |
+| `inference-host` | Serverless open-weights hosts: `deepinfra`, `fireworks`, `together` | `<archive_root>/inference-host/<slug>/latest/` |
+
+AWS Bedrock stays under `cloud-infra`. OpenRouter is not in the catalog.
+
+Existing `<archive_root>/llm-api/` trees (the former topic slug) may remain until
+you re-sync into `frontier-labs/` or prune them.
+
+```bash
+refbolt sync --provider deepinfra
+# → <archive_root>/inference-host/deepinfra/latest/
+```
 
 ## Docker
 

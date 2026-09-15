@@ -6,7 +6,7 @@
 # that tells refbolt what to fetch, from where, and how.
 #
 # Hierarchy: archive_root → topics[] → providers[] → paths[]
-# Topics group providers by domain (e.g., "llm-api", "cloud-docs").
+# Topics group providers by domain (e.g., "frontier-labs", "inference-host").
 # Providers define a base URL and glob-friendly path patterns.
 "$schema": "https://json-schema.org/draft/2020-12/schema"
 "$id": "providers/v0/providers"
@@ -51,14 +51,15 @@ properties:
         minLength: 2
         maxLength: 64
         examples:
-          - llm-api
+          - frontier-labs
+          - inference-host
           - cloud-docs
-          - internal-tools
       name:
         type: string
         description: Human-readable display name for this topic.
         examples:
-          - LLM API Documentation
+          - Frontier Labs
+          - Inference Hosts
           - Cloud Provider Docs
       description:
         type: string

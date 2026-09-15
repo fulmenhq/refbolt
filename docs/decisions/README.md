@@ -27,10 +27,10 @@ This directory is the **single authoritative location** for all decision records
 
 ### Data Decisions
 
-| DDR                                                    | Decision                                      | Date       |
-| ------------------------------------------------------ | --------------------------------------------- | ---------- |
-| [DDR-0001](DDR-0001-archive-tree-structure.md)         | Archive tree structure                        | 2026-03-21 |
-| [DDR-0002](DDR-0002-hierarchical-guide-specificity.md) | Hierarchical providers must be guide-specific | 2026-03-22 |
+| DDR                                                    | Decision                                                      | Date       |
+| ------------------------------------------------------ | ------------------------------------------------------------- | ---------- |
+| [DDR-0001](DDR-0001-archive-tree-structure.md)         | Archive tree structure (flat topics; 2026-09 `llm-api` split) | 2026-03-21 |
+| [DDR-0002](DDR-0002-hierarchical-guide-specificity.md) | Hierarchical providers must be guide-specific                 | 2026-03-22 |
 
 ## Creating a New Decision Record
 

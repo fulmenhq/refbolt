@@ -117,7 +117,7 @@ properties:
       type: string
       pattern: "^[a-z][a-z0-9]+(-[a-z0-9]+)*$"
     examples:
-      - - llm-api
+      - - frontier-labs
         - ai
         - frontier-model
       - - cloud
@@ -134,9 +134,9 @@ properties:
       type: string
       pattern: "^[a-z][a-z0-9]+(-[a-z0-9]+)*$"
     examples:
-      - - llm-api
+      - - frontier-labs
+      - - inference-host
       - - cloud-infra
-      - - python-libs
   # ── Status & maintenance ────────────────────────────────────────
   status:
     type: string

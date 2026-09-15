@@ -2,7 +2,7 @@
 
 **Status**: Accepted
 **Date**: 2026-03-21
-**Updated**: 2026-04-21
+**Updated**: 2026-09-15
 **Deciders**: @3leapsdave
 
 ## Context
@@ -30,7 +30,10 @@ The archive tree follows this structure:
         └── .sync-meta.json
 ```
 
-- **Topic** (e.g. `llm-api`): groups providers by domain. Slug-formatted.
+- **Topic** (e.g. `frontier-labs`, `inference-host`): groups providers by domain.
+  Slug-formatted. Topics are **flat** — nested topic directories are not
+  supported. The former `llm-api` topic was split in 2026-09 (see Amendment
+  below).
 - **Provider** (e.g. `xai`): one directory per documentation source.
   Slug-formatted.
 - **Date** (`YYYY-MM-DD`): each sync writes into a directory keyed by the
@@ -72,6 +75,25 @@ The archive tree follows this structure:
   churn git history on every retry, which would be actively harmful here.
 - Topic/provider slugs are enforced by schema validation, preventing
   filesystem-unsafe names.
+
+### Amendment 2026-09-15: `llm-api` → `frontier-labs` + `inference-host`
+
+Topics remain first-order and **flat**. Nested trees such as
+`inference-providers/frontier-labs/...` need a separate DDR, schema change,
+and archive migration — deferred.
+
+The former `llm-api` topic is **renamed** to `frontier-labs` (`xai`,
+`anthropic`, `openai`). Third-party serverless open-weights hosts are a new
+topic `inference-host` (`deepinfra`, `fireworks`, `together`). AWS Bedrock
+stays under `cloud-infra`.
+
+“Inference providers” is a **documentation umbrella only** — not a nested
+directory.
+
+**Archive migration:** existing `<archive_root>/llm-api/` trees may remain on
+disk until operators re-sync into `frontier-labs/` or prune the old path.
+`latest/` under the new topic is independent; there is no automatic rename of
+on-disk archives.
 
 ### Design-choice matrix
 
