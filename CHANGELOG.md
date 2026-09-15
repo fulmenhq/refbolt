@@ -8,7 +8,8 @@ All notable changes to this project will be documented in this file. Older entri
 
 ### Added
 
-- **`inference-host` topic** with P0 serverless hosts `deepinfra`, `fireworks`, and `together`. Native fetch + `llms.txt` / `llms-full.txt` (`Source:` delimiters). OpenRouter and P1 hosts (Groq, Cerebras, SambaNova, Hyperbolic) are not included.
+- **`inference-host` topic** with P0 serverless hosts `deepinfra`, `fireworks`, and `together`. Native fetch + `llms.txt` / `llms-full.txt` (`Source:` delimiters). OpenRouter is not in the catalog.
+- **`inference-host` P1/P2 hosts** `groq`, `cerebras`, `sambanova`, `hyperbolic`, `featherless`, `novita` (9 providers in the topic). Native + `llms_txt_url` / `llms_full_txt_url` where published. SambaNova uses versioned Mintlify `_llms/vX.md` indexes (latest pin v2.1.1) plus `/docs/llms-full.txt`. Featherless has root `llms.txt` only (no dump; `/docs/*` is HTML).
 
 ### Changed
 

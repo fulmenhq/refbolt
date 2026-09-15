@@ -211,7 +211,7 @@ Use `fetch_strategy: jina` with key reference pages: `/docs/api-reference/chat`,
 
 Verified. Chat, responses, and assistants pages archived via Jina Reader. OpenAPI spec fetched from GitHub.
 
-## Inference hosts (DeepInfra, Fireworks, Together)
+## Inference hosts (P0 + P1/P2)
 
 Topic `inference-host` archives third-party **serverless open-weights** inference
 hosts. It is a first-order flat topic — not nested under `inference-providers/`.
@@ -219,11 +219,17 @@ The documentation umbrella “inference providers” covers both `frontier-labs`
 (lab APIs) and `inference-host`. AWS Bedrock stays under `cloud-infra`. OpenRouter
 is not in the catalog.
 
-All three P0 hosts are Mintlify sites with:
+| Wave | Slugs                                         |
+| ---- | --------------------------------------------- |
+| P0   | `deepinfra`, `fireworks`, `together`          |
+| P1   | `groq`, `cerebras`, `sambanova`, `hyperbolic` |
+| P2   | `featherless`, `novita`                       |
 
-- native `.md` suffix on page URLs
+Most hosts are Mintlify (or Groq console) sites with:
+
+- native `.md` suffix on page URLs (except Featherless — HTML-only `/docs/*`)
 - `llms.txt` as a markdown **index** of links
-- `llms-full.txt` as a `Source:`-delimited dump (DigitalOcean-style splitter)
+- `llms-full.txt` as a dump (`Source:` or Groq `URL:` delimiters)
 
 `fetch_strategy: native` with both `llms_txt_url` and `llms_full_txt_url` mirrors
 xAI: the index yields zero split sections, so native fetch falls back to the
@@ -231,10 +237,13 @@ full dump. Supplemental `.md` paths are for targeted refresh between full syncs.
 
 ### TOS / robots (SDR-0001, probed 2026-09-15)
 
-Each docs host publishes `robots.txt` with
-`Content-Signal: ai-train=yes, search=yes, ai-input=yes` and Allow-all except
-`/_next/` and `/cdn-cgi/`. `llms.txt` / `llms-full.txt` are explicit
-programmatic endpoints. `tos_reviewed: true` on that basis.
+P0 Mintlify hosts plus Cerebras, SambaNova (`/docs/robots.txt`), Hyperbolic docs,
+and Novita publish `robots.txt` with
+`Content-Signal: ai-train=yes, search=yes, ai-input=yes`. Groq and Featherless
+have no Content-Signal but Allow public docs and publish `llms.txt` (Groq also
+`llms-full.txt` and native `.md`). `tos_reviewed: true` on that basis. Public
+ZDR/residency language varies — see per-host notes; do not treat catalog
+inclusion as an estate allowlist decision.
 
 ### DeepInfra (`deepinfra`)
 
@@ -273,11 +282,76 @@ compatibility, API keys, privacy and security (ZDR / store-train-passthrough
 toggles). Serverless region pin is limited — dedicated/VPC for residency. Watch
 **passthrough models** (traffic can leave Together).
 
+### Groq (`groq`)
+
+**Base URL**: `https://console.groq.com`
+**llms.txt**: `https://console.groq.com/llms.txt` — ~63KB index
+**llms-full.txt**: `https://console.groq.com/llms-full.txt` — ~390 `URL:` sections, ~779KB
+**Archive**: `<archive_root>/inference-host/groq/latest/`
+
+Native `.md` on `/docs/**`. robots.txt allows `/` except `/dashboard/`,
+`/settings/`, `/keys/`. Public docs cover Zero Data Retention and Data Controls
+(`/docs/your-data.md`).
+
+### Cerebras Inference (`cerebras`)
+
+**Base URL**: `https://inference-docs.cerebras.ai`
+**llms.txt**: `https://inference-docs.cerebras.ai/llms.txt` — ~22KB index
+**llms-full.txt**: `https://inference-docs.cerebras.ai/llms-full.txt` — ~120 `Source:` sections, ~1.2MB
+**OpenAPI**: `https://inference-docs.cerebras.ai/api-reference/openapi.yaml`
+**Archive**: `<archive_root>/inference-host/cerebras/latest/`
+
+Mintlify Content-Signal `ai-input=yes`. Guessed ZDR paths 404 — corporate
+privacy exists; public inference ZDR is thin.
+
+### SambaNova (`sambanova`)
+
+**Base URL**: `https://docs.sambanova.ai` (domain-only — do not add `/docs` as
+`base_url` path or `FilterByBaseURL` drops mintlify.dev `Source:` hosts)
+**llms.txt**: `https://docs.sambanova.ai/docs/llms.txt` — versioned `_llms/vX.md` index (root `/llms.txt` 404)
+**Latest versioned dump (pin)**: `https://sambanova-systems.mintlify.dev/docs/_llms/v2-1-1.md` (v2.1.1, ~335 pages)
+**llms-full.txt**: `https://docs.sambanova.ai/docs/llms-full.txt` — ~897 `Source:` sections, ~5.0MB
+**OpenAPI**: `https://raw.githubusercontent.com/sambanova/sambanova-inference-api-spec/refs/heads/main/openapi.documented.json`
+**Archive**: `<archive_root>/inference-host/sambanova/latest/`
+
+`robots.txt` is under `/docs/` (root 404). Cloud ZDR is less crisp publicly.
+
+### Hyperbolic (`hyperbolic`)
+
+**Base URL**: `https://www.hyperbolic.ai` (apex; `docs.hyperbolic.ai` aliases to `/docs`)
+**llms.txt**: `https://www.hyperbolic.ai/docs/llms.txt` — ~3KB index
+**llms-full.txt**: `https://www.hyperbolic.ai/docs/llms-full.txt` — ~20 `Source:` sections, ~111KB
+**OpenAPI**: `https://www.hyperbolic.ai/docs/api-reference/openapi.json`
+**Archive**: `<archive_root>/inference-host/hyperbolic/latest/`
+
+Keep `base_url` without a `/docs` path: dump `Source:` lines still use
+`https://docs.hyperbolic.ai/docs/...`. Inference overview (ZDR claim) is native
+`.md` but **not** in `llms.txt` — supplemental path `/docs/inference/overview.md`.
+
+### Featherless (`featherless`)
+
+**Base URL**: `https://featherless.ai`
+**llms.txt**: `https://featherless.ai/llms.txt` — ~4KB index (**no** `llms-full.txt`)
+**Archive**: `<archive_root>/inference-host/featherless/latest/`
+
+Native `.md` suffix on `/docs/*` 404s (HTML SPA). Catalog archives the published
+`llms.txt` only. Index states no prompt/chat logging.
+
+### Novita AI (`novita`)
+
+**Base URL**: `https://docs.novita.ai`
+**llms.txt**: `https://docs.novita.ai/llms.txt` — ~8KB index
+**llms-full.txt**: `https://docs.novita.ai/llms-full.txt` — ~448 `Source:` sections, ~1.45MB
+**Archive**: `<archive_root>/inference-host/novita/latest/`
+
+`novita.ai/docs` aliases here. Privacy policy at
+`https://novita.ai/legal/privacy-policy`. ZDR/US residency not established.
+
 ### Status
 
-Verified (HTTP 200 on `llms.txt`, `llms-full.txt`, native `.md` samples, and
-robots.txt Content-Signal, 2026-09-15). Full archive trees land after
-`refbolt sync --provider <slug>`.
+Verified (HTTP 200 on `llms.txt`, dumps where published, native `.md` samples,
+and robots.txt, 2026-09-15). Full archive trees land after
+`refbolt sync --provider <slug>`. Featherless archives the llms.txt index only.
 
 ## Jina Reader
 

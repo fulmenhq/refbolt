@@ -64,9 +64,9 @@ func TestCatalogEntries_CountAndSort(t *testing.T) {
 		t.Fatal("got zero entries")
 	}
 
-	// Expected: 57 providers. Exact count guards against future drift; if
+	// Expected: 63 providers. Exact count guards against future drift; if
 	// the catalog grows on purpose, update this number alongside the change.
-	const expected = 57
+	const expected = 63
 	if len(entries) != expected {
 		t.Errorf("CatalogEntries count = %d, want %d", len(entries), expected)
 	}
@@ -165,8 +165,8 @@ func TestProvidersByTopic_FiltersAndErrorsOnUnknown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("inference-host: %v", err)
 	}
-	if len(hosts) != 3 {
-		t.Errorf("inference-host count = %d, want 3", len(hosts))
+	if len(hosts) != 9 {
+		t.Errorf("inference-host count = %d, want 9", len(hosts))
 	}
 
 	_, err = ProvidersByTopic("not-a-topic")

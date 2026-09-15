@@ -66,7 +66,7 @@ topics:
   - slug: inference-host
     name: Inference Hosts
     description: >-
-      Third-party serverless open-weights inference hosts (DeepInfra, Fireworks, Together). Distinct from frontier-labs (first-party lab APIs) and from cloud-infra AWS Bedrock. Nested inference-providers/ directories are not supported.
+      Third-party serverless open-weights inference hosts (DeepInfra, Fireworks, Together, Groq, Cerebras, SambaNova, Hyperbolic, Featherless, Novita). Distinct from frontier-labs (first-party lab APIs) and from cloud-infra AWS Bedrock. Nested inference-providers/ directories are not supported.
     providers:
       # DeepInfra — Mintlify native .md + llms.txt index; dump is llms-full.txt
       # (Source: delimiters, DigitalOcean-style). OpenAI-compatible base
@@ -121,6 +121,92 @@ topics:
           - /docs/inference/openai-compatibility.md
           - /docs/api-keys-authentication.md
           - /docs/privacy-and-security.md
+      # Groq — console.groq.com native .md + llms.txt index; dump is
+      # llms-full.txt (URL: delimiters, Anthropic-style). robots.txt Allow: /
+      # except /dashboard/ /settings/ /keys/; no Content-Signal. Explicit
+      # Zero Data Retention / Data Controls at /docs/your-data.
+      - slug: groq
+        name: Groq
+        base_url: https://console.groq.com
+        fetch_strategy: native
+        llms_txt_url: https://console.groq.com/llms.txt
+        llms_full_txt_url: https://console.groq.com/llms-full.txt
+        paths:
+          - /docs/overview.md
+          - /docs/quickstart.md
+          - /docs/openai.md
+          - /docs/models.md
+          - /docs/your-data.md
+      # Cerebras Inference — Mintlify native .md + llms.txt / llms-full.txt
+      # (Source: delimiters). robots.txt Content-Signal: ai-input=yes. Public
+      # inference ZDR page is thin (corporate privacy only); verify contract
+      # language before estate allowlist.
+      - slug: cerebras
+        name: Cerebras Inference
+        base_url: https://inference-docs.cerebras.ai
+        fetch_strategy: native
+        llms_txt_url: https://inference-docs.cerebras.ai/llms.txt
+        llms_full_txt_url: https://inference-docs.cerebras.ai/llms-full.txt
+        openapi_url: https://inference-docs.cerebras.ai/api-reference/openapi.yaml
+        paths:
+          - /quickstart.md
+          - /models/overview.md
+          - /capabilities/tool-use.md
+          - /api-reference/chat-completions.md
+      # SambaNova — llms.txt at /docs/llms.txt is a versioned Mintlify index
+      # pointing at _llms/vX.md dumps (latest v2.1.1, ~335 pages). Root
+      # /llms.txt is 404. Current dump is /docs/llms-full.txt (Source: lines
+      # on sambanova-systems.mintlify.dev). Keep base_url domain-only so
+      # FilterByBaseURL does not drop those Source hosts. robots.txt lives
+      # under /docs/ with Content-Signal: ai-input=yes.
+      - slug: sambanova
+        name: SambaNova
+        base_url: https://docs.sambanova.ai
+        fetch_strategy: native
+        llms_txt_url: https://docs.sambanova.ai/docs/llms.txt
+        llms_full_txt_url: https://docs.sambanova.ai/docs/llms-full.txt
+        openapi_url: https://raw.githubusercontent.com/sambanova/sambanova-inference-api-spec/refs/heads/main/openapi.documented.json
+      # Hyperbolic — docs.hyperbolic.ai aliases to www.hyperbolic.ai/docs.
+      # llms-full.txt Source: lines still use docs.hyperbolic.ai/docs/..., so
+      # base_url is the www apex (no /docs path) to avoid FilterByBaseURL
+      # dropping the dump. Inference overview (ZDR claim) is native .md but
+      # not listed in llms.txt — keep it as a supplemental path. robots.txt
+      # Content-Signal: ai-input=yes.
+      - slug: hyperbolic
+        name: Hyperbolic
+        base_url: https://www.hyperbolic.ai
+        fetch_strategy: native
+        llms_txt_url: https://www.hyperbolic.ai/docs/llms.txt
+        llms_full_txt_url: https://www.hyperbolic.ai/docs/llms-full.txt
+        openapi_url: https://www.hyperbolic.ai/docs/api-reference/openapi.json
+        paths:
+          - /docs/overview/overview.md
+          - /docs/overview/quickstart.md
+          - /docs/inference/overview.md
+          - /docs/general/security-compliance.md
+      # Featherless — root llms.txt exists (~4KB index; no llms-full.txt).
+      # Linked /docs/* pages are HTML-only (native .md suffix 404s). Archive
+      # the published llms.txt; do not native-fetch HTML. robots.txt Allow: /
+      # except /dashboard /login /signup. llms.txt states "No logging".
+      - slug: featherless
+        name: Featherless
+        base_url: https://featherless.ai
+        fetch_strategy: native
+        llms_txt_url: https://featherless.ai/llms.txt
+      # Novita AI — Mintlify native .md + llms.txt / llms-full.txt (Source:).
+      # novita.ai/docs aliases to docs.novita.ai. robots.txt Content-Signal:
+      # ai-input=yes. Privacy policy exists; ZDR/US residency not established
+      # from public docs.
+      - slug: novita
+        name: Novita AI
+        base_url: https://docs.novita.ai
+        fetch_strategy: native
+        llms_txt_url: https://docs.novita.ai/llms.txt
+        llms_full_txt_url: https://docs.novita.ai/llms-full.txt
+        paths:
+          - /guides/introduction.md
+          - /guides/llm-api.md
+          - /api-reference/model-apis-llm-create-chat-completion.md
   - slug: python-libs
     name: Python Libraries
     description: Key Python library documentation
