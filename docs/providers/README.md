@@ -67,7 +67,7 @@ just the REST API. For Cursor and local Grok agents, the high-value surfaces are
 
 **Cursor-specific entry points** (also listed as supplemental paths in `providers.yaml`):
 
-| Page                                      | Archive path (under `llm-api/xai/latest/`) |
+| Page                                      | Archive path (under `frontier-labs/xai/latest/`) |
 | ----------------------------------------- | ------------------------------------------ |
 | Docs MCP setup for Cursor                 | `developers/docs-mcp.md`                   |
 | Grok Bot overview                         | `grok-bot/overview.md`                     |
@@ -78,7 +78,7 @@ just the REST API. For Cursor and local Grok agents, the high-value surfaces are
 Live MCP endpoint (not archived — connect at runtime): `https://docs.x.ai/api/mcp`
 
 **Agent usage:** sync once, then point Cursor `@Docs` or a local agent context root at
-`<archive_root>/llm-api/xai/latest/`. Grok Bot and Cursor integration docs are **not**
+`<archive_root>/frontier-labs/xai/latest/`. Grok Bot and Cursor integration docs are **not**
 under `spacex-data` — that topic is REST API reference only.
 
 ### Fetch Quirks (as of 2026-09-13)
@@ -210,6 +210,74 @@ Use `fetch_strategy: jina` with key reference pages: `/docs/api-reference/chat`,
 ### Status
 
 Verified. Chat, responses, and assistants pages archived via Jina Reader. OpenAPI spec fetched from GitHub.
+
+## Inference hosts (DeepInfra, Fireworks, Together)
+
+Topic `inference-host` archives third-party **serverless open-weights** inference
+hosts. It is a first-order flat topic — not nested under `inference-providers/`.
+The documentation umbrella “inference providers” covers both `frontier-labs`
+(lab APIs) and `inference-host`. AWS Bedrock stays under `cloud-infra`. OpenRouter
+is not in the catalog.
+
+All three P0 hosts are Mintlify sites with:
+
+- native `.md` suffix on page URLs
+- `llms.txt` as a markdown **index** of links
+- `llms-full.txt` as a `Source:`-delimited dump (DigitalOcean-style splitter)
+
+`fetch_strategy: native` with both `llms_txt_url` and `llms_full_txt_url` mirrors
+xAI: the index yields zero split sections, so native fetch falls back to the
+full dump. Supplemental `.md` paths are for targeted refresh between full syncs.
+
+### TOS / robots (SDR-0001, probed 2026-09-15)
+
+Each docs host publishes `robots.txt` with
+`Content-Signal: ai-train=yes, search=yes, ai-input=yes` and Allow-all except
+`/_next/` and `/cdn-cgi/`. `llms.txt` / `llms-full.txt` are explicit
+programmatic endpoints. `tos_reviewed: true` on that basis.
+
+### DeepInfra (`deepinfra`)
+
+**Base URL**: `https://docs.deepinfra.com`
+**llms.txt**: `https://docs.deepinfra.com/llms.txt` — ~25KB index
+**llms-full.txt**: `https://docs.deepinfra.com/llms-full.txt` — ~209 `Source:` sections, ~289KB
+**OpenAPI**: `https://api.deepinfra.com/openapi.json`
+**Archive**: `<archive_root>/inference-host/deepinfra/latest/`
+
+OpenAI-compatible base `https://api.deepinfra.com/v1/openai`. Public docs cover
+inference privacy handling (`/account/data-privacy.md`) and subprocessors.
+Marketing pricing at `https://deepinfra.com/pricing` is HTML-only and is not
+fetched natively (not on the docs host).
+
+### Fireworks AI (`fireworks`)
+
+**Base URL**: `https://docs.fireworks.ai`
+**llms.txt**: `https://docs.fireworks.ai/llms.txt` — ~56KB index
+**llms-full.txt**: `https://docs.fireworks.ai/llms-full.txt` — ~387 `Source:` sections, ~1.5MB
+**Archive**: `<archive_root>/inference-host/fireworks/latest/`
+
+High-value agent pages (also listed as supplemental paths): US-only Serverless,
+enterprise data residency, Zero Data Retention (`data_handling.md`), serving
+paths (Standard / Priority / Fast). Caveat: Responses API defaults `store=True`
+(30-day retention) — ZDR for that path needs `store=False`.
+
+### Together AI (`together`)
+
+**Base URL**: `https://docs.together.ai`
+**llms.txt**: `https://docs.together.ai/llms.txt` — ~61KB index
+**llms-full.txt**: `https://docs.together.ai/llms-full.txt` — ~342 `Source:` sections, ~2.3MB
+**Archive**: `<archive_root>/inference-host/together/latest/`
+
+Curated supplemental paths: intro, quickstart, chat overview, OpenAI
+compatibility, API keys, privacy and security (ZDR / store-train-passthrough
+toggles). Serverless region pin is limited — dedicated/VPC for residency. Watch
+**passthrough models** (traffic can leave Together).
+
+### Status
+
+Verified (HTTP 200 on `llms.txt`, `llms-full.txt`, native `.md` samples, and
+robots.txt Content-Signal, 2026-09-15). Full archive trees land after
+`refbolt sync --provider <slug>`.
 
 ## Jina Reader
 
@@ -561,7 +629,7 @@ documentation. Opt-in by surface — there is no monolithic firehose sync.
 
 | Topic / provider | What it is                                     | What it is NOT                      |
 | ---------------- | ---------------------------------------------- | ----------------------------------- |
-| `llm-api/xai`    | xAI Grok API, Grok Bot, Cursor MCP             | X Platform REST API for posting/DMs |
+| `frontier-labs/xai` | xAI Grok API, Grok Bot, Cursor MCP             | X Platform REST API for posting/DMs |
 | `spacex-data/*`  | r/SpaceX launch data + Starlink enterprise API | X/Twitter social platform           |
 
 ### X Developer Platform (`docs.x.com`)

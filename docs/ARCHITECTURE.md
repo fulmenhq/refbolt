@@ -111,16 +111,22 @@ Sources: `internal/cmd/{init,validate,sync,version}.go`, `internal/cmd/root.go`.
 
 ### 2. Embedded Catalog and Schema
 
-The binary ships with a curated catalog of 46 providers across 9 topics plus
+The binary ships with a curated catalog of 57 providers across 11 topics plus
 the JSON Schema that validates them:
 
 - Source of truth: `configs/providers.yaml`, `schemas/providers/v0/providers.schema.yaml`
 - Embedded copies: `assets/catalog.yaml`, `assets/schema.yaml` — refreshed by `make embed-assets`
 - Zero-config fallback: when no user config is found, `sync` runs against the embedded catalog
 
-Topics: `llm-api`, `python-libs`, `cloud-infra`, `data-platform`,
-`container-platform`, `collaboration`, `self-hosted-suite`, `spacex-data`,
-`design-platform`.
+Topics: `frontier-labs`, `inference-host`, `python-libs`, `cloud-infra`,
+`data-platform`, `container-platform`, `collaboration`, `self-hosted-suite`,
+`spacex-data`, `social-platform`, `design-platform`.
+
+`frontier-labs` is the former `llm-api` topic (xAI, Anthropic, OpenAI).
+`inference-host` is serverless open-weights hosts (DeepInfra, Fireworks,
+Together). “Inference providers” is a docs umbrella only — topics stay flat
+(see [DDR-0001](decisions/DDR-0001-archive-tree-structure.md)). AWS Bedrock
+remains under `cloud-infra`.
 
 The `spacex-data` topic groups the r/SpaceX community open REST API (`spacex-*`
 slugs, `github-raw` from `r-spacex/SpaceX-API`) and the official Starlink Public
@@ -133,7 +139,7 @@ monolithic sync.
 `registry/providers.jsonl` records capability metadata (llms.txt availability,
 `md_suffix` pattern, GitHub source, OpenAPI, ToS-review status, verification
 date, site quirks) for every provider known to the project. It currently
-contains 47 entries, one more than the shipped catalog — `aws-cli` is
+contains 58 entries, one more than the shipped catalog — `aws-cli` is
 described in the registry but not yet wired into `configs/providers.yaml`.
 See the Open Questions section.
 
@@ -260,8 +266,8 @@ Commit message format (`internal/git/message.go`):
 refbolt sync: 2026-04-20
 
 Providers updated:
-- xai: 96 files (llm-api)
-- anthropic: 488 files (llm-api)
+- xai: 96 files (frontier-labs)
+- anthropic: 488 files (frontier-labs)
 
 Archive root: /data/archive
 

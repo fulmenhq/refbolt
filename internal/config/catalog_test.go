@@ -64,9 +64,9 @@ func TestCatalogEntries_CountAndSort(t *testing.T) {
 		t.Fatal("got zero entries")
 	}
 
-	// Expected: 54 providers. Exact count guards against future drift; if
+	// Expected: 57 providers. Exact count guards against future drift; if
 	// the catalog grows on purpose, update this number alongside the change.
-	const expected = 54
+	const expected = 57
 	if len(entries) != expected {
 		t.Errorf("CatalogEntries count = %d, want %d", len(entries), expected)
 	}
@@ -148,17 +148,25 @@ func TestCatalogEntryBySlug_MissingRegistryDegradesGracefully(t *testing.T) {
 func TestProvidersByTopic_FiltersAndErrorsOnUnknown(t *testing.T) {
 	setupRealCatalogAndRegistry(t)
 
-	llm, err := ProvidersByTopic("llm-api")
+	labs, err := ProvidersByTopic("frontier-labs")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(llm) == 0 {
-		t.Fatal("expected at least one llm-api provider")
+	if len(labs) == 0 {
+		t.Fatal("expected at least one frontier-labs provider")
 	}
-	for _, e := range llm {
-		if e.TopicSlug != "llm-api" {
-			t.Errorf("wrong topic %q in llm-api filter", e.TopicSlug)
+	for _, e := range labs {
+		if e.TopicSlug != "frontier-labs" {
+			t.Errorf("wrong topic %q in frontier-labs filter", e.TopicSlug)
 		}
+	}
+
+	hosts, err := ProvidersByTopic("inference-host")
+	if err != nil {
+		t.Fatalf("inference-host: %v", err)
+	}
+	if len(hosts) != 3 {
+		t.Errorf("inference-host count = %d, want 3", len(hosts))
 	}
 
 	_, err = ProvidersByTopic("not-a-topic")
@@ -198,8 +206,8 @@ func TestTopicSummaries_CountsMatchEntries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TopicSummaries: %v", err)
 	}
-	if len(summaries) != 10 {
-		t.Errorf("want 10 topics, got %d", len(summaries))
+	if len(summaries) != 11 {
+		t.Errorf("want 11 topics, got %d", len(summaries))
 	}
 
 	// Verify counts sum back to the total provider count.
