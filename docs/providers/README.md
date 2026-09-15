@@ -68,12 +68,12 @@ just the REST API. For Cursor and local Grok agents, the high-value surfaces are
 **Cursor-specific entry points** (also listed as supplemental paths in `providers.yaml`):
 
 | Page                                      | Archive path (under `frontier-labs/xai/latest/`) |
-| ----------------------------------------- | ------------------------------------------ |
-| Docs MCP setup for Cursor                 | `developers/docs-mcp.md`                   |
-| Grok Bot overview                         | `grok-bot/overview.md`                     |
-| Team admin (Cursor dashboard, MCP policy) | `grok-bot/teams-and-enterprises.md`        |
-| Cursor MCP config compat                  | `build/features/mcp-servers.md`            |
-| Cursor hooks compat                       | `build/features/hooks.md`                  |
+| ----------------------------------------- | ------------------------------------------------ |
+| Docs MCP setup for Cursor                 | `developers/docs-mcp.md`                         |
+| Grok Bot overview                         | `grok-bot/overview.md`                           |
+| Team admin (Cursor dashboard, MCP policy) | `grok-bot/teams-and-enterprises.md`              |
+| Cursor MCP config compat                  | `build/features/mcp-servers.md`                  |
+| Cursor hooks compat                       | `build/features/hooks.md`                        |
 
 Live MCP endpoint (not archived — connect at runtime): `https://docs.x.ai/api/mcp`
 
@@ -627,10 +627,10 @@ documentation. Opt-in by surface — there is no monolithic firehose sync.
 
 **Important:** This topic is distinct from:
 
-| Topic / provider | What it is                                     | What it is NOT                      |
-| ---------------- | ---------------------------------------------- | ----------------------------------- |
+| Topic / provider    | What it is                                     | What it is NOT                      |
+| ------------------- | ---------------------------------------------- | ----------------------------------- |
 | `frontier-labs/xai` | xAI Grok API, Grok Bot, Cursor MCP             | X Platform REST API for posting/DMs |
-| `spacex-data/*`  | r/SpaceX launch data + Starlink enterprise API | X/Twitter social platform           |
+| `spacex-data/*`     | r/SpaceX launch data + Starlink enterprise API | X/Twitter social platform           |
 
 ### X Developer Platform (`docs.x.com`)
 

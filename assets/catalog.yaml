@@ -8,10 +8,7 @@ topics:
   - slug: frontier-labs
     name: Frontier Labs
     description: >-
-      First-party frontier lab APIs (xAI, Anthropic, OpenAI) plus Grok Bot and
-      agent IDE integrations. Documentation umbrella "inference providers" is
-      not a nested directory — topics stay flat (DDR-0001). Former topic slug:
-      llm-api.
+      First-party frontier lab APIs (xAI, Anthropic, OpenAI) plus Grok Bot and agent IDE integrations. Documentation umbrella "inference providers" is not a nested directory — topics stay flat (DDR-0001). Former topic slug: llm-api.
     providers:
       # xAI — llms.txt archives the full docs.x.ai site in one request (~164 sections).
       # Includes /developers/** (REST API), /grok-bot/** (Grok Bot + Cursor SSO/dashboard),
@@ -69,10 +66,7 @@ topics:
   - slug: inference-host
     name: Inference Hosts
     description: >-
-      Third-party serverless open-weights inference hosts (DeepInfra, Fireworks,
-      Together). Distinct from frontier-labs (first-party lab APIs) and from
-      cloud-infra AWS Bedrock. Nested inference-providers/ directories are not
-      supported.
+      Third-party serverless open-weights inference hosts (DeepInfra, Fireworks, Together). Distinct from frontier-labs (first-party lab APIs) and from cloud-infra AWS Bedrock. Nested inference-providers/ directories are not supported.
     providers:
       # DeepInfra — Mintlify native .md + llms.txt index; dump is llms-full.txt
       # (Source: delimiters, DigitalOcean-style). OpenAI-compatible base
