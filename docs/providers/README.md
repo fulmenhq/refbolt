@@ -211,19 +211,23 @@ Use `fetch_strategy: jina` with key reference pages: `/docs/api-reference/chat`,
 
 Verified. Chat, responses, and assistants pages archived via Jina Reader. OpenAPI spec fetched from GitHub.
 
-## Inference hosts (P0 + P1/P2)
+## Inference hosts (P0 + P1/P2 + TypeSafe)
 
-Topic `inference-host` archives third-party **serverless open-weights** inference
-hosts. It is a first-order flat topic — not nested under `inference-providers/`.
-The documentation umbrella “inference providers” covers both `frontier-labs`
+Topic `inference-host` archives third-party hosted inference APIs: serverless
+**open-weights** hosts plus TypeSafe’s System One decision API. It is a
+first-order flat topic — not nested under `inference-providers/`. The
+documentation umbrella “inference providers” covers both `frontier-labs`
 (lab APIs) and `inference-host`. AWS Bedrock stays under `cloud-infra`. OpenRouter
-is not in the catalog.
+is not in the catalog. TypeSafe is **not** a frontier lab and **not** an
+OpenAI-compat / open-weights chat host — agents should not treat `typesafe` like
+Together or Fireworks.
 
-| Wave | Slugs                                         |
-| ---- | --------------------------------------------- |
-| P0   | `deepinfra`, `fireworks`, `together`          |
-| P1   | `groq`, `cerebras`, `sambanova`, `hyperbolic` |
-| P2   | `featherless`, `novita`                       |
+| Wave     | Slugs                                                           |
+| -------- | --------------------------------------------------------------- |
+| P0       | `deepinfra`, `fireworks`, `together`                            |
+| P1       | `groq`, `cerebras`, `sambanova`, `hyperbolic`                   |
+| P2       | `featherless`, `novita`                                         |
+| TypeSafe | `typesafe` (Jev / System One structured-decision API; not chat) |
 
 Most hosts are Mintlify (or Groq console) sites with:
 
@@ -235,15 +239,16 @@ Most hosts are Mintlify (or Groq console) sites with:
 xAI: the index yields zero split sections, so native fetch falls back to the
 full dump. Supplemental `.md` paths are for targeted refresh between full syncs.
 
-### TOS / robots (SDR-0001, probed 2026-09-15)
+### TOS / robots (SDR-0001, probed 2026-09-15 / TypeSafe 2026-09-17)
 
 P0 Mintlify hosts plus Cerebras, SambaNova (`/docs/robots.txt`), Hyperbolic docs,
-and Novita publish `robots.txt` with
+Novita, and TypeSafe publish `robots.txt` with
 `Content-Signal: ai-train=yes, search=yes, ai-input=yes`. Groq and Featherless
 have no Content-Signal but Allow public docs and publish `llms.txt` (Groq also
 `llms-full.txt` and native `.md`). `tos_reviewed: true` on that basis. Public
 ZDR/residency language varies — see per-host notes; do not treat catalog
-inclusion as an estate allowlist decision.
+inclusion as an estate allowlist decision. TypeSafe harvest is **public docs
+only** — MCA / ToS / Privacy / DPA PDFs stay off this archive.
 
 ### DeepInfra (`deepinfra`)
 
@@ -347,11 +352,36 @@ Native `.md` suffix on `/docs/*` 404s (HTML SPA). Catalog archives the published
 `novita.ai/docs` aliases here. Privacy policy at
 `https://novita.ai/legal/privacy-policy`. ZDR/US residency not established.
 
+### TypeSafe (`typesafe`)
+
+**Base URL**: `https://docs.typesafe.ai`
+**llms.txt**: `https://docs.typesafe.ai/llms.txt` — ~16KB index (~111 page links)
+**llms-full.txt**: `https://docs.typesafe.ai/llms-full.txt` — ~111 `Source:` sections, ~816KB
+**OpenAPI**: `https://api.typesafe.ai/openapi.json` (`POST /v1/systemone`, `GET /v1/models`)
+**Archive**: `<archive_root>/inference-host/typesafe/latest/`
+
+Mintlify. robots.txt Allow `/` (Disallow `/_next/` and `/cdn-cgi/`) with
+Content-Signal `ai-train=yes, search=yes, ai-input=yes`. Native `.md` suffix
+works. Sitemap published.
+
+**Product (do not confuse with open-weights chat hosts):** Jev is TypeSafe’s
+flagship model and the first System One model. Callers send **state** plus typed
+**questions**; the API returns structured **Choice / Score / Noul** answers with
+probabilities and **confidence**. Endpoint is `POST https://api.typesafe.ai/v1/systemone`.
+This is not OpenAI-compat chat completions and not an open-weights catalog.
+
+Supplemental paths cover introduction, quickstart, System One, state, primitives,
+confidence, HTTP API, models, and the agent skill. `/legal.md` is a public link
+index only — do not ingest MCA / ToS / Privacy / DPA PDFs into this archive.
+Public legal.md mentions enterprise ZDR via `privacy@typesafe.ai`; that is not
+documented as the default for the public API, so the catalog does not tag `zdr`.
+
 ### Status
 
 Verified (HTTP 200 on `llms.txt`, dumps where published, native `.md` samples,
-and robots.txt, 2026-09-15). Full archive trees land after
-`refbolt sync --provider <slug>`. Featherless archives the llms.txt index only.
+and robots.txt, 2026-09-15; TypeSafe probed 2026-09-17). Full archive trees land
+after `refbolt sync --provider <slug>`. Featherless archives the llms.txt index
+only.
 
 ## Jina Reader
 

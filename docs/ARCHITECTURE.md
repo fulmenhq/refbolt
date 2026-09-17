@@ -111,7 +111,7 @@ Sources: `internal/cmd/{init,validate,sync,version}.go`, `internal/cmd/root.go`.
 
 ### 2. Embedded Catalog and Schema
 
-The binary ships with a curated catalog of 63 providers across 11 topics plus
+The binary ships with a curated catalog of 64 providers across 11 topics plus
 the JSON Schema that validates them:
 
 - Source of truth: `configs/providers.yaml`, `schemas/providers/v0/providers.schema.yaml`
@@ -123,8 +123,10 @@ Topics: `frontier-labs`, `inference-host`, `python-libs`, `cloud-infra`,
 `spacex-data`, `social-platform`, `design-platform`.
 
 `frontier-labs` is the former `llm-api` topic (xAI, Anthropic, OpenAI).
-`inference-host` is serverless open-weights hosts (DeepInfra, Fireworks,
-Together, Groq, Cerebras, SambaNova, Hyperbolic, Featherless, Novita).
+`inference-host` is hosted inference APIs: serverless open-weights hosts
+(DeepInfra, Fireworks, Together, Groq, Cerebras, SambaNova, Hyperbolic,
+Featherless, Novita) plus TypeSafe (Jev / System One structured-decision
+API — not OpenAI-compat chat or open-weights).
 “Inference providers” is a docs umbrella only — topics stay flat
 (see [DDR-0001](decisions/DDR-0001-archive-tree-structure.md)). AWS Bedrock
 remains under `cloud-infra`.
@@ -140,7 +142,7 @@ monolithic sync.
 `registry/providers.jsonl` records capability metadata (llms.txt availability,
 `md_suffix` pattern, GitHub source, OpenAPI, ToS-review status, verification
 date, site quirks) for every provider known to the project. It currently
-contains 64 entries, one more than the shipped catalog — `aws-cli` is
+contains 65 entries, one more than the shipped catalog — `aws-cli` is
 described in the registry but not yet wired into `configs/providers.yaml`.
 See the Open Questions section.
 

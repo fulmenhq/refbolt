@@ -66,7 +66,7 @@ topics:
   - slug: inference-host
     name: Inference Hosts
     description: >-
-      Third-party serverless open-weights inference hosts (DeepInfra, Fireworks, Together, Groq, Cerebras, SambaNova, Hyperbolic, Featherless, Novita). Distinct from frontier-labs (first-party lab APIs) and from cloud-infra AWS Bedrock. Nested inference-providers/ directories are not supported.
+      Third-party hosted inference APIs: serverless open-weights hosts (DeepInfra, Fireworks, Together, Groq, Cerebras, SambaNova, Hyperbolic, Featherless, Novita) plus TypeSafe (Jev / System One structured-decision API — not OpenAI-compat chat or open-weights). Distinct from frontier-labs (first-party lab APIs) and from cloud-infra AWS Bedrock. Nested inference-providers/ directories are not supported.
     providers:
       # DeepInfra — Mintlify native .md + llms.txt index; dump is llms-full.txt
       # (Source: delimiters, DigitalOcean-style). OpenAI-compatible base
@@ -207,6 +207,29 @@ topics:
           - /guides/introduction.md
           - /guides/llm-api.md
           - /api-reference/model-apis-llm-create-chat-completion.md
+      # TypeSafe — Mintlify native .md + llms.txt / llms-full.txt (Source:).
+      # Jev is the flagship System One model: state + typed questions →
+      # structured Choice/Score/Noul answers with confidence. Not an
+      # OpenAI-compat chat host and not open-weights. robots.txt
+      # Content-Signal: ai-input=yes. Policy PDFs stay off this archive
+      # (legal.md is a public link index only).
+      - slug: typesafe
+        name: TypeSafe
+        base_url: https://docs.typesafe.ai
+        fetch_strategy: native
+        llms_txt_url: https://docs.typesafe.ai/llms.txt
+        llms_full_txt_url: https://docs.typesafe.ai/llms-full.txt
+        openapi_url: https://api.typesafe.ai/openapi.json
+        paths:
+          - /introduction.md
+          - /introduction/quickstart.md
+          - /concepts/system-one.md
+          - /concepts/state.md
+          - /primitives.md
+          - /confidence.md
+          - /api.md
+          - /models.md
+          - /agent-skill.md
   - slug: python-libs
     name: Python Libraries
     description: Key Python library documentation
