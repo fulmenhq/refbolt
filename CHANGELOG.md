@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. Older entri
 
 - **`inference-host` topic** with P0 serverless hosts `deepinfra`, `fireworks`, and `together`. Native fetch + `llms.txt` / `llms-full.txt` (`Source:` delimiters). OpenRouter is not in the catalog.
 - **`inference-host` P1/P2 hosts** `groq`, `cerebras`, `sambanova`, `hyperbolic`, `featherless`, `novita` (9 providers in the topic). Native + `llms_txt_url` / `llms_full_txt_url` where published. SambaNova uses versioned Mintlify `_llms/vX.md` indexes (latest pin v2.1.1) plus `/docs/llms-full.txt`. Featherless has root `llms.txt` only (no dump; `/docs/*` is HTML).
+- **`inference-host` TypeSafe (`typesafe`)** — Jev / System One structured-decision API (Choice/Score/Noul + confidence), not OpenAI-compat chat or open-weights. Mintlify native `.md` + `llms.txt` index and `llms-full.txt` (`Source:` dump). Public OpenAPI at `https://api.typesafe.ai/openapi.json`. Policy PDFs excluded.
 
 ### Changed
 

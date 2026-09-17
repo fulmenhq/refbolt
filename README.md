@@ -8,7 +8,7 @@ trees ready for offline consumption. One command, reproducible snapshots, no dri
 
 ## Features
 
-- 63 providers across 11 topics (frontier labs, inference hosts, cloud infra, SpaceX/Starlink data APIs, data platforms, design platforms, and more)
+- 64 providers across 11 topics (frontier labs, inference hosts, cloud infra, SpaceX/Starlink data APIs, data platforms, design platforms, and more)
 - 5 fetch strategies: native, jina, auto, github-raw, llmstxt-hierarchical
 - Incremental sync — skips unchanged providers via per-provider `.sync-meta.json` hints
 - Provider/topic filtering: `--provider`, `--topic`, `--exclude-provider`
@@ -135,7 +135,7 @@ a `providers.yaml` and has no network dependency.
 
 ### Selective sync
 
-Not every project needs all 63 providers. Pick what you need:
+Not every project needs all 64 providers. Pick what you need:
 
 ```bash
 # Frontier lab APIs (xAI / Grok Bot + Cursor, Anthropic, OpenAI)
@@ -212,12 +212,14 @@ Details: [docs/providers/README.md](docs/providers/README.md#xai--grok).
 “Inference providers” is a documentation umbrella, not a nested archive
 directory. Topics stay flat per [DDR-0001](docs/decisions/DDR-0001-archive-tree-structure.md):
 
-| Topic            | Who                                                                                                                                         | Archive path                                   |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `frontier-labs`  | First-party lab APIs: `xai`, `anthropic`, `openai`                                                                                          | `<archive_root>/frontier-labs/<slug>/latest/`  |
-| `inference-host` | Serverless open-weights hosts: `deepinfra`, `fireworks`, `together`, `groq`, `cerebras`, `sambanova`, `hyperbolic`, `featherless`, `novita` | `<archive_root>/inference-host/<slug>/latest/` |
+| Topic            | Who                                                                                                                                                                                | Archive path                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `frontier-labs`  | First-party lab APIs: `xai`, `anthropic`, `openai`                                                                                                                                 | `<archive_root>/frontier-labs/<slug>/latest/`  |
+| `inference-host` | Hosted inference APIs: open-weights `deepinfra`, `fireworks`, `together`, `groq`, `cerebras`, `sambanova`, `hyperbolic`, `featherless`, `novita`; System One `typesafe` (not chat) | `<archive_root>/inference-host/<slug>/latest/` |
 
 AWS Bedrock stays under `cloud-infra`. OpenRouter is not in the catalog.
+`typesafe` is a structured-decision API (Jev / System One Choice/Score/Noul), not
+an OpenAI-compat or open-weights chat host.
 
 Existing `<archive_root>/llm-api/` trees (the former topic slug) may remain until
 you re-sync into `frontier-labs/` or prune them.
