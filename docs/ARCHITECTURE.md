@@ -21,9 +21,9 @@ stable reference material, and teams sharing a common archive via bind-mounted
 or network storage.
 
 The CLI is a single self-contained Go binary. It ships with an embedded
-provider catalog and schema, so running `refbolt sync --all` against a fresh
-checkout produces a usable archive with no further configuration. Users who
-want to pick a subset generate their own `providers.yaml` via `refbolt init`.
+provider catalog and schema. Start with `refbolt sync --provider xai` or generate
+a scoped `providers.yaml` with `refbolt init --topic frontier-labs`. Without a
+user config, `sync --all` selects the entire embedded catalog.
 
 refbolt is not a crawler. It prefers official Markdown endpoints
 (`llms.txt` / `llms-full.txt` / `.md` suffix), falls back to Jina Reader for
@@ -363,7 +363,7 @@ docker run --rm \
 
 A top-level `docker-compose.yml` wires the CLI and runner images together around a
 host-bind `./archive` directory. Generate a `providers.yaml` at the repo root first
-(`make build && ./bin/refbolt init --all --output providers.yaml`, or `refbolt init`
+(`make build && ./bin/refbolt init --topic frontier-labs --output providers.yaml`, or `refbolt init`
 from an installed binary); the file is gitignored and mounted read-only into the
 containers. Three services ship by default:
 
