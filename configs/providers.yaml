@@ -19,13 +19,12 @@ topics:
         llms_full_txt_url: https://docs.x.ai/llms-full.txt
         paths:
           # Developer API (REST inference, tools, models)
-          - /developers/introduction.md
           - /developers/quickstart.md
           - /developers/models.md
           - /developers/tools/overview.md
           - /developers/tools/function-calling.md
           - /developers/tools/web-search.md
-          - /developers/rest-api-reference/inference/chat.md
+          - /developers/rest-api-reference/inference/chat-completions.md
           - /developers/docs-mcp.md
           # Grok Bot — Cursor account, SSO, dashboard admin, team rollout
           - /grok-bot/overview.md
@@ -47,7 +46,6 @@ topics:
           # Key pages (supplement the full dump for targeted updates)
           - /en/agents-and-tools/tool-use/overview.md
           - /en/build-with-claude/prompt-caching.md
-          - /en/api-reference/messages.md
       # OpenAI — native API-only Markdown export plus curated reference pages.
       # The full export is a single document; retain it alongside native .md pages.
       # OpenAPI spec remains on the manual_spec branch.
@@ -260,16 +258,27 @@ topics:
         base_url: https://docs.aws.amazon.com/glue/latest/dg
         fetch_strategy: llmstxt-hierarchical
         llms_txt_url: https://docs.aws.amazon.com/llms.txt
+        paths:
+          - what-is-glue.md
+          - start-console-overview.md
+          - set-up-iam.md
       - slug: aws-bedrock-userguide
         name: AWS Bedrock User Guide
         base_url: https://docs.aws.amazon.com/bedrock/latest/userguide
         fetch_strategy: llmstxt-hierarchical
         llms_txt_url: https://docs.aws.amazon.com/llms.txt
+        paths:
+          - what-is-bedrock.md
+          - getting-started.md
+          - model-cards.md
       - slug: aws-bedrock-apiref
         name: AWS Bedrock API Reference
         base_url: https://docs.aws.amazon.com/bedrock/latest/APIReference
         fetch_strategy: llmstxt-hierarchical
         llms_txt_url: https://docs.aws.amazon.com/llms.txt
+        paths:
+          - API_ListFoundationModels.md
+          - API_GetFoundationModel.md
       # DigitalOcean — root llms-full.txt is a chunk index, not a content dump.
       # Each provider fetches its published per-area Source: delimited chunk.
       # base_url filtering keeps sections within the selected product scope.
@@ -659,7 +668,6 @@ topics:
         paths:
           - getting-started.md
           - api-v2-service-accounts.md
-          - migrating-from-v1-to-v2.md
           - authentication.md
           - rate-limits-1.md
           - starlink-api-status.md

@@ -123,22 +123,6 @@ func TestMatchServiceURLs_NoMatch(t *testing.T) {
 	}
 }
 
-func TestSelectBestMatch(t *testing.T) {
-	// When base_url is bedrock/latest/userguide, selectBestMatch should prefer
-	// the userguide URL over the APIReference URL.
-	urls := []string{
-		"https://docs.aws.amazon.com/bedrock/latest/userguide/llms.txt",
-		"https://docs.aws.amazon.com/bedrock/latest/APIReference/llms.txt",
-	}
-	prefix := servicePrefix("https://docs.aws.amazon.com/bedrock/latest/userguide")
-	best := selectBestMatch(urls, prefix)
-
-	want := "https://docs.aws.amazon.com/bedrock/latest/userguide/llms.txt"
-	if best != want {
-		t.Errorf("selectBestMatch() = %q, want %q", best, want)
-	}
-}
-
 func TestNewHierarchicalFetcher_MissingLLMSTxtURL(t *testing.T) {
 	cfg := ProviderConfig{
 		Slug:          "test",

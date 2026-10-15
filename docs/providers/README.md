@@ -106,7 +106,7 @@ refbolt sync --provider xai --force
 **Base URL**: `https://platform.claude.com/docs` (migrated from `docs.anthropic.com` circa March 2026)
 **llms.txt**: `https://platform.claude.com/llms.txt` — 62KB index, 606 page links
 **llms-full.txt**: `https://platform.claude.com/llms-full.txt` — 24MB full dump, 488 sections
-**Individual .md**: Available at `/docs/en/<path>.md` (307 redirects for renamed pages)
+**Individual .md**: Available for selected guides at `/docs/en/<path>.md`; the full export also contains API reference content.
 
 **Important**: Both `.txt` endpoints are at the **domain root** (`platform.claude.com/`), NOT under `/docs/`. The old `/docs/llms.txt` and `/docs/llms-full.txt` paths return 404.
 
@@ -177,7 +177,18 @@ Matching uses the `base_url`-derived path prefix — `/bedrock/latest/userguide/
 
 ### Content Format
 
-AWS per-service `llms.txt` files are structured table-of-contents indexes (Markdown links to HTML pages), not content dumps. The raw `llms.txt` is archived as-is — it serves as a reference index for the service's documentation structure.
+AWS per-service `llms.txt` files are structured indexes, not content dumps.
+The current indexes publish native `.md` links. The catalog archives each index
+plus curated pages: Glue overview, console getting started and IAM setup; Bedrock
+overview, quickstart and model cards; Bedrock API list/get foundation-model
+references. This is curated content alongside a complete index, not a full-guide
+crawl.
+
+For `llmstxt-hierarchical`, `paths` names literal `.md` pages relative to the
+guide-specific `base_url`. Each target must appear in that guide's index and stay
+within its URL scope. Globs and recursive crawling are not supported. Requests
+are paced at one per second unless `rate_limit.requests_per_second` is configured.
+An ambiguous guide prefix or unavailable selected page fails that provider.
 
 ### Verified Services (as of 2026-03-22)
 
