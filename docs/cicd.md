@@ -158,7 +158,7 @@ refbolt is pure Go with `CGO_ENABLED=0`. This means all cross-compilation happen
 | `format-check` | —              | yamlfmt + prettier via `goneat-tools-runner` container                                                                       |
 | `build-test`   | `format-check` | `make fmt` + diff check, golangci-lint v2, `make test-short`, `make build`, smoke test (`refbolt version`, `refbolt --help`) |
 
-Both jobs run in the `ghcr.io/fulmenhq/goneat-tools-runner:v0.3.3` container. Go is installed via `actions/setup-go` (1.25.x). Tests run in short mode — no live network calls, no git integration tests.
+Both jobs run in the `ghcr.io/fulmenhq/goneat-tools-runner:v0.3.3` container. Go is installed via `actions/setup-go` (1.27.2). Tests run in short mode — no live network calls, no git integration tests.
 
 ### `.github/workflows/release.yml`
 

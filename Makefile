@@ -54,7 +54,7 @@ BINDIR_RESOLVE = \
 	fi
 
 # Tooling
-GONEAT_VERSION ?= v0.5.16
+GONEAT_VERSION ?= v0.6.4
 GO_LICENSES_VERSION := v2.0.1
 GO_LICENSES ?= go run github.com/google/go-licenses/v2@$(GO_LICENSES_VERSION)
 

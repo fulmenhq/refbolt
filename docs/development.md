@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Go 1.25+ (`go version`)
+- Go 1.27.2+ (`go version`)
 - goneat (`make bootstrap` to install)
 - git
 
