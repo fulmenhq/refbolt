@@ -2,6 +2,9 @@
 
 Operational notes for each documentation provider — fetch quirks, domain changes, auth requirements, and known issues. Updated as providers change behavior.
 
+See the [dated coverage matrix](coverage.md) for source scope, artifact kinds,
+and verification results across the catalog.
+
 ## GitHub-Hosted Markdown Providers
 
 Providers using the `github-raw` strategy rely on two GitHub surfaces:
@@ -201,26 +204,6 @@ An ambiguous guide prefix or unavailable selected page fails that provider.
 ### Probed Services (observation only)
 
 S3 User Guide (157KB), CloudFormation User Guide (51KB), Lambda Developer Guide (81KB) — all return 200. The hierarchical pattern works broadly across AWS.
-
-## OpenAI
-
-**Base URL**: `https://platform.openai.com`
-**llms.txt / llms-full.txt**: 404 — not available.
-**OpenAPI spec**: `https://github.com/openai/openai-openapi` (branch `manual_spec`).
-
-### Fetch Quirks (as of 2026-03-22)
-
-- **No native .md**: Pages are HTML only. No llms.txt or llms-full.txt endpoints.
-- **Requires Jina Reader**: Use `fetch_strategy: jina` or `auto` (auto detects HTML and falls back to Jina).
-- **OpenAPI spec**: Available at `openai/openai-openapi` on GitHub, branch `manual_spec` (not `master` or `main`).
-
-### Recommended Strategy
-
-Use `fetch_strategy: jina` with key reference pages: `/docs/api-reference/chat`, `/docs/api-reference/responses`, `/docs/api-reference/assistants`. OpenAPI spec fetched directly from GitHub (`manual_spec` branch).
-
-### Status
-
-Verified. Chat, responses, and assistants pages archived via Jina Reader. OpenAPI spec fetched from GitHub.
 
 ## Inference hosts (P0 + P1/P2 + TypeSafe)
 

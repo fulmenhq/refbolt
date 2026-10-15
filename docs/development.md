@@ -5,6 +5,7 @@
 - Go 1.26.9+ (`go version`); Go 1.27.2 recommended for local checks
 - goneat (`make bootstrap` to install)
 - git
+- ripgrep (`rg`) for license-audit regression tests
 
 ## Build & Test
 
