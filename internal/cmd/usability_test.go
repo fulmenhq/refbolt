@@ -171,18 +171,18 @@ func TestUsability_ValidateCustomizationTipOnEmbeddedCatalog(t *testing.T) {
 }
 
 // TestUsability_CatalogShowIncludesCredentialURL covers item #3 on the
-// catalog surface. `catalog show openai` should include the Jina URL
-// because openai uses the jina strategy.
+// catalog surface. `catalog show hetzner-cloud` should include the Jina URL
+// because hetzner-cloud uses the jina strategy.
 func TestUsability_CatalogShowIncludesCredentialURL(t *testing.T) {
 	setupCatalogFixture(t)
 	clearCatalogFlags(t)
 
-	stdout, _, err := runCatalog(t, "catalog", "show", "openai")
+	stdout, _, err := runCatalog(t, "catalog", "show", "hetzner-cloud")
 	if err != nil {
-		t.Fatalf("catalog show openai: %v", err)
+		t.Fatalf("catalog show hetzner-cloud: %v", err)
 	}
 	if !strings.Contains(stdout, "jina.ai/reader") {
-		t.Errorf("catalog show openai should include jina.ai/reader URL, got: %q", stdout)
+		t.Errorf("catalog show hetzner-cloud should include jina.ai/reader URL, got: %q", stdout)
 	}
 }
 
