@@ -73,6 +73,13 @@ func (f *HTTPFetcher) checkPathHints(ctx context.Context) (FetchHint, error) {
 		}
 		hint.PathHints[archivePath] = ph
 	}
+	if f.cfg.OpenAPIURL != "" {
+		ph, err := f.headURL(ctx, f.cfg.OpenAPIURL)
+		if err != nil {
+			return FetchHint{}, fmt.Errorf("HEAD %s: %w", f.cfg.OpenAPIURL, err)
+		}
+		hint.PathHints["openapi.yaml"] = ph
+	}
 	return hint, nil
 }
 

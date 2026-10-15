@@ -195,6 +195,11 @@ path; when all match, the provider is skipped entirely. During fetch, conditiona
 GET (`If-None-Match`) reuses archived content on HTTP 304 without re-downloading
 body bytes.
 
+Supplemental OpenAPI specs participate in per-path hints. A bulk document's HEAD
+response cannot represent separate pages or specs; those mixed providers fetch
+their sources again and use write-level dedup. Changes to the spec URL and archive
+layout invalidate prior sync metadata.
+
 Two levels of skip during `refbolt sync`:
 
 1. **Fetch-level skip** — `internal/cmd/sync.go` computes the current
@@ -209,8 +214,12 @@ Two levels of skip during `refbolt sync`:
    the same path. Matching content bumps `WriteStat.Skipped`; changed or new
    content bumps `WriteStat.Written`.
 
-`--force` on `refbolt sync` bypasses the fetch-level check entirely.
+`--force` on `refbolt sync` bypasses the fetch-level check and conditional GETs.
 Write-level dedup is always applied.
+
+A failed provider or an empty archive result makes the command return an error
+after processing the other selected providers. Failed runs do not trigger git
+commit or push automation, and failed providers do not record successful metadata.
 
 Sources: `internal/sync/metadata.go`, `internal/provider/provider.go` (FetchHint + HintChecker interface), `internal/cmd/sync.go:83-110`, `internal/archive/writer.go:50-69`.
 
@@ -246,6 +255,11 @@ Tree structure:
   content is skipped (`WriteStat.Skipped++`); changed or new content is
   written (`WriteStat.Written++`). This avoids disk churn and keeps git
   diffs clean when nothing meaningful changed.
+- **Path validation** — the writer rejects escaping paths and collisions between
+  distinct source pages before writing the batch. A fresh supplemental copy of
+  the same source replaces its dump copy and counts once. Cloudflare uses source
+  Markdown paths; repeated titles without source URLs receive distinct fallback
+  filenames. Section markers inside fenced examples remain part of the page.
 - **Symlink failures are non-fatal** — on filesystems without symlink
   support (certain Windows + FAT mounts), a warning is logged and the
   run continues.

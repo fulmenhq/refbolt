@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -70,6 +71,7 @@ var syncCmd = &cobra.Command{
 		}
 
 		var syncResults []gitpkg.SyncResult
+		var syncErrors []error
 
 		for _, sp := range selected {
 			fmt.Printf("Topic: %s\n", sp.topicSlug)
@@ -80,6 +82,8 @@ var syncCmd = &cobra.Command{
 				sp.cfg.LLMSTxtURL, sp.cfg.LLMSFullTxtURL, sp.cfg.GitHubRepo, sp.cfg.GitHubDocsPath,
 				sp.cfg.GitHubBranch, sp.cfg.Paths,
 			)
+			cfgFields["openapi_url"] = sp.cfg.OpenAPIURL
+			cfgFields["archive_layout"] = "source-paths-v2"
 			cfgHash := syncpkg.ConfigHash(cfgFields)
 
 			metaPath := syncpkg.MetaPath(archiveRoot, sp.topicSlug, sp.cfg.Slug)
@@ -118,13 +122,14 @@ var syncCmd = &cobra.Command{
 			fetcher, err := provider.NewFetcher(sp.cfg)
 			if err != nil {
 				fmt.Printf("  %s: error creating fetcher: %v\n", sp.cfg.Slug, err)
+				syncErrors = append(syncErrors, fmt.Errorf("%s: creating fetcher: %w", sp.cfg.Slug, err))
 				continue
 			}
 
 			if inc, ok := fetcher.(provider.IncrementalFetcher); ok {
 				latestDir := filepath.Join(archiveRoot, sp.topicSlug, sp.cfg.Slug, "latest")
 				var prior provider.FetchHint
-				if existingMeta != nil {
+				if existingMeta != nil && !syncForce {
 					prior = providerHintFromSync(existingMeta.Hint)
 				}
 				inc.SetIncrementalContext(latestDir, prior)
@@ -133,6 +138,11 @@ var syncCmd = &cobra.Command{
 			pages, err := fetcher.Fetch(cmd.Context())
 			if err != nil {
 				fmt.Printf("  %s: error fetching: %v\n", sp.cfg.Slug, err)
+				syncErrors = append(syncErrors, fmt.Errorf("%s: fetching: %w", sp.cfg.Slug, err))
+				continue
+			}
+			if len(pages) == 0 {
+				syncErrors = append(syncErrors, fmt.Errorf("%s: fetch returned no pages", sp.cfg.Slug))
 				continue
 			}
 
@@ -142,6 +152,11 @@ var syncCmd = &cobra.Command{
 			stat, err := writer.Write(sp.topicSlug, sp.cfg.Slug, pages)
 			if err != nil {
 				fmt.Printf("  %s: error writing: %v\n", sp.cfg.Slug, err)
+				syncErrors = append(syncErrors, fmt.Errorf("%s: writing: %w", sp.cfg.Slug, err))
+				continue
+			}
+			if stat.Total == 0 {
+				syncErrors = append(syncErrors, fmt.Errorf("%s: fetch returned no nonempty pages", sp.cfg.Slug))
 				continue
 			}
 
@@ -191,6 +206,10 @@ var syncCmd = &cobra.Command{
 					FilesWritten: stat.Written,
 				})
 			}
+		}
+
+		if len(syncErrors) > 0 {
+			return fmt.Errorf("sync incomplete: %w", errors.Join(syncErrors...))
 		}
 
 		// Git operations (opt-in via --git-commit).

@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/fulmenhq/refbolt/internal/provider"
@@ -36,6 +38,10 @@ func NewWriter(root string) *Writer {
 // Content dedup: before writing, compares SHA-256 of new content against
 // existing file. Skips write if unchanged, avoiding disk churn and git noise.
 func (w *Writer) Write(topicSlug, providerSlug string, pages []provider.Page) (WriteStat, error) {
+	pages, err := uniquePages(pages)
+	if err != nil {
+		return WriteStat{}, err
+	}
 	date := time.Now().Format("2006-01-02")
 	dateDir := filepath.Join(w.root, topicSlug, providerSlug, date)
 
@@ -79,6 +85,50 @@ func (w *Writer) Write(topicSlug, providerSlug string, pages []provider.Page) (W
 	}
 
 	return stat, nil
+}
+
+// Validate the whole batch before writing. A supplemental fetch of the same
+// source replaces its dump copy; different sources may never overwrite it.
+func uniquePages(pages []provider.Page) ([]provider.Page, error) {
+	result := make([]provider.Page, 0, len(pages))
+	seen := make(map[string]int)
+	for _, page := range pages {
+		if len(page.Content) == 0 {
+			continue
+		}
+		if !filepath.IsLocal(page.Path) {
+			return nil, fmt.Errorf("unsafe archive path %q", page.Path)
+		}
+		page.Path = filepath.Clean(page.Path)
+		if i, ok := seen[page.Path]; ok {
+			prior := result[i]
+			same := sameSource(prior.SourceURL, page.SourceURL) ||
+				(prior.SourceURL == "" && page.SourceURL == "" && bytes.Equal(prior.Content, page.Content))
+			if !same {
+				return nil, fmt.Errorf("archive path %q belongs to distinct sources %q and %q", page.Path, prior.SourceURL, page.SourceURL)
+			}
+			result[i] = page
+			continue
+		}
+		seen[page.Path] = len(result)
+		result = append(result, page)
+	}
+	return result, nil
+}
+
+func sameSource(a, b string) bool {
+	if a == "" || b == "" {
+		return false
+	}
+	normalize := func(raw string) string {
+		u, err := url.Parse(raw)
+		if err != nil {
+			return raw
+		}
+		u.Path = strings.TrimSuffix(u.Path, ".md")
+		return u.String()
+	}
+	return normalize(a) == normalize(b)
 }
 
 // contentEqual compares two byte slices by SHA-256 hash.

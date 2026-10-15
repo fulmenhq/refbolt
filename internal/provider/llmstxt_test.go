@@ -391,7 +391,7 @@ You need a Cloudflare account.
 	}
 
 	// First page: KV overview.
-	if pages[0].Path != "cloudflare-workers-kv.md" {
+	if pages[0].Path != "kv/index.md" {
 		t.Errorf("page[0] Path = %q", pages[0].Path)
 	}
 	if !strings.Contains(string(pages[0].Content), "# Cloudflare Workers KV") {
@@ -409,7 +409,7 @@ You need a Cloudflare account.
 	}
 
 	// Second page: Getting started.
-	if pages[1].Path != "getting-started.md" {
+	if pages[1].Path != "kv/get-started.md" {
 		t.Errorf("page[1] Path = %q", pages[1].Path)
 	}
 	if !strings.Contains(string(pages[1].Content), "# Getting started") {
