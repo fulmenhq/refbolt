@@ -17,6 +17,13 @@ make check-all      # fmt + lint + test
 make clean          # purge bin/, dist/, Go caches
 ```
 
+License targets use pinned `go-licenses/v2` v2.0.1 through `go run`, independently
+of any `go-licenses` binary on PATH. `make license-audit` rejects scanner errors,
+empty reports, and GPL/LGPL/AGPL/MPL/CDDL licenses. `make license-inventory` and
+`make license-save` export the resolved dependency inventory and license texts.
+`make test-license-audit` exercises scanner failures and forbidden-license cases
+without network access.
+
 ## Environment Variables
 
 refbolt uses environment variables for credentials and configuration. Secrets are never stored in config files — only env var _names_ appear in `configs/providers.yaml` and provider schemas.

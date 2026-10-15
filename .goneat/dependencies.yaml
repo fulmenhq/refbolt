@@ -1,7 +1,7 @@
 version: v1
 # License policy remains governed by the existing make license-audit target.
-# A future Goneat license policy needs a maintainer decision for Viper's
-# transitive github.com/hashicorp/hcl GPL-3.0 dependency.
+# go-licenses v2 audits the resolved module graph; inventory and license
+# text export use the same pinned scanner as the audit.
 cooling:
   enabled: true
   min_age_days: 7
