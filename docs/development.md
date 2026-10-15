@@ -30,9 +30,10 @@ needed, for example `make build BUILD_GOTOOLCHAIN=go1.27.2`. CI and release
 workflows install the `go.mod` minimum and disable automatic toolchain upgrades.
 Local tests and quality checks use the installed Go toolchain by default.
 
-`make prepush` also runs security checks. It installs the pinned gosec build
-into `bin/security/` and puts that directory first on PATH for the checks.
-The pin uses upstream commit `ea75d9ff49b6`, with `golang.org/x/tools` v0.51.0;
+`make prepush` runs security checks with `BUILD_GOTOOLCHAIN` (the supported
+minimum by default). It installs pinned gosec v2.29.0 into `bin/security/` with
+that toolchain and puts the directory first on PATH for the checks.
+This also selects the same toolchain while the scanner loads packages;
 the v2.29.0 release cannot decode Go 1.27.2 export data
 ([upstream issue](https://github.com/securego/gosec/issues/1774)).
 `make security-tools` installs the same scanner separately. Other security

@@ -59,7 +59,7 @@ BINDIR_RESOLVE = \
 GONEAT_VERSION ?= v0.6.4
 GO_LICENSES_VERSION := v2.0.1
 GO_LICENSES ?= go run github.com/google/go-licenses/v2@$(GO_LICENSES_VERSION)
-GOSEC_VERSION := v2.29.1-0.20261005090724-ea75d9ff49b6
+GOSEC_VERSION := v2.29.0
 
 SFETCH_RESOLVE = \
 	$(BINDIR_RESOLVE); \
@@ -306,12 +306,14 @@ precommit:  ## Run pre-commit hooks
 	@echo "Running pre-commit validation..."; $(GONEAT_RESOLVE); $$GONEAT format; $$GONEAT assess --check --categories format,lint --fail-on critical
 	@echo "✅ Pre-commit checks passed"
 
+security-tools: export GOTOOLCHAIN = $(BUILD_GOTOOLCHAIN)
+
 security-tools:  ## Install the pinned Go security scanner
 	@mkdir -p "$(CURDIR)/bin/security"
 	GOBIN="$(CURDIR)/bin/security" $(GOCMD) install github.com/securego/gosec/v2/cmd/gosec@$(GOSEC_VERSION)
 
 prepush: license-audit security-tools  ## Run pre-push hooks (includes license audit)
-	@set -e; echo "Running pre-push validation..."; export PATH="$(CURDIR)/bin/security:$$PATH"; $(GONEAT_RESOLVE); $$GONEAT format; $$GONEAT assess --check --categories format,lint,security --fail-on high
+	@set -e; echo "Running pre-push validation..."; export PATH="$(CURDIR)/bin/security:$$PATH"; export GOTOOLCHAIN="$(BUILD_GOTOOLCHAIN)"; $(GONEAT_RESOLVE); $$GONEAT format; $$GONEAT assess --check --categories format,lint,security --fail-on high
 	@echo "✅ Pre-push checks passed"
 
 # ─────────────────────────────────────────────────────────────────────────────
