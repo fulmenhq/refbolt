@@ -95,7 +95,7 @@ tools:
     description: License compliance for Go dependencies
     kind: go
     detect_command: go-licenses -h
-    install_package: github.com/google/go-licenses@latest
+    install_package: github.com/google/go-licenses/v2@v2.0.1
     check_args:
       - -h
     installer_priority:

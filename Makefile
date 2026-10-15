@@ -3,6 +3,7 @@
 .PHONY: release-sign release-export-keys release-verify-keys release-verify-checksums release-notes release-download release-upload release-upload-provenance release-upload-all
 .PHONY: version-set version-bump-major version-bump-minor version-bump-patch
 .PHONY: license-inventory license-save license-audit update-licenses
+.PHONY: test-license-audit
 
 # Binary and version information
 BINARY_NAME := refbolt
@@ -54,6 +55,8 @@ BINDIR_RESOLVE = \
 
 # Tooling
 GONEAT_VERSION ?= v0.5.16
+GO_LICENSES_VERSION := v2.0.1
+GO_LICENSES ?= go run github.com/google/go-licenses/v2@$(GO_LICENSES_VERSION)
 
 SFETCH_RESOLVE = \
 	$(BINDIR_RESOLVE); \
@@ -267,11 +270,11 @@ docker-build-runner:  ## Build local runner container image
 version:  ## Print current version
 	@echo "$(VERSION)"
 
-test: dependencies ## Run all tests (includes live network tests)
+test: dependencies test-license-audit ## Run all tests (includes live network tests)
 	@echo "Running test suite..."
 	$(GOTEST) ./... -v
 
-test-short: dependencies ## Run tests without live network (CI-safe)
+test-short: dependencies test-license-audit ## Run tests without live network (CI-safe)
 	@echo "Running short test suite..."
 	$(GOTEST) ./... -v -short
 
@@ -309,39 +312,33 @@ prepush: license-audit  ## Run pre-push hooks (includes license audit)
 license-inventory:  ## Generate CSV inventory of dependency licenses
 	@echo "🔎 Generating license inventory (CSV)..."
 	@mkdir -p docs/licenses dist/reports
-	@if ! command -v go-licenses >/dev/null 2>&1; then \
-		echo "Installing go-licenses..."; \
-		go install github.com/google/go-licenses@latest; \
-	fi
-	go-licenses csv ./... > docs/licenses/inventory.csv
+	$(GO_LICENSES) report ./... > docs/licenses/inventory.csv
 	@echo "✅ Wrote docs/licenses/inventory.csv"
 
 license-save:  ## Save third-party license texts
 	@echo "📄 Saving third-party license texts..."
 	@rm -rf docs/licenses/third-party
-	@if ! command -v go-licenses >/dev/null 2>&1; then \
-		echo "Installing go-licenses..."; \
-		go install github.com/google/go-licenses@latest; \
-	fi
-	go-licenses save ./... --save_path=docs/licenses/third-party
+	$(GO_LICENSES) save ./... --save_path=docs/licenses/third-party
 	@echo "✅ Saved third-party licenses to docs/licenses/third-party"
 
 license-audit:  ## Audit for forbidden licenses
 	@echo "🧪 Auditing dependency licenses..."
 	@mkdir -p dist/reports
-	@if ! command -v go-licenses >/dev/null 2>&1; then \
-		echo "Installing go-licenses..."; \
-		go install github.com/google/go-licenses@latest; \
-	fi
-	@forbidden='GPL|LGPL|AGPL|MPL|CDDL'; \
-	out=$$(go-licenses csv ./...); \
-	echo "$$out" > dist/reports/license-inventory.csv; \
-	if echo "$$out" | grep -E "$$forbidden" >/dev/null; then \
+	@set -eu; \
+	report=$$(mktemp dist/reports/license-inventory.XXXXXX); \
+	trap 'rm -f "$$report"' EXIT HUP INT TERM; \
+	$(GO_LICENSES) report ./... > "$$report"; \
+	if [ ! -s "$$report" ]; then echo "❌ License scanner returned an empty report" >&2; exit 1; fi; \
+	mv "$$report" dist/reports/license-inventory.csv; \
+	if grep -E 'GPL|LGPL|AGPL|MPL|CDDL' dist/reports/license-inventory.csv >/dev/null; then \
 		echo "❌ Forbidden license detected. See dist/reports/license-inventory.csv"; \
 		exit 1; \
 	else \
 		echo "✅ No forbidden licenses detected"; \
 	fi
+
+test-license-audit: ## Verify license-audit rejects scanner failures and forbidden licenses
+	@bash scripts/license-audit.test.sh
 
 update-licenses: license-inventory license-save  ## Update license inventory and texts
 
