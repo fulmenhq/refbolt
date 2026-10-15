@@ -13,6 +13,7 @@ BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS := -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.buildDate=$(BUILD_DATE)
 
 # Go related variables
+BUILD_GOTOOLCHAIN ?= go$(shell awk '/^go / {print $$2; exit}' go.mod)
 GOCMD := go
 GOTEST := $(GOCMD) test
 GOFMT := $(GOCMD) fmt
@@ -222,6 +223,8 @@ embed-assets: ## Sync embedded assets from source of truth
 	@# JSONL is parsed line-by-line — cannot carry a comment header. Copy verbatim.
 	@cp registry/providers.jsonl assets/registry.jsonl
 
+build build-all release-build: export GOTOOLCHAIN = $(BUILD_GOTOOLCHAIN)
+
 build: dependencies embed-assets ## Build binary for current platform
 	@echo "→ Building $(BINARY_NAME) v$(VERSION)..."
 	@go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME) ./cmd/$(BINARY_NAME)
@@ -245,7 +248,7 @@ build-all:  ## Build multi-platform binaries and generate checksums
 	@GOOS=windows GOARCH=amd64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-windows-amd64.exe ./cmd/$(BINARY_NAME)
 	@GOOS=windows GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-windows-arm64.exe ./cmd/$(BINARY_NAME)
 	@GOOS=linux GOARCH=arm64 go build -ldflags="$(LDFLAGS)" -o bin/$(BINARY_NAME)-linux-arm64 ./cmd/$(BINARY_NAME)
-	@cd bin && (sha256sum * > SHA256SUMS.txt 2>/dev/null || shasum -a 256 * > SHA256SUMS.txt)
+	@cd bin && (sha256sum $(BINARY_NAME)-* > SHA256SUMS.txt 2>/dev/null || shasum -a 256 $(BINARY_NAME)-* > SHA256SUMS.txt)
 	@echo "✓ Multi-platform binaries built in bin/ (6 platforms)"
 
 docker-build:  ## Build local CLI container image

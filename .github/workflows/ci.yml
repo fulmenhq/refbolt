@@ -48,6 +48,7 @@ jobs:
     env:
       FULMEN_WORKSPACE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "0"
+      GOTOOLCHAIN: local
       GOPATH: ${{ github.workspace }}/../_go
     steps:
       - name: Checkout
@@ -60,7 +61,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.27.2"
+          go-version-file: go.mod
       - name: Verify runner + Go toolchain
         run: |
           set -euo pipefail
