@@ -276,4 +276,4 @@ refbolt is designed for local, offline developer reference — keeping version-p
 
 ## License
 
-Dual-licensed under [Apache License 2.0](LICENSE) and [MIT License](LICENSE-MIT). See the respective files for details.
+Dual-licensed under [Apache License 2.0](LICENSE-APACHE) and [MIT License](LICENSE-MIT) — `SPDX-License-Identifier: Apache-2.0 OR MIT`. See [LICENSE](LICENSE) for the notice and the linked files for full terms.
