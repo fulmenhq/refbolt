@@ -45,7 +45,12 @@ topics:
         base_url: %q
         fetch_strategy: native
         paths: [/good.md]
-`, root, srv.URL, srv.URL, srv.URL)
+      - slug: missing-bulk
+        base_url: %q
+        fetch_strategy: native
+        llms_full_txt_url: %q
+        paths: [/good.md]
+`, root, srv.URL, srv.URL, srv.URL, srv.URL, srv.URL+"/missing-full.txt")
 	cfg := filepath.Join(t.TempDir(), "providers.yaml")
 	if err := os.WriteFile(cfg, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
@@ -59,12 +64,15 @@ topics:
 	t.Cleanup(func() { syncAll, syncForce = false, false })
 	syncCmd.SetContext(context.Background())
 	err := syncCmd.RunE(syncCmd, nil)
-	if err == nil || !strings.Contains(err.Error(), "missing") || !strings.Contains(err.Error(), "empty") {
+	if err == nil || !strings.Contains(err.Error(), "missing") || !strings.Contains(err.Error(), "empty") || !strings.Contains(err.Error(), "missing-bulk") {
 		t.Fatalf("incomplete sync should report both failed providers: %v", err)
 	}
-	for _, slug := range []string{"missing", "empty"} {
+	for _, slug := range []string{"missing", "empty", "missing-bulk"} {
 		if _, err := os.Stat(filepath.Join(root, "test-topic", slug, ".sync-meta.json")); !os.IsNotExist(err) {
 			t.Fatalf("failed provider %s recorded sync metadata", slug)
+		}
+		if _, err := os.Stat(filepath.Join(root, "test-topic", slug, "latest")); !os.IsNotExist(err) {
+			t.Fatalf("failed provider %s published a snapshot", slug)
 		}
 	}
 	if _, err := os.Stat(filepath.Join(root, "test-topic", "good", "latest", "good.md")); err != nil {

@@ -144,10 +144,7 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	if primaryURL != "" {
 		rawPages, split, llmsHint, err := f.fetchLLMSWithFallback(ctx, primaryURL)
 		if err != nil {
-			fmt.Printf("  ⚠ %s: %v (falling back to individual pages)\n", llmsTxtFilename(primaryURL), err)
-			if len(literalPaths(f.cfg.Paths)) == 0 && f.cfg.OpenAPIURL == "" {
-				fetchErrors = append(fetchErrors, err)
-			}
+			return nil, fmt.Errorf("incomplete provider %s: bulk documentation: %w", f.cfg.Slug, err)
 		} else {
 			f.lastFetchHint.ETag = llmsHint.ETag
 			f.lastFetchHint.LastModified = llmsHint.LastModified
@@ -442,7 +439,15 @@ func (f *HTTPFetcher) fetchLLMSWithFallback(ctx context.Context, primaryURL stri
 		}
 		optedIn := f.cfg.LLMSFullTxtURL != "" && fallbackURL == f.cfg.LLMSFullTxtURL
 		fmt.Printf("  ⚠ %s: %v; trying %s\n", filename, err, llmsTxtFilename(fallbackURL))
-		return f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+		raw, split, hint, fallbackErr := f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+		if fallbackErr != nil {
+			return nil, nil, FetchHint{}, errors.Join(err, fallbackErr)
+		}
+		if len(raw) == 0 {
+			// An unsupported auto-detected candidate cannot replace a failed source.
+			return nil, nil, FetchHint{}, err
+		}
+		return raw, split, hint, nil
 	}
 
 	split := splitLLMSDump(primaryPage.Content, primaryURL)
@@ -462,7 +467,14 @@ func (f *HTTPFetcher) fetchLLMSWithFallback(ctx context.Context, primaryURL stri
 
 	optedIn := f.cfg.LLMSFullTxtURL != "" && fallbackURL == f.cfg.LLMSFullTxtURL
 	fullRaw, fullSplit, fullHint, fullErr := f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+	if fullErr != nil && optedIn {
+		return nil, nil, FetchHint{}, fmt.Errorf("required full dump %s: %w", fallbackURL, fullErr)
+	}
 	if fullErr != nil || len(fullSplit) == 0 {
+		if fullErr == nil && optedIn {
+			// An explicit full export can be a flat document without section delimiters.
+			return append([]Page{*primaryPage}, fullRaw...), fullSplit, fullHint, nil
+		}
 		if fullErr != nil {
 			fmt.Printf("  ⚠ %s: %v\n", llmsTxtFilename(fallbackURL), fullErr)
 		}
