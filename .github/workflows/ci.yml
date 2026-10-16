@@ -48,6 +48,7 @@ jobs:
     env:
       FULMEN_WORKSPACE_ROOT: ${{ github.workspace }}
       CGO_ENABLED: "0"
+      GOTOOLCHAIN: local
       GOPATH: ${{ github.workspace }}/../_go
     steps:
       - name: Checkout
@@ -60,7 +61,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25.x"
+          go-version-file: go.mod
       - name: Verify runner + Go toolchain
         run: |
           set -euo pipefail
@@ -81,7 +82,7 @@ jobs:
         # goneat-tools-runner does not ship golangci-lint yet.
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.4.0
+          version: v2.14.0
           args: --help
       - name: Verify golangci-lint
         run: |

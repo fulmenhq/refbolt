@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Go 1.25+ (`go version`)
+- Go 1.26.9+ (`go version`); Go 1.27.2 recommended for local checks
 - goneat (`make bootstrap` to install)
 - git
 
@@ -23,6 +23,12 @@ empty reports, and GPL/LGPL/AGPL/MPL/CDDL licenses. `make license-inventory` and
 `make license-save` export the resolved dependency inventory and license texts.
 `make test-license-audit` exercises scanner failures and forbidden-license cases
 without network access.
+
+Build targets (`build`, `build-all`, and `release-build`) select the minimum
+Go version from `go.mod` via `BUILD_GOTOOLCHAIN`. Override it explicitly when
+needed, for example `make build BUILD_GOTOOLCHAIN=go1.27.2`. CI and release
+workflows install the `go.mod` minimum and disable automatic toolchain upgrades.
+Local tests and quality checks use the installed Go toolchain by default.
 
 ## Environment Variables
 
