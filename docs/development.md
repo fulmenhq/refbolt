@@ -30,6 +30,15 @@ needed, for example `make build BUILD_GOTOOLCHAIN=go1.27.2`. CI and release
 workflows install the `go.mod` minimum and disable automatic toolchain upgrades.
 Local tests and quality checks use the installed Go toolchain by default.
 
+`make prepush` runs security checks with `BUILD_GOTOOLCHAIN` (the supported
+minimum by default). It installs pinned gosec v2.29.0 into `bin/security/` with
+that toolchain and puts the directory first on PATH for the checks.
+This also selects the same toolchain while the scanner loads packages;
+the v2.29.0 release cannot decode Go 1.27.2 export data
+([upstream issue](https://github.com/securego/gosec/issues/1774)).
+`make security-tools` installs the same scanner separately. Other security
+tools are configured in `.goneat/tools.yaml`.
+
 ## Environment Variables
 
 refbolt uses environment variables for credentials and configuration. Secrets are never stored in config files — only env var _names_ appear in `configs/providers.yaml` and provider schemas.
