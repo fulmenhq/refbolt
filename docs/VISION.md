@@ -74,14 +74,14 @@ It is not a full web scraper. It is a focused, opinionated docs archiver optimiz
 ## Technology Choices
 
 - Go CLI (static binary, fast, cross-platform)
-- Docker-first deployment via fulmen-toolbox
+- Local binary first (Homebrew/Scoop), container images for scheduled and CI runs
 - Native Markdown fetching where providers support it (.md suffix, /llms-full.txt)
 - Jina Reader fallback (Apache 2.0) for noisy sites
 - Git-aware diff/commit for change detection
 
 ## Long-Term Trajectory
 
-**Near-term (2026)**: Support OpenAI + Anthropic + xAI/Grok with daily syncs.
+**Near-term (2026)**: Maintain current documentation sources across the provider catalog, with focused syncs and explicit content coverage.
 
 **Medium-term**: Add arbitrary sites via config, Tauri offline viewer mode, Slack/Teams notifications on breaking changes.
 

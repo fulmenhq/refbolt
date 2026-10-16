@@ -27,18 +27,15 @@ brew install fulmenhq/tap/refbolt
 # Generate a config with the topics you need
 refbolt init --topic frontier-labs --output providers.yaml
 
-# Or start with everything and trim later
-refbolt init --all --output providers.yaml
-
-# Run your first sync
-refbolt sync --all
+# Start with one native source from that config
+refbolt sync --config providers.yaml --provider xai
 ```
 
 ### Build from source
 
 ```bash
 make build
-./bin/refbolt sync --all --verbose
+./bin/refbolt sync --provider xai --verbose
 ```
 
 ### Run in Docker
@@ -54,47 +51,40 @@ Fresh install from brew or scoop — here's the end-to-end flow:
 # 1. Browse what's available without syncing anything
 refbolt catalog list
 
-# 2. Try a zero-config sync — uses the built-in catalog, writes to ./archive
-refbolt sync --all
+# 2. Try a focused native sync — xAI docs, no credentials needed
+refbolt sync --provider xai
 
 # 3. Customize — generate a providers.yaml you can edit
-refbolt init --all --output providers.yaml
+refbolt init --topic frontier-labs --output providers.yaml
 
 # 4. (Edit providers.yaml — delete topics/providers you don't want)
 
-# 5. Sync with your curated config
-refbolt sync --all
+# 5. Sync only the providers remaining in your config
+refbolt sync --config providers.yaml --all
 ```
 
-Credentials are optional but recommended for higher rate limits:
+The xAI example archives its native documentation export and pages without API
+credentials. The `frontier-labs` topic also includes Anthropic and OpenAI API
+exports; generate that topic's config when you want all three.
 
-```bash
-export JINA_API_KEY=jina_...     # https://jina.ai/reader
-export GITHUB_TOKEN=ghp_...      # https://github.com/settings/tokens
-```
-
-`refbolt catalog show <slug>` shows per-provider detail including which
-credentials (if any) help that source sync reliably. `refbolt validate`
-checks your `providers.yaml` against the embedded schema and warns on any
-missing env vars.
+Use `--provider`, `--topic`, or an explicit curated config for routine syncs.
+With no user config, `sync --all` selects the full embedded catalog, including
+large GitHub trees, social API references, and Jina-backed sources.
 
 ## Prerequisites
 
-refbolt works out of the box for most providers. Two optional API keys unlock higher rate limits:
+Credentials are source-specific:
 
-| Variable       | When needed                                          | How to get it                        |
-| -------------- | ---------------------------------------------------- | ------------------------------------ |
-| `JINA_API_KEY` | Providers using Jina Reader (OpenAI)                 | https://jina.ai/reader               |
-| `GITHUB_TOKEN` | GitHub-backed providers (Trino, kubectl, Mattermost) | GitHub Settings → Developer → Tokens |
+| Variable       | When needed                                                                                                        | How to get it                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| `JINA_API_KEY` | Set before syncing Jina-backed Hetzner and YouTube documentation                                                   | https://jina.ai/reader             |
+| `GITHUB_TOKEN` | Recommended for GitHub-backed sources, including Trino, kubectl, Mattermost, Nextcloud, Stalwart, Figma and SpaceX | https://github.com/settings/tokens |
 
-Set them before syncing:
-
-```bash
-export JINA_API_KEY=jina_...
-export GITHUB_TOKEN=ghp_...
-```
-
-Without these keys, anonymous access works but may hit rate limits on repeated syncs. See [docs/development.md](docs/development.md) for details.
+Native sources such as xAI, Anthropic, OpenAI and DigitalOcean do not require
+these credentials. `refbolt catalog show <slug>` shows the selected strategy and
+credential requirements. `refbolt validate` checks the config and warns about
+missing credential variables. See [docs/development.md](docs/development.md) for
+source-specific setup.
 
 ## Configuration
 
@@ -144,14 +134,14 @@ refbolt sync --topic frontier-labs
 # Third-party serverless inference hosts (DeepInfra, Fireworks, Together)
 refbolt sync --topic inference-host
 
-# Grok Bot / Cursor agent docs only (~164 pages from docs.x.ai llms.txt)
+# xAI API, Grok Bot and agent documentation
 refbolt sync --provider xai
 
 # Only Anthropic and OpenAI
 refbolt sync --provider anthropic --provider openai
 
-# Everything except the large GitHub-backed repos
-refbolt sync --all --exclude-provider trino --exclude-provider kubernetes-kubectl
+# All configured providers except OpenAI
+refbolt sync --config providers.yaml --all --exclude-provider openai
 
 # Only one AWS service
 refbolt sync --provider aws-bedrock-userguide
@@ -237,7 +227,7 @@ bind-mounted `./archive/` directory so snapshots stay visible to your editor.
 
 ```bash
 # 1. Generate a providers.yaml at the repo root (the compose services mount it)
-refbolt init --all --output providers.yaml
+refbolt init --topic frontier-labs --output providers.yaml
 
 # 2. Build the images
 docker compose build
@@ -269,7 +259,7 @@ For scripting or CI without compose, the raw `docker run` recipes still work:
 docker run --rm \
   -v ./providers.yaml:/work/providers.yaml:ro \
   -v ./archive:/data/archive \
-  refbolt:local sync --all --verbose
+  refbolt:local sync --config /work/providers.yaml --all --verbose
 ```
 
 ## Intended Use
