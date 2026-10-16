@@ -131,6 +131,7 @@ func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 // Then fetches any literal paths not covered by the bulk dump.
 func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	var pages []Page
+	var fetchErrors []error
 	f.lastFetchHint = FetchHint{}
 
 	// Strategy 1: If a bulk llms.txt / llms-full.txt URL is configured, fetch
@@ -143,7 +144,7 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	if primaryURL != "" {
 		rawPages, split, llmsHint, err := f.fetchLLMSWithFallback(ctx, primaryURL)
 		if err != nil {
-			fmt.Printf("  ⚠ %s: %v (falling back to individual pages)\n", llmsTxtFilename(primaryURL), err)
+			return nil, fmt.Errorf("incomplete provider %s: bulk documentation: %w", f.cfg.Slug, err)
 		} else {
 			f.lastFetchHint.ETag = llmsHint.ETag
 			f.lastFetchHint.LastModified = llmsHint.LastModified
@@ -179,6 +180,7 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 		page, err := f.fetchPage(ctx, p)
 		if err != nil {
 			fmt.Printf("  ⚠ %s: %v\n", p, err)
+			fetchErrors = append(fetchErrors, fmt.Errorf("%s: %w", p, err))
 			continue
 		}
 		pages = append(pages, *page)
@@ -189,17 +191,21 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 		page, err := f.fetchOpenAPI(ctx)
 		if err != nil {
 			fmt.Printf("  ⚠ openapi: %v\n", err)
+			fetchErrors = append(fetchErrors, fmt.Errorf("openapi: %w", err))
 		} else {
 			pages = append(pages, *page)
 		}
 	}
 
+	if len(fetchErrors) > 0 {
+		return nil, fmt.Errorf("incomplete provider %s: %w", f.cfg.Slug, errors.Join(fetchErrors...))
+	}
 	return pages, nil
 }
 
 func (f *HTTPFetcher) fetchOpenAPI(ctx context.Context) (*Page, error) {
 	if f.cfg.FetchStrategy != StrategyNative || f.archiveLatestDir == "" {
-		return f.fetchURL(ctx, f.cfg.OpenAPIURL, "openapi.yaml")
+		return validateDocument(f.fetchURL(ctx, f.cfg.OpenAPIURL, "openapi.yaml"))
 	}
 	page, hint, err := f.fetchNativeConditional(ctx, f.cfg.OpenAPIURL, "openapi.yaml", f.priorHint.PathHints["openapi.yaml"])
 	if err != nil {
@@ -209,6 +215,16 @@ func (f *HTTPFetcher) fetchOpenAPI(ctx context.Context) (*Page, error) {
 		f.lastFetchHint.PathHints = make(map[string]FetchHint)
 	}
 	f.lastFetchHint.PathHints["openapi.yaml"] = hint
+	return validateDocument(page, nil)
+}
+
+func validateDocument(page *Page, err error) (*Page, error) {
+	if err != nil {
+		return nil, err
+	}
+	if len(bytes.TrimSpace(page.Content)) == 0 || looksLikeHTML(page.Content) {
+		return nil, fmt.Errorf("%s returned empty content or HTML instead of a documentation artifact", page.SourceURL)
+	}
 	return page, nil
 }
 
@@ -238,18 +254,18 @@ func (f *HTTPFetcher) fetchPage(ctx context.Context, pagePath string) (*Page, er
 				f.lastFetchHint.PathHints = make(map[string]FetchHint)
 			}
 			f.lastFetchHint.PathHints[archivePath] = hint
-			return page, nil
+			return validateDocument(page, nil)
 		}
-		return f.fetchDirect(ctx, fullURL, archivePath)
+		return validateDocument(f.fetchDirect(ctx, fullURL, archivePath))
 	case StrategyJina:
-		return f.fetchViaJina(ctx, fullURL, archivePath)
+		return validateDocument(f.fetchViaJina(ctx, fullURL, archivePath))
 	case StrategyAuto:
 		// Try direct first; if it fails or returns HTML, fall back to Jina.
-		page, err := f.fetchDirect(ctx, fullURL, archivePath)
+		page, err := validateDocument(f.fetchDirect(ctx, fullURL, archivePath))
 		if err == nil && !looksLikeHTML(page.Content) {
 			return page, nil
 		}
-		return f.fetchViaJina(ctx, fullURL, archivePath)
+		return validateDocument(f.fetchViaJina(ctx, fullURL, archivePath))
 	default:
 		return nil, fmt.Errorf("unknown fetch strategy: %s", strategy)
 	}
@@ -415,6 +431,7 @@ const llmsFullPeekBytes = 8192
 func (f *HTTPFetcher) fetchLLMSWithFallback(ctx context.Context, primaryURL string) ([]Page, []Page, FetchHint, error) {
 	filename := llmsTxtFilename(primaryURL)
 	primaryPage, primaryHint, err := f.fetchURLWithHint(ctx, primaryURL, filename)
+	primaryPage, err = validateDocument(primaryPage, err)
 	if err != nil {
 		fallbackURL := f.llmsFullFallbackURL(primaryURL, nil)
 		if fallbackURL == "" || fallbackURL == primaryURL {
@@ -422,7 +439,15 @@ func (f *HTTPFetcher) fetchLLMSWithFallback(ctx context.Context, primaryURL stri
 		}
 		optedIn := f.cfg.LLMSFullTxtURL != "" && fallbackURL == f.cfg.LLMSFullTxtURL
 		fmt.Printf("  ⚠ %s: %v; trying %s\n", filename, err, llmsTxtFilename(fallbackURL))
-		return f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+		raw, split, hint, fallbackErr := f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+		if fallbackErr != nil {
+			return nil, nil, FetchHint{}, errors.Join(err, fallbackErr)
+		}
+		if len(raw) == 0 {
+			// An unsupported auto-detected candidate cannot replace a failed source.
+			return nil, nil, FetchHint{}, err
+		}
+		return raw, split, hint, nil
 	}
 
 	split := splitLLMSDump(primaryPage.Content, primaryURL)
@@ -442,7 +467,14 @@ func (f *HTTPFetcher) fetchLLMSWithFallback(ctx context.Context, primaryURL stri
 
 	optedIn := f.cfg.LLMSFullTxtURL != "" && fallbackURL == f.cfg.LLMSFullTxtURL
 	fullRaw, fullSplit, fullHint, fullErr := f.fetchLLMSFullCandidate(ctx, fallbackURL, !optedIn)
+	if fullErr != nil && optedIn {
+		return nil, nil, FetchHint{}, fmt.Errorf("required full dump %s: %w", fallbackURL, fullErr)
+	}
 	if fullErr != nil || len(fullSplit) == 0 {
+		if fullErr == nil && optedIn {
+			// An explicit full export can be a flat document without section delimiters.
+			return append([]Page{*primaryPage}, fullRaw...), fullSplit, fullHint, nil
+		}
 		if fullErr != nil {
 			fmt.Printf("  ⚠ %s: %v\n", llmsTxtFilename(fallbackURL), fullErr)
 		}
@@ -491,6 +523,7 @@ func (f *HTTPFetcher) fetchLLMSFullCandidate(ctx context.Context, fullURL string
 	}
 
 	page, hint, err := f.fetchURLWithHint(ctx, fullURL, filename)
+	page, err = validateDocument(page, err)
 	if err != nil {
 		return nil, nil, FetchHint{}, err
 	}
@@ -616,12 +649,9 @@ func stripJinaHeader(body []byte) []byte {
 // looksLikeHTML checks if content appears to be HTML rather than Markdown.
 // Used by the auto strategy to decide whether to fall back to Jina.
 func looksLikeHTML(content []byte) bool {
-	// Check the first 1KB for HTML indicators.
-	sample := content
-	if len(sample) > 1024 {
-		sample = sample[:1024]
-	}
-	lower := bytes.ToLower(sample)
-	return bytes.Contains(lower, []byte("<!doctype html")) ||
-		bytes.Contains(lower, []byte("<html"))
+	// HTML examples inside Markdown are not HTML documents.
+	lower := bytes.ToLower(bytes.TrimSpace(bytes.TrimPrefix(content, []byte("\xef\xbb\xbf"))))
+	return bytes.HasPrefix(lower, []byte("<!doctype html")) ||
+		bytes.HasPrefix(lower, []byte("<html>")) ||
+		bytes.HasPrefix(lower, []byte("<html "))
 }

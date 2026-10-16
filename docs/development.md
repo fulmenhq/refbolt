@@ -86,6 +86,12 @@ Provider credentials (e.g., `OPENAI_API_KEY`, `GITHUB_TOKEN`) are used only for 
 
 See [docs/ARCHITECTURE.md → Fetch Strategies](ARCHITECTURE.md#4-fetch-strategies) for splitter variants and implementation pointers.
 
+Configured page and spec fetches must succeed before that provider is published
+to the archive. Missing pages, empty artifacts, and HTML returned where a native
+document is expected fail the provider and leave its previous snapshot and sync
+metadata in place. Other selected providers continue; the command returns an
+error if any provider failed, and git commit/push automation does not run.
+
 ## Browsing the Catalog
 
 `refbolt catalog` is a read-only view over the embedded catalog (with registry

@@ -319,10 +319,10 @@ Claude can use tools.
 	}
 }
 
-func TestHTTPFetcher_FullDump404KeepsIndex(t *testing.T) {
+func TestHTTPFetcher_OptionalFullDump404KeepsIndex(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/llms.txt" {
-			_, _ = w.Write([]byte(xaiIndexBody))
+			_, _ = w.Write([]byte("# Index\n\n- [Overview](/overview.md)\n"))
 			return
 		}
 		http.NotFound(w, r)
@@ -330,10 +330,9 @@ func TestHTTPFetcher_FullDump404KeepsIndex(t *testing.T) {
 	defer srv.Close()
 
 	f, err := NewHTTPFetcher(ProviderConfig{
-		Slug:           "xai",
-		BaseURL:        srv.URL,
-		LLMSTxtURL:     srv.URL + "/llms.txt",
-		LLMSFullTxtURL: srv.URL + "/llms-full.txt",
+		Slug:       "index-only",
+		BaseURL:    srv.URL,
+		LLMSTxtURL: srv.URL + "/llms.txt",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -344,6 +343,87 @@ func TestHTTPFetcher_FullDump404KeepsIndex(t *testing.T) {
 	}
 	if len(pages) != 1 || pages[0].Path != "llms.txt" {
 		t.Errorf("expected only the index after full dump 404, got %+v", pages)
+	}
+}
+
+func TestHTTPFetcher_RequiredFullDumpCannotFallBackToIndex(t *testing.T) {
+	for _, failure := range []string{"missing", "empty", "html"} {
+		t.Run(failure, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/llms.txt":
+					_, _ = w.Write([]byte("# Index\n\n- [Overview](/overview.md)\n"))
+				case "/ok.md", "/schema":
+					_, _ = w.Write([]byte("# Supplemental document"))
+				default:
+					switch failure {
+					case "missing":
+						http.NotFound(w, r)
+					case "empty":
+						w.WriteHeader(http.StatusOK)
+					case "html":
+						_, _ = w.Write([]byte("<!DOCTYPE html><html>Error</html>"))
+					}
+				}
+			}))
+			defer srv.Close()
+			f, err := NewHTTPFetcher(ProviderConfig{
+				Slug: "required-full", BaseURL: srv.URL, FetchStrategy: StrategyNative,
+				LLMSTxtURL: srv.URL + "/llms.txt", LLMSFullTxtURL: srv.URL + "/llms-full.txt",
+				Paths: []string{"/ok.md"}, OpenAPIURL: srv.URL + "/schema",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			pages, err := f.Fetch(context.Background())
+			if err == nil || len(pages) != 0 {
+				t.Fatalf("required dump failure published %d pages: %v", len(pages), err)
+			}
+		})
+	}
+}
+
+func TestHTTPFetcher_ExplicitFlatFullDumpIsRetained(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/llms.txt" {
+			_, _ = w.Write([]byte("# Index\n\n- [Overview](/overview.md)\n"))
+			return
+		}
+		_, _ = w.Write([]byte("# Complete flat documentation"))
+	}))
+	defer srv.Close()
+	f, err := NewHTTPFetcher(ProviderConfig{
+		Slug: "flat-full", BaseURL: srv.URL, FetchStrategy: StrategyNative,
+		LLMSTxtURL: srv.URL + "/llms.txt", LLMSFullTxtURL: srv.URL + "/llms-full.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pages, err := f.Fetch(context.Background())
+	if err != nil || len(pages) != 2 || pages[1].Path != "llms-full.txt" {
+		t.Fatalf("explicit flat dump not retained: %+v, %v", pages, err)
+	}
+}
+
+func TestHTTPFetcher_FailedIndexCanUseCompleteDump(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/llms-full.txt" {
+			_, _ = w.Write([]byte(xaiDumpBody))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+	f, err := NewHTTPFetcher(ProviderConfig{
+		Slug: "complete-fallback", BaseURL: srv.URL, FetchStrategy: StrategyNative,
+		LLMSTxtURL: srv.URL + "/llms.txt", LLMSFullTxtURL: srv.URL + "/llms-full.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pages, err := f.Fetch(context.Background())
+	if err != nil || len(pages) != 3 {
+		t.Fatalf("valid full dump did not replace failed index: %+v, %v", pages, err)
 	}
 }
 
