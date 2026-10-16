@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // HierarchicalFetcher implements the llmstxt-hierarchical strategy.
@@ -27,6 +28,10 @@ func NewHierarchicalFetcher(cfg ProviderConfig) (*HierarchicalFetcher, error) {
 	}
 	if cfg.BaseURL == "" {
 		return nil, fmt.Errorf("base_url is required for hierarchical strategy on provider %s", cfg.Slug)
+	}
+	base, err := url.Parse(cfg.BaseURL)
+	if err != nil || base.Host == "" || (base.Scheme != "https" && base.Scheme != "http") {
+		return nil, fmt.Errorf("base_url must be an HTTP documentation URL for provider %s", cfg.Slug)
 	}
 	httpFetcher, err := NewHTTPFetcher(cfg)
 	if err != nil {
@@ -55,14 +60,26 @@ func (f *HierarchicalFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	prefix := servicePrefix(f.cfg.BaseURL)
 	allURLs := parseIndexLLMSTxtURLs(indexPage.Content)
 	matched := matchServiceURLs(allURLs, prefix)
+	base, _ := url.Parse(f.cfg.BaseURL)
+	var scoped []string
+	seen := make(map[string]bool)
+	for _, raw := range matched {
+		u, err := url.Parse(raw)
+		if err == nil && u.Host == base.Host && u.Scheme == base.Scheme && !seen[raw] {
+			scoped = append(scoped, raw)
+			seen[raw] = true
+		}
+	}
+	matched = scoped
 
 	if len(matched) == 0 {
 		return nil, fmt.Errorf("no llms.txt entry found in index for service prefix %q (provider %s); check that base_url matches an indexed service", prefix, f.cfg.Slug)
 	}
 
-	// One provider = one guide family. If multiple URLs match the prefix,
-	// pick the one whose path is the closest match (longest common prefix).
-	serviceURL := selectBestMatch(matched, prefix)
+	if len(matched) != 1 {
+		return nil, fmt.Errorf("ambiguous service prefix %q: matched %d guides; use a guide-specific base_url", prefix, len(matched))
+	}
+	serviceURL := matched[0]
 	fmt.Printf("  → %s: matched index entry %s\n", f.cfg.Slug, serviceURL)
 
 	// 3. Fetch the service-level llms.txt (or llms-full.txt).
@@ -90,7 +107,71 @@ func (f *HierarchicalFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	}
 	pages = append(pages, split...)
 	fmt.Printf("  ✓ %s: %d sections from service llms.txt\n", f.cfg.Slug, len(split))
+	curated, err := f.fetchCuratedPages(ctx, servicePage.Content)
+	if err != nil {
+		return nil, err
+	}
+	pages = append(pages, curated...)
 
+	return pages, nil
+}
+
+var guideMarkdownLink = regexp.MustCompile(`\[[^\]]*\]\((https?://[^\s)]+)\)`)
+
+// Fetch only literal Markdown paths published by the selected guide's index.
+// This does not crawl the guide or follow links recursively.
+func (f *HierarchicalFetcher) fetchCuratedPages(ctx context.Context, index []byte) ([]Page, error) {
+	allowed := make(map[string]bool)
+	for _, m := range guideMarkdownLink.FindAllSubmatch(index, -1) {
+		allowed[string(m[1])] = true
+	}
+	base, _ := url.Parse(f.cfg.BaseURL)
+	var targets []string
+	seen := make(map[string]bool)
+	for _, p := range f.cfg.Paths {
+		if strings.ContainsAny(p, "*?[#") {
+			return nil, fmt.Errorf("hierarchical path %q must be a literal Markdown path", p)
+		}
+		target, err := pageURL(f.cfg.BaseURL, p)
+		if err != nil {
+			return nil, err
+		}
+		u, err := url.Parse(target)
+		if err != nil || u.Host != base.Host || !strings.HasPrefix(u.Path, servicePrefix(f.cfg.BaseURL)) ||
+			!strings.HasSuffix(u.Path, ".md") || !allowed[target] {
+			return nil, fmt.Errorf("path %q is not a Markdown page published by guide %s", p, f.cfg.BaseURL)
+		}
+		if !seen[target] {
+			targets = append(targets, target)
+			seen[target] = true
+		}
+	}
+	interval := time.Second
+	if f.cfg.RateLimit != nil && f.cfg.RateLimit.RequestsPerSecond > 0 {
+		interval = time.Duration(float64(time.Second) / f.cfg.RateLimit.RequestsPerSecond)
+	}
+	var pages []Page
+	for i, target := range targets {
+		if i > 0 {
+			timer := time.NewTimer(interval)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return nil, ctx.Err()
+			case <-timer.C:
+			}
+		}
+		u, _ := url.Parse(target)
+		pagePath := strings.TrimPrefix(u.Path, servicePrefix(f.cfg.BaseURL))
+		page, err := f.client.fetchURL(ctx, target, pagePath)
+		if err != nil {
+			return nil, fmt.Errorf("fetching curated guide page: %w", err)
+		}
+		if looksLikeHTML(page.Content) || len(bytes.TrimSpace(page.Content)) == 0 {
+			return nil, fmt.Errorf("guide page %s did not return nonempty Markdown", target)
+		}
+		pages = append(pages, *page)
+	}
 	return pages, nil
 }
 
@@ -157,37 +238,4 @@ func matchServiceURLs(indexURLs []string, prefix string) []string {
 		}
 	}
 	return matched
-}
-
-// selectBestMatch picks the index URL with the longest matching path prefix,
-// ensuring one provider entry maps to exactly one guide family.
-func selectBestMatch(urls []string, prefix string) string {
-	best := urls[0]
-	bestLen := 0
-	for _, rawURL := range urls {
-		u, err := url.Parse(rawURL)
-		if err != nil {
-			continue
-		}
-		// Count how many path segments match.
-		common := commonPrefixLen(u.Path, prefix)
-		if common > bestLen {
-			bestLen = common
-			best = rawURL
-		}
-	}
-	return best
-}
-
-func commonPrefixLen(a, b string) int {
-	n := len(a)
-	if len(b) < n {
-		n = len(b)
-	}
-	for i := 0; i < n; i++ {
-		if a[i] != b[i] {
-			return i
-		}
-	}
-	return n
 }

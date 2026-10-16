@@ -111,7 +111,7 @@ properties:
       paths:
         type: array
         description: >-
-          List of URL path patterns to fetch, resolved relative to base_url. Supports doublestar glob patterns. Fetched in order; duplicates are deduplicated. Can be empty when llms_txt_url or llms_full_txt_url is set (bulk fetch covers all content).
+          List of URL paths to fetch, resolved relative to base_url. GitHub providers support doublestar glob patterns. Hierarchical providers accept literal .md paths published in the selected guide index; they do not recursively crawl links. Can be empty when llms_txt_url or llms_full_txt_url is set.
         minItems: 0
         default: []
         items:
