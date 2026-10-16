@@ -291,9 +291,11 @@ func TestCatalogList_FilterByStrategy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// openai is the lone jina provider in the catalog.
-	if !strings.Contains(stdout, "openai") {
-		t.Error("jina filter missing openai")
+	if !strings.Contains(stdout, "hetzner-cloud") {
+		t.Error("jina filter missing hetzner-cloud")
+	}
+	if strings.Contains(stdout, "openai") {
+		t.Error("jina filter should not contain openai (native)")
 	}
 	if strings.Contains(stdout, "anthropic") {
 		t.Error("jina filter should not contain anthropic (native)")

@@ -51,17 +51,20 @@ topics:
           - /en/agents-and-tools/tool-use/overview.md
           - /en/build-with-claude/prompt-caching.md
           - /en/api-reference/messages.md
-      # OpenAI — no native .md or llms.txt. HTML only, requires Jina Reader.
-      # OpenAPI spec on GitHub (manual_spec branch, not master/main).
+      # OpenAI — native API-only Markdown export plus curated reference pages.
+      # The full export is a single document; retain it alongside native .md pages.
+      # OpenAPI spec remains on the manual_spec branch.
       - slug: openai
         name: OpenAI
-        base_url: https://platform.openai.com
-        fetch_strategy: jina
+        base_url: https://developers.openai.com/api
+        fetch_strategy: native
         fetch_timeout: "90s"
         paths:
-          - /docs/api-reference/chat
-          - /docs/api-reference/responses
-          - /docs/api-reference/assistants
+          - /llms-full.txt
+          - /docs/quickstart.md
+          - /docs/models.md
+          - /reference/resources/responses/methods/create.md
+          - /reference/chat-completions/overview.md
         openapi_url: https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/manual_spec/openapi.yaml
   - slug: inference-host
     name: Inference Hosts
@@ -270,45 +273,44 @@ topics:
         base_url: https://docs.aws.amazon.com/bedrock/latest/APIReference
         fetch_strategy: llmstxt-hierarchical
         llms_txt_url: https://docs.aws.amazon.com/llms.txt
-      # DigitalOcean — 40MB llms-full.txt with Source: URL delimiters (4083 pages total).
-      # Scoped by base_url prefix — each entry archives only its URL prefix.
-      # All entries share the same llms_txt_url; fetch is repeated per provider.
-      # Tech debt: shared fetch cache planned for v0.0.3.
+      # DigitalOcean — root llms-full.txt is a chunk index, not a content dump.
+      # Each provider fetches its published per-area Source: delimited chunk.
+      # base_url filtering keeps sections within the selected product scope.
       - slug: digitalocean-api
         name: DigitalOcean API Reference
         base_url: https://docs.digitalocean.com/reference/api
         fetch_strategy: native
-        llms_txt_url: https://docs.digitalocean.com/llms-full.txt
+        llms_txt_url: https://docs.digitalocean.com/llms-full-reference-api.txt
         paths: []
       - slug: digitalocean-doctl
         name: DigitalOcean doctl CLI
         base_url: https://docs.digitalocean.com/reference/doctl
         fetch_strategy: native
-        llms_txt_url: https://docs.digitalocean.com/llms-full.txt
+        llms_txt_url: https://docs.digitalocean.com/llms-full-reference-doctl.txt
         paths: []
       - slug: digitalocean-k8s
         name: DigitalOcean Kubernetes
         base_url: https://docs.digitalocean.com/products/kubernetes
         fetch_strategy: native
-        llms_txt_url: https://docs.digitalocean.com/llms-full.txt
+        llms_txt_url: https://docs.digitalocean.com/llms-full-products-kubernetes.txt
         paths: []
       - slug: digitalocean-dbs
         name: DigitalOcean Managed Databases
         base_url: https://docs.digitalocean.com/products/databases
         fetch_strategy: native
-        llms_txt_url: https://docs.digitalocean.com/llms-full.txt
+        llms_txt_url: https://docs.digitalocean.com/llms-full-products-databases.txt
         paths: []
       - slug: digitalocean-droplets
         name: DigitalOcean Droplets
         base_url: https://docs.digitalocean.com/products/droplets
         fetch_strategy: native
-        llms_txt_url: https://docs.digitalocean.com/llms-full.txt
+        llms_txt_url: https://docs.digitalocean.com/llms-full-products-droplets.txt
         paths: []
       - slug: digitalocean-spaces
         name: DigitalOcean Spaces
         base_url: https://docs.digitalocean.com/products/spaces
         fetch_strategy: native
-        llms_txt_url: https://docs.digitalocean.com/llms-full.txt
+        llms_txt_url: https://docs.digitalocean.com/llms-full-products-spaces.txt
         paths: []
       # Cloudflare — per-product llms-full.txt with YAML frontmatter delimiters.
       # Three-tier architecture: /llms.txt → /workers/llms.txt → /workers/llms-full.txt.
@@ -465,17 +467,18 @@ topics:
         auth_env_var: GITHUB_TOKEN
         paths:
           - "**/*.rst"
-      # Stalwart Mail Server — Docusaurus Markdown source, published to stalw.art/docs/.
+      # Stalwart Mail Server — Astro/Starlight Markdown source, published to stalw.art/docs/.
       # Single cohesive manual covering JMAP, IMAP, SMTP, CalDAV, spam, clustering.
       - slug: stalwart
         name: Stalwart Mail Server Documentation
         base_url: https://stalw.art/docs
         fetch_strategy: github-raw
         github_repo: stalwartlabs/website
-        github_docs_path: docs/
+        github_docs_path: src/content/docs/docs/
         auth_env_var: GITHUB_TOKEN
         paths:
           - "**/*.md"
+          - "**/*.mdx"
   - slug: spacex-data
     name: SpaceX & Starlink Data APIs
     description: r/SpaceX open REST API and official Starlink Public API v2 (opt-in by surface)

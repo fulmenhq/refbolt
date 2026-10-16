@@ -383,6 +383,23 @@ and robots.txt, 2026-09-15; TypeSafe probed 2026-09-17). Full archive trees land
 after `refbolt sync --provider <slug>`. Featherless archives the llms.txt index
 only.
 
+## OpenAI
+
+**Base URL**: `https://developers.openai.com/api`
+**Strategy**: native Markdown and the API-only `llms-full.txt` export
+
+The API documentation publishes [a routing index](https://developers.openai.com/api/llms.txt),
+[a full Markdown export](https://developers.openai.com/api/llms-full.txt), and
+individual `.md` pages. The catalog retains the full export as one document and
+fetches curated quickstart, models, Responses, and Chat Completions pages alongside
+the `manual_spec` OpenAPI snapshot. Jina credentials are not required for this
+provider. The scope is API documentation; Codex and other product documentation
+have separate upstream indexes.
+
+The former `platform.openai.com` curated HTML paths redirect to the developer
+site. New snapshots use the current native paths; earlier date snapshots remain
+unchanged.
+
 ## Jina Reader
 
 **Service URL**: `https://r.jina.ai/<target-url>`
@@ -409,34 +426,23 @@ For authenticated access (higher rate limits), set the `JINA_API_KEY` environmen
 ## DigitalOcean
 
 **Base URL**: `https://docs.digitalocean.com` (scoped per product via URL prefix)
-**llms-full.txt**: `https://docs.digitalocean.com/llms-full.txt` (40MB, 4,083 pages)
-**Strategy**: `native` + `llms_txt_url` with URL prefix filtering (FA-090)
+**Strategy**: `native` with per-area full-text chunks and URL prefix filtering
 
-### Architecture
+The root [`llms-full.txt`](https://docs.digitalocean.com/llms-full.txt) is a small
+index of full-text chunks. Each configured provider fetches its own published
+chunk, splits on `Source:` URLs, and retains only sections matching `base_url`.
 
-DigitalOcean publishes a single 40MB `llms-full.txt` containing all documentation. Sections are delimited by `Source: <url>` lines (not `URL:` like Anthropic). Each provider entry scopes to a URL prefix via `base_url`, so only matching sections are archived.
+| Slug                    | Full-text chunk                     |
+| ----------------------- | ----------------------------------- |
+| `digitalocean-api`      | `llms-full-reference-api.txt`       |
+| `digitalocean-doctl`    | `llms-full-reference-doctl.txt`     |
+| `digitalocean-k8s`      | `llms-full-products-kubernetes.txt` |
+| `digitalocean-dbs`      | `llms-full-products-databases.txt`  |
+| `digitalocean-droplets` | `llms-full-products-droplets.txt`   |
+| `digitalocean-spaces`   | `llms-full-products-spaces.txt`     |
 
-### Opt-In by Product
-
-Six product areas are configured, each fetching from the same shared `llms-full.txt` but scoping differently:
-
-| Slug                    | Scope                  | Pages |
-| ----------------------- | ---------------------- | ----- |
-| `digitalocean-api`      | `/reference/api`       | ~226  |
-| `digitalocean-doctl`    | `/reference/doctl`     | ~542  |
-| `digitalocean-k8s`      | `/products/kubernetes` | ~355  |
-| `digitalocean-dbs`      | `/products/databases`  | ~213  |
-| `digitalocean-droplets` | `/products/droplets`   | ~60   |
-| `digitalocean-spaces`   | `/products/spaces`     | ~40   |
-
-### Known Limitations
-
-- **Repeated fetches**: Each scoped provider re-downloads the full 40MB file. Shared fetch cache planned for v0.0.3.
-- **No auth required**: Public endpoint, no rate limit issues observed.
-
-### Status
-
-Verified. All 6 scoped providers produce correct filtered archives.
+Chunk URLs are relative to `https://docs.digitalocean.com/`. No credentials are
+required. The catalog no longer downloads the same root index for every product.
 
 ## Cloudflare
 
@@ -604,18 +610,18 @@ Verified. ~173 RST files archived.
 ## Stalwart Mail Server
 
 **Strategy**: `github-raw`
-**Source**: `stalwartlabs/website`, path `docs/`
-**Format**: Docusaurus Markdown
+**Source**: `stalwartlabs/website`, path `src/content/docs/docs/`
+**Format**: Astro/Starlight Markdown and MDX
 
 ### Notes
 
 - Covers JMAP, IMAP, SMTP, CalDAV, CardDAV, spam filtering, clustering.
-- 17 sections: install, config, server, storage, auth, email, MTA, collaboration, encryption, spam, sieve, cluster, telemetry, management, API, development.
+- The documentation subtree excludes the sibling blog and marketing content.
 - `GITHUB_TOKEN` recommended.
 
 ### Status
 
-Verified. ~270 Markdown files archived.
+The catalog follows the current documentation source tree, including `.md` and `.mdx` pages.
 
 ## Figma
 
