@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // SplitLLMSTxt parses the xAI-style llms.txt format into individual pages.
@@ -26,18 +29,25 @@ func SplitLLMSTxt(content []byte, sourceURL string) ([]Page, error) {
 	var pages []Page
 	var currentPath string
 	var currentContent bytes.Buffer
+	var fence markdownFence
 
 	scanner := bufio.NewScanner(bytes.NewReader(content))
 	// Full dumps moved to llms-full.txt can be >1MB with long lines.
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for scanner.Scan() {
 		line := scanner.Text()
+		if fence.consume(line) {
+			if currentPath != "" {
+				currentContent.WriteString(line + "\n")
+			}
+			continue
+		}
 
 		if strings.HasPrefix(line, "===/") && strings.HasSuffix(line, "===") {
 			// Flush the previous section.
 			if currentPath != "" {
 				pages = append(pages, Page{
-					SourceURL: sourceURL,
+					SourceURL: sectionSourceURL(sourceURL, currentPath),
 					Path:      pathToArchivePath(currentPath),
 					Content:   copyBytes(bytes.TrimSpace(currentContent.Bytes())),
 				})
@@ -62,13 +72,23 @@ func SplitLLMSTxt(content []byte, sourceURL string) ([]Page, error) {
 	// Flush the last section.
 	if currentPath != "" {
 		pages = append(pages, Page{
-			SourceURL: sourceURL,
+			SourceURL: sectionSourceURL(sourceURL, currentPath),
 			Path:      pathToArchivePath(currentPath),
 			Content:   copyBytes(bytes.TrimSpace(currentContent.Bytes())),
 		})
 	}
 
 	return pages, nil
+}
+
+func sectionSourceURL(sourceURL, pagePath string) string {
+	u, err := url.Parse(sourceURL)
+	if err != nil {
+		return sourceURL
+	}
+	u.Path = pagePath
+	u.RawPath, u.RawQuery, u.Fragment = "", "", ""
+	return u.String()
 }
 
 // splitLLMSDump tries every known bulk-dump delimiter format and returns the
@@ -170,6 +190,7 @@ func SplitLLMSFullTxt(content []byte, sourceURL string) ([]Page, error) {
 	var currentURL string
 	var currentContent bytes.Buffer
 	var skipNextHeading bool
+	var fence markdownFence
 
 	scanner := bufio.NewScanner(bytes.NewReader(content))
 	// Large llms-full.txt files (Anthropic ~24MB, DO ~40MB); increase scanner buffer.
@@ -177,6 +198,12 @@ func SplitLLMSFullTxt(content []byte, sourceURL string) ([]Page, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		if fence.consume(line) {
+			if currentURL != "" {
+				currentContent.WriteString(line + "\n")
+			}
+			continue
+		}
 
 		if sectionURL, ok := parseSectionURL(line); ok {
 			// Flush the previous section.
@@ -252,131 +279,147 @@ func SplitLLMSFullTxt(content []byte, sourceURL string) ([]Page, error) {
 // Archive paths are derived from its `url:` field when present, or from the
 // frontmatter title as a fallback.
 func SplitFrontmatterFullTxt(content []byte, sourceURL string) ([]Page, error) {
-	var pages []Page
-	var sections []frontmatterSection
-
+	var lines []string
 	scanner := bufio.NewScanner(bytes.NewReader(content))
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-
-	var (
-		inFrontmatter bool
-		currentTitle  string // title of the section being collected
-		pendingTitle  string // title being parsed in current frontmatter block
-		currentURL    string // canonical page URL for the section being collected
-		pendingURL    string // URL being parsed in current frontmatter block
-		rawContent    bytes.Buffer
-		collecting    bool
-		foundTitle    bool
-	)
-
-	flushSection := func() {
-		if currentTitle != "" && rawContent.Len() > 0 {
-			sections = append(sections, frontmatterSection{
-				title:   currentTitle,
-				url:     currentURL,
-				content: copyBytes(rawContent.Bytes()),
-			})
-		}
-		currentTitle = ""
-		currentURL = ""
-		rawContent.Reset()
-		collecting = false
-	}
-
 	for scanner.Scan() {
-		line := scanner.Text()
-		trimmed := strings.TrimSpace(line)
-
-		// Detect frontmatter start: "---" when not already in frontmatter.
-		if trimmed == "---" && !inFrontmatter {
-			inFrontmatter = true
-			pendingTitle = ""
-			pendingURL = ""
-			foundTitle = false
-			continue
-		}
-
-		if inFrontmatter {
-			if trimmed == "---" {
-				if foundTitle {
-					// End of a real frontmatter block (had title:).
-					// Flush the previous section, start new one.
-					if collecting {
-						flushSection()
-					}
-					currentTitle = pendingTitle
-					currentURL = pendingURL
-					inFrontmatter = false
-					collecting = true
-					continue
-				}
-				// False start: "---" followed by "---" without title:.
-				// Stay scanning in case the next line starts frontmatter.
-				continue
-			}
-			// Extract title from frontmatter.
-			if strings.HasPrefix(trimmed, "title:") {
-				pendingTitle = strings.TrimSpace(strings.TrimPrefix(trimmed, "title:"))
-				foundTitle = true
-				continue
-			}
-			if strings.HasPrefix(trimmed, "url:") {
-				pendingURL = strings.TrimSpace(strings.TrimPrefix(trimmed, "url:"))
-				continue
-			}
-			// Blank lines in potential frontmatter — skip.
-			if trimmed == "" {
-				continue
-			}
-			// Other frontmatter line (description:, image:, etc.) — skip.
-			if foundTitle {
-				continue
-			}
-			// Non-blank, non-title, non---- line without title found.
-			// This was a false start (the --- was just a HR).
-			inFrontmatter = false
-			// Fall through to content collection.
-		}
-
-		if !collecting {
-			continue
-		}
-
-		// Strip Cloudflare boilerplate between frontmatter and content.
-		if isBoilerplateLine(trimmed) {
-			continue
-		}
-
-		rawContent.WriteString(line)
-		rawContent.WriteByte('\n')
+		lines = append(lines, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		return pages, fmt.Errorf("scanning frontmatter llms-full.txt: %w", err)
+		return nil, fmt.Errorf("scanning frontmatter llms-full.txt: %w", err)
 	}
 
-	// Flush last section.
-	flushSection()
+	var sections []frontmatterSection
+	var current frontmatterSection
+	var body bytes.Buffer
+	var fence markdownFence
+	flush := func() {
+		if current.title != "" && body.Len() > 0 {
+			current.content = copyBytes(body.Bytes())
+			sections = append(sections, current)
+		}
+		body.Reset()
+	}
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		if fence.consume(line) {
+			if current.title != "" {
+				body.WriteString(line + "\n")
+			}
+			continue
+		}
+		if strings.TrimSpace(line) == "---" {
+			// A real YAML header can put description/image fields before title.
+			// A horizontal rule is retained unless a complete header follows.
+			for j := i + 1; j < len(lines) && j-i <= 64; j++ {
+				if strings.TrimSpace(lines[j]) != "---" {
+					continue
+				}
+				var header struct {
+					Title string `yaml:"title"`
+					URL   string `yaml:"url"`
+				}
+				if yaml.Unmarshal([]byte(strings.Join(lines[i+1:j], "\n")), &header) == nil && header.Title != "" {
+					flush()
+					current = frontmatterSection{title: header.Title, url: header.URL}
+					i = j
+					line = ""
+				}
+				break
+			}
+			if line == "" {
+				continue
+			}
+		}
+		if current.title == "" {
+			continue
+		}
+		if current.url == "" {
+			current.url = frontmatterPageURL(line, sourceURL)
+		}
+		if !isBoilerplateLine(strings.TrimSpace(line)) {
+			body.WriteString(line + "\n")
+		}
+	}
+	flush()
 
-	// Convert sections to pages.
+	reserved := make(map[string]bool)
+	for _, s := range sections {
+		if s.url != "" {
+			reserved[llmsFullURLToPath(s.url)] = true
+		}
+	}
+	used := make(map[string]bool)
+	var pages []Page
 	for _, s := range sections {
 		archivePath := titleToArchivePath(s.title)
 		pageSourceURL := sourceURL
 		if s.url != "" {
 			archivePath = llmsFullURLToPath(s.url)
 			pageSourceURL = s.url
+		} else {
+			stem := strings.TrimSuffix(archivePath, ".md")
+			for n := 2; used[archivePath] || reserved[archivePath]; n++ {
+				archivePath = fmt.Sprintf("%s-%d.md", stem, n)
+			}
 		}
-		cleaned := trimTrailingBoundary(s.content)
-		// Also strip any leading blank lines.
-		cleaned = bytes.TrimLeft(cleaned, "\n\r\t ")
-
-		pages = append(pages, Page{
-			SourceURL: pageSourceURL,
-			Path:      archivePath,
-			Content:   cleaned,
-		})
+		used[archivePath] = true
+		cleaned := bytes.TrimLeft(trimTrailingBoundary(s.content), "\n\r\t ")
+		pages = append(pages, Page{SourceURL: pageSourceURL, Path: archivePath, Content: cleaned})
 	}
-
 	return pages, nil
+}
+
+var markdownPageLink = regexp.MustCompile(`\[View as Markdown\]\((https?://[^\s)]+)\)`)
+var cloudflareEditLink = regexp.MustCompile(`https://github\.com/cloudflare/cloudflare-docs/edit/[^/]+/src/content/docs/([^\s)]+)`)
+
+func frontmatterPageURL(line, sourceURL string) string {
+	source, err := url.Parse(sourceURL)
+	if err != nil {
+		return ""
+	}
+	if m := markdownPageLink.FindStringSubmatch(line); len(m) == 2 {
+		page, err := url.Parse(m[1])
+		if err == nil && page.Scheme == source.Scheme && page.Host == source.Host {
+			return page.String()
+		}
+	}
+	if source.Host == "developers.cloudflare.com" {
+		if m := cloudflareEditLink.FindStringSubmatch(line); len(m) == 2 {
+			pagePath := strings.TrimSuffix(strings.TrimSuffix(m[1], ".mdx"), ".md")
+			return sectionSourceURL(sourceURL, "/"+pagePath+".md")
+		}
+	}
+	return ""
+}
+
+// Section markers inside fenced code are examples, not document boundaries.
+type markdownFence struct {
+	marker byte
+	size   int
+}
+
+func (f *markdownFence) consume(line string) bool {
+	inside := f.size > 0
+	trimmed := strings.TrimLeft(line, " ")
+	if len(line)-len(trimmed) > 3 || len(trimmed) < 3 || (trimmed[0] != '`' && trimmed[0] != '~') {
+		return inside
+	}
+	n := 0
+	for n < len(trimmed) && trimmed[n] == trimmed[0] {
+		n++
+	}
+	if n < 3 {
+		return inside
+	}
+	if inside {
+		if trimmed[0] == f.marker && n >= f.size && strings.TrimSpace(trimmed[n:]) == "" {
+			f.size = 0
+		}
+	} else {
+		f.marker, f.size = trimmed[0], n
+	}
+	return true
 }
 
 // frontmatterSection holds a parsed section from a frontmatter-delimited file.
@@ -521,7 +564,7 @@ func FilterByBaseURL(pages []Page, baseURL string) []Page {
 	var filtered []Page
 	for _, p := range pages {
 		sourceNorm := strings.TrimRight(p.SourceURL, "/")
-		if strings.HasPrefix(sourceNorm, prefix) {
+		if sourceNorm == prefix || strings.HasPrefix(sourceNorm, prefix+"/") {
 			filtered = append(filtered, p)
 		}
 	}

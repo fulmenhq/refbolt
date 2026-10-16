@@ -73,8 +73,14 @@ func (f *HTTPFetcher) CheckHints(ctx context.Context) (FetchHint, error) {
 	}
 
 	// Multi-source providers without per-path support: refuse provider-level HEAD.
-	hasMultipleSources := len(f.cfg.Paths) > 1 || (len(f.cfg.Paths) > 0 && f.cfg.OpenAPIURL != "")
-	if hasMultipleSources {
+	sources := len(literalPaths(f.cfg.Paths))
+	if f.cfg.LLMSTxtURL != "" || f.cfg.LLMSFullTxtURL != "" {
+		sources++
+	}
+	if f.cfg.OpenAPIURL != "" {
+		sources++
+	}
+	if sources > 1 {
 		return hint, fmt.Errorf("multi-source provider %s: HEAD check cannot represent all upstream URLs", f.cfg.Slug)
 	}
 
@@ -180,7 +186,7 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 
 	// Fetch OpenAPI spec if configured.
 	if f.cfg.OpenAPIURL != "" {
-		page, err := f.fetchURL(ctx, f.cfg.OpenAPIURL, "openapi.yaml")
+		page, err := f.fetchOpenAPI(ctx)
 		if err != nil {
 			fmt.Printf("  ⚠ openapi: %v\n", err)
 		} else {
@@ -189,6 +195,21 @@ func (f *HTTPFetcher) Fetch(ctx context.Context) ([]Page, error) {
 	}
 
 	return pages, nil
+}
+
+func (f *HTTPFetcher) fetchOpenAPI(ctx context.Context) (*Page, error) {
+	if f.cfg.FetchStrategy != StrategyNative || f.archiveLatestDir == "" {
+		return f.fetchURL(ctx, f.cfg.OpenAPIURL, "openapi.yaml")
+	}
+	page, hint, err := f.fetchNativeConditional(ctx, f.cfg.OpenAPIURL, "openapi.yaml", f.priorHint.PathHints["openapi.yaml"])
+	if err != nil {
+		return nil, err
+	}
+	if f.lastFetchHint.PathHints == nil {
+		f.lastFetchHint.PathHints = make(map[string]FetchHint)
+	}
+	f.lastFetchHint.PathHints["openapi.yaml"] = hint
+	return page, nil
 }
 
 // fetchPage fetches a single page by path from the provider's base URL.
