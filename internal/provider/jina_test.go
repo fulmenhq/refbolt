@@ -1,16 +1,54 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"strings"
 	"testing"
 )
 
+// routeRecorder wraps the fetcher's transport and records each request host, so
+// the auto test can prove the Jina proxy was reached on the wire.
+type routeRecorder struct {
+	base  http.RoundTripper
+	hosts []string
+}
+
+func (r *routeRecorder) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.hosts = append(r.hosts, req.URL.Host)
+	return r.base.RoundTrip(req)
+}
+
+// requireLiveJinaKey fails the live Jina check when the key is absent. These
+// tests are a release gate: a missing secret must not look like a green skip.
+func requireLiveJinaKey(t *testing.T) {
+	t.Helper()
+	if jinaAPIKey(ProviderConfig{}) == "" {
+		t.Fatal("JINA_API_KEY is required for live Jina checks")
+	}
+}
+
+// requireJinaContent fails on short or HTML-looking bodies. Jina transient
+// short responses are treated as failures for the live gate, not skips.
+func requireJinaContent(t *testing.T, content []byte) {
+	t.Helper()
+	if len(bytes.TrimSpace(content)) < 1000 {
+		t.Fatalf("Jina returned insufficient content (%d bytes); expected a documentation page", len(content))
+	}
+	if looksLikeHTML(content) {
+		t.Fatal("Jina returned HTML instead of Markdown")
+	}
+}
+
+// TestHTTPFetcher_Jina_OpenAI is a transport integration check for the Jina
+// Reader path against a stable docs URL. It is not a test of the current
+// OpenAI provider config, which is native.
 func TestHTTPFetcher_Jina_OpenAI(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping network test in short mode")
 	}
+	requireLiveJinaKey(t)
 	cfg := ProviderConfig{
 		Slug:          "openai",
 		Name:          "OpenAI",
@@ -34,12 +72,7 @@ func TestHTTPFetcher_Jina_OpenAI(t *testing.T) {
 	page := pages[0]
 	t.Logf("Page path: %s, size: %d bytes", page.Path, len(page.Content))
 
-	// Jina Reader can return transient short responses (e.g., 88 bytes).
-	// Skip rather than fail — the mechanism is validated by unit tests;
-	// this live test validates content quality when Jina cooperates.
-	if len(page.Content) < 1000 {
-		t.Skipf("Jina returned transient short response (%d bytes); skipping quality checks", len(page.Content))
-	}
+	requireJinaContent(t, page.Content)
 
 	content := string(page.Content)
 
@@ -55,11 +88,15 @@ func TestHTTPFetcher_Jina_OpenAI(t *testing.T) {
 	}
 }
 
+// TestHTTPFetcher_Jina_Auto_Fallback exercises the auto strategy's Jina fallback
+// as a transport integration check. The stable URL is not today's native
+// OpenAI provider config. The route is proven on the wire: the direct request
+// to the provider host must happen, and a request must reach r.jina.ai.
 func TestHTTPFetcher_Jina_Auto_Fallback(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping network test in short mode")
 	}
-	// OpenAI with "auto" strategy: direct fetch returns HTML, should fall back to Jina.
+	requireLiveJinaKey(t)
 	cfg := ProviderConfig{
 		Slug:          "openai",
 		Name:          "OpenAI",
@@ -71,6 +108,8 @@ func TestHTTPFetcher_Jina_Auto_Fallback(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	rec := &routeRecorder{base: f.client.Transport}
+	f.client.Transport = rec
 
 	pages, err := f.Fetch(context.Background())
 	if err != nil {
@@ -80,18 +119,23 @@ func TestHTTPFetcher_Jina_Auto_Fallback(t *testing.T) {
 		t.Fatal("Expected at least 1 page from auto strategy with Jina fallback")
 	}
 
-	t.Logf("Page path: %s, size: %d bytes", pages[0].Path, len(pages[0].Content))
-
-	// Jina can return transient short responses; skip quality checks if so.
-	if len(pages[0].Content) < 1000 {
-		t.Skipf("Jina returned transient short response (%d bytes); skipping quality checks", len(pages[0].Content))
+	// Auto must try the direct provider host first, then fall back to the Jina
+	// proxy. Check the order of first appearances, not just presence.
+	directAt, jinaAt := -1, -1
+	for i, h := range rec.hosts {
+		if h == "platform.openai.com" && directAt < 0 {
+			directAt = i
+		}
+		if h == "r.jina.ai" && jinaAt < 0 {
+			jinaAt = i
+		}
+	}
+	if directAt < 0 || jinaAt < 0 || jinaAt < directAt {
+		t.Fatalf("auto strategy did not take direct-then-Jina route: hosts=%v", rec.hosts)
 	}
 
-	// Auto should have detected HTML from direct fetch and fallen back to Jina,
-	// so content should be clean Markdown (no HTML doctype).
-	if looksLikeHTML(pages[0].Content) {
-		t.Error("Auto strategy returned HTML; expected Jina fallback to produce Markdown")
-	}
+	// Content is a second guard: clean, substantial Markdown with no HTML doctype.
+	requireJinaContent(t, pages[0].Content)
 }
 
 func TestStripJinaHeader(t *testing.T) {

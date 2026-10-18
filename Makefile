@@ -3,7 +3,7 @@
 .PHONY: release-sign release-export-keys release-verify-keys release-verify-checksums release-notes release-download release-upload release-upload-provenance release-upload-all
 .PHONY: version-set version-bump-major version-bump-minor version-bump-patch
 .PHONY: license-inventory license-save license-audit update-licenses
-.PHONY: test-license-audit
+.PHONY: test-license-audit test-live-jina
 .PHONY: security-tools
 
 # Binary and version information
@@ -347,6 +347,10 @@ license-audit:  ## Audit for forbidden licenses
 	else \
 		echo "✅ No forbidden licenses detected"; \
 	fi
+
+test-live-jina: ## Live Jina gate: requires JINA_API_KEY (CI and tag releases)
+	@test -n "$$JINA_API_KEY" || { echo "JINA_API_KEY is required for live Jina checks" >&2; exit 1; }
+	$(GOTEST) -count=1 -run '^(TestHTTPFetcher_Jina_OpenAI|TestHTTPFetcher_Jina_Auto_Fallback)$$' ./internal/provider/
 
 test-license-audit: ## Verify license-audit rejects scanner failures and forbidden licenses
 	@bash scripts/license-audit.test.sh

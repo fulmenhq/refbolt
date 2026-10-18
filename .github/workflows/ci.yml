@@ -5,9 +5,19 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
+  # Live Jina transport checks on main and manual runs only. PRs get no secrets.
+  live-jina:
+    # Secret-bearing: pushes and manual runs on main only, never PRs.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/live-jina.yml
+    secrets:
+      JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
   # Container-based format checking (LOW friction - v0.2.1+)
   # Uses goneat-tools-runner which has foundation tools pre-installed
   format-check:
