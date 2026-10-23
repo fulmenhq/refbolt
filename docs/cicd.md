@@ -35,11 +35,11 @@ Runs all tests including live network fetches and git integration. Requires:
 - `JINA_API_KEY` for the live Jina transport checks (see [Live Jina gate](#live-jina-gate)). Anonymous Jina access works for ad hoc runs but may return 429.
 
 ```bash
-# Local development — full suite
+# Set JINA_API_KEY from your local secret store, then run the full suite
 make test
 
-# With Jina auth for reliable rate limits (set JINA_API_KEY from your local secret store)
-make test
+# Run only the live Jina release gate
+make test-live-jina
 ```
 
 ### Tests skipped in short mode
@@ -210,8 +210,10 @@ See `RELEASE_CHECKLIST.md` for the full step-by-step procedure.
 ### What does NOT trigger CI
 
 - Pushes to feature branches without a PR — open a PR to get CI
-- Manual workflow dispatch — not configured (add if needed later)
 - Nightly full test suite — not configured; run `make test` locally for live network coverage
+
+Manual workflow dispatch is configured. On `main`, it runs the live Jina gate
+alongside the other CI jobs. On other refs, the live Jina job is skipped.
 
 ## Release Signing
 
