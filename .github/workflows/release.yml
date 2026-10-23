@@ -8,7 +8,17 @@ on:
 permissions:
   contents: write
 jobs:
+  # The tagged commit must pass the live Jina check itself.
+  # A main run does not count.
+  live-jina:
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/live-jina.yml
+    secrets:
+      JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
   release:
+    needs: live-jina
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     container:

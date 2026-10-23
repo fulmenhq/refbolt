@@ -1,0 +1,33 @@
+# yamllint disable rule:document-start
+# yamllint disable rule:truthy
+# Reusable live Jina check. Called by ci.yml (main pushes, manual runs) and
+# release.yml (tag pushes). Pass only the named secret; PR runs never call it.
+name: Live Jina
+on:
+  workflow_call:
+    secrets:
+      JINA_API_KEY:
+        required: true
+permissions:
+  contents: read
+jobs:
+  live-jina:
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+      GOTOOLCHAIN: local
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Live Jina transport checks
+        env:
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+        run: |
+          set -euo pipefail
+          make test-live-jina

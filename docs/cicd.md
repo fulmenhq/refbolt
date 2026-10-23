@@ -32,15 +32,14 @@ Runs all tests including live network fetches and git integration. Requires:
 
 - Network access to external APIs
 - `git` on PATH with user.name/user.email configured
-- Optional: `JINA_API_KEY` for authenticated Jina tests (anonymous works but may 429)
+- `JINA_API_KEY` for the live Jina transport checks (see [Live Jina gate](#live-jina-gate)). Anonymous Jina access works for ad hoc runs but may return 429.
 
 ```bash
-# Local development — full suite
+# Set JINA_API_KEY from your local secret store, then run the full suite
 make test
 
-# With Jina auth for reliable rate limits
-source ~/devsecops/vars/fulmenhq-refbolt-jina.sh
-make test
+# Run only the live Jina release gate
+make test-live-jina
 ```
 
 ### Tests skipped in short mode
@@ -67,14 +66,42 @@ For GitHub Actions or similar:
   run: go test -short ./...
 ```
 
-For nightly or pre-merge full validation:
+Full validation runs are not scheduled in CI. The live Jina checks run through the gate below, not through a full-suite job.
 
-```yaml
-- name: Run full test suite
-  run: go test ./...
-  env:
-    JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
-```
+## Live Jina gate
+
+Two tests make real Jina Reader requests and are a **required** release check:
+
+- `TestHTTPFetcher_Jina_OpenAI`
+- `TestHTTPFetcher_Jina_Auto_Fallback`
+
+They are transport integration checks against a stable docs URL. They are not a test of the current OpenAI provider config, which uses native fetch.
+
+Behavior:
+
+- A missing or blank `JINA_API_KEY` **fails** the check with `JINA_API_KEY is required for live Jina checks`. It does not skip.
+- Short (under 1000 bytes) or HTML-looking responses **fail**. They do not skip.
+- Short mode (`go test -short`, `make test-short`) skips the live tests, so PR CI stays hermetic.
+- The auto-fallback test checks the route on the wire: a direct request to the provider host must come before a request to the Jina proxy. Content checks run after that as a second guard.
+
+Where it runs:
+
+| Trigger                                     | Runs                                                                            | Secret                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------- |
+| Pull request                                | No                                                                              | Not provided               |
+| Push to `main`                              | `ci.yml` calls `live-jina.yml`                                                  | `JINA_API_KEY` (CI secret) |
+| Manual (`workflow_dispatch`) on `main` only | `ci.yml` calls `live-jina.yml`                                                  | `JINA_API_KEY` (CI secret) |
+| Tag `v*`                                    | `release.yml` calls `live-jina.yml` on the tagged commit; `release` waits on it | `JINA_API_KEY` (CI secret) |
+
+A tag cannot publish unless the tagged commit passes the live check itself. A passing `main` run does not substitute for it.
+
+Credentials:
+
+- `JINA_API_KEY` is a repository secret. It belongs to a dedicated CI key, separate from any local development key.
+- Rotate the CI key every 90 days. Replace the repository secret when you rotate.
+- No key material appears in workflow files, logs, or commit messages.
+
+Local reminder: run `make test`, or the two tests above, with your local key before you open a PR that touches providers or the Jina path. A failed live check at tag time is the failure this step prevents.
 
 ## Build
 
@@ -158,7 +185,7 @@ refbolt is pure Go with `CGO_ENABLED=0`. This means all cross-compilation happen
 | `format-check` | —              | yamlfmt + prettier via `goneat-tools-runner` container                                                                       |
 | `build-test`   | `format-check` | `make fmt` + diff check, golangci-lint v2, `make test-short`, `make build`, smoke test (`refbolt version`, `refbolt --help`) |
 
-Both jobs run in the `ghcr.io/fulmenhq/goneat-tools-runner:v0.3.3` container. Go is installed via `actions/setup-go` (1.27.2). Tests run in short mode — no live network calls, no git integration tests.
+Both jobs run in the `ghcr.io/fulmenhq/goneat-tools-runner:v0.3.3` container. Go is installed via `actions/setup-go` from the `go.mod` minimum (1.26.9) with `GOTOOLCHAIN=local`. Tests run in short mode — no live network calls, no git integration tests.
 
 ### `.github/workflows/release.yml`
 
@@ -183,8 +210,10 @@ See `RELEASE_CHECKLIST.md` for the full step-by-step procedure.
 ### What does NOT trigger CI
 
 - Pushes to feature branches without a PR — open a PR to get CI
-- Manual workflow dispatch — not configured (add if needed later)
 - Nightly full test suite — not configured; run `make test` locally for live network coverage
+
+Manual workflow dispatch is configured. On `main`, it runs the live Jina gate
+alongside the other CI jobs. On other refs, the live Jina job is skipped.
 
 ## Release Signing
 
